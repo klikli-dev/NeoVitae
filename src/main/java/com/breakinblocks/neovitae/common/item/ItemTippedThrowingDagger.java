@@ -14,7 +14,7 @@ import java.util.List;
 
 /**
  * Tipped throwing dagger - an amethyst throwing dagger with potion effects applied.
- * Created via ARC recipe using lingering alchemy potions.
+ * Created via Athanor recipe using lingering alchemy potions.
  */
 public class ItemTippedThrowingDagger extends ItemThrowingDagger {
 
@@ -35,7 +35,6 @@ public class ItemTippedThrowingDagger extends ItemThrowingDagger {
     public void appendHoverText(ItemStack stack, TooltipContext context, List<Component> tooltip, TooltipFlag flag) {
         super.appendHoverText(stack, context, tooltip, flag);
 
-        // Add potion effect tooltips
         PotionContents contents = stack.get(DataComponents.POTION_CONTENTS);
         if (contents != null) {
             contents.addPotionTooltip(tooltip::add, 1.0F, context.tickRate());

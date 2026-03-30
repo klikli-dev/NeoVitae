@@ -1,0 +1,52 @@
+package com.breakinblocks.neovitae.common.block.dungeon;
+
+import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
+import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.state.BlockState;
+import com.breakinblocks.neovitae.common.blockentity.BaseBlockEntity;
+import com.breakinblocks.neovitae.common.blockentity.NVTiles;
+
+public class SpikeTrapBlockEntity extends BaseBlockEntity {
+
+    public SpikeTrapBlockEntity(BlockPos pos, BlockState state) {
+        super(NVTiles.SPIKE_TRAP_TYPE.get(), pos, state);
+    }
+
+    public static void tick(Level level, BlockPos pos, BlockState state, SpikeTrapBlockEntity tile) {
+        if (level.isClientSide) {
+            return;
+        }
+
+        boolean active = state.getValue(BlockSpikeTrap.ACTIVE);
+        Direction facing = state.getValue(BlockSpikeTrap.FACING);
+        BlockPos spikePos = pos.relative(facing);
+
+        if (active) {
+            tile.extendSpikes(spikePos, facing);
+        } else {
+            tile.retractSpikes(spikePos);
+        }
+    }
+
+    private void extendSpikes(BlockPos spikePos, Direction facing) {
+        if (level == null) return;
+
+        BlockState currentState = level.getBlockState(spikePos);
+        if (currentState.isAir() || currentState.canBeReplaced()) {
+            BlockState spikeState = DungeonBlocks.SPIKES.block().get().defaultBlockState()
+                    .setValue(BlockSpikes.FACING, facing);
+            level.setBlock(spikePos, spikeState, 3);
+        }
+    }
+
+    private void retractSpikes(BlockPos spikePos) {
+        if (level == null) return;
+
+        BlockState currentState = level.getBlockState(spikePos);
+        if (currentState.getBlock() instanceof BlockSpikes) {
+            level.setBlock(spikePos, Blocks.AIR.defaultBlockState(), 3);
+        }
+    }
+}

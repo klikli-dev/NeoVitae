@@ -15,20 +15,19 @@ import net.neoforged.neoforge.client.RenderTypeHelper;
 import net.neoforged.neoforge.client.extensions.common.IClientFluidTypeExtensions;
 import net.neoforged.neoforge.fluids.FluidStack;
 import com.breakinblocks.neovitae.NeoVitae;
-import com.breakinblocks.neovitae.common.blockentity.BloodTankTile;
+import com.breakinblocks.neovitae.common.blockentity.BloodTankBlockEntity;
 import com.breakinblocks.neovitae.util.helper.RenderHelper;
 
-public class BloodTankRenderer implements BlockEntityRenderer<BloodTankTile> {
+public class BloodTankRenderer implements BlockEntityRenderer<BloodTankBlockEntity> {
     public BloodTankRenderer(BlockEntityRendererProvider.Context context) {}
 
-    // Tank inside
     private static final float minHeight = 1F/16F + 0.01F;
     private static final float maxHeight = 11F/16F;
-    private static final float start = 4F/16F; // inside corner
-    private static final float end = 12F/16F; // other inside corner
+    private static final float start = 4F/16F;
+    private static final float end = 12F/16F;
 
     @Override
-    public void render(BloodTankTile blockEntity, float partialTick, PoseStack poseStack, MultiBufferSource bufferSource, int packedLight, int packedOverlay) {
+    public void render(BloodTankBlockEntity blockEntity, float partialTick, PoseStack poseStack, MultiBufferSource bufferSource, int packedLight, int packedOverlay) {
         Minecraft minecraft = Minecraft.getInstance();
         FluidStack fluidStack = blockEntity.getFluidContained();
         if (fluidStack.isEmpty()) {

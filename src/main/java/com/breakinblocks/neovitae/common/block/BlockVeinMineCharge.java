@@ -3,12 +3,8 @@ package com.breakinblocks.neovitae.common.block;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
-import com.breakinblocks.neovitae.common.blockentity.VeinMineChargeTile;
+import com.breakinblocks.neovitae.common.blockentity.VeinMineChargeBlockEntity;
 
-/**
- * Block for vein mine charges.
- * Mines connected ore blocks of the same type when triggered.
- */
 public class BlockVeinMineCharge extends BlockShapedExplosive {
     private final int maxBlocks;
 
@@ -19,7 +15,7 @@ public class BlockVeinMineCharge extends BlockShapedExplosive {
 
     @Override
     public BlockEntity newBlockEntity(BlockPos pos, BlockState state) {
-        return new VeinMineChargeTile(maxBlocks, pos, state);
+        return new VeinMineChargeBlockEntity(maxBlocks, pos, state);
     }
 
     public int getMaxBlocks() {

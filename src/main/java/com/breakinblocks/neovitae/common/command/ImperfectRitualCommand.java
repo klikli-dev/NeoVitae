@@ -20,8 +20,8 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.entity.BlockEntity;
-import com.breakinblocks.neovitae.common.blockentity.TileImperfectRitualStone;
-import com.breakinblocks.neovitae.common.datamap.BMDataMaps;
+import com.breakinblocks.neovitae.common.blockentity.ImperfectRitualStoneBlockEntity;
+import com.breakinblocks.neovitae.common.datamap.NVDataMaps;
 import com.breakinblocks.neovitae.common.datamap.ImperfectRitualStats;
 import com.breakinblocks.neovitae.ritual.ImperfectRitual;
 import com.breakinblocks.neovitae.ritual.RitualRegistry;
@@ -29,8 +29,8 @@ import com.breakinblocks.neovitae.ritual.RitualRegistry;
 /**
  * Admin command for managing imperfect rituals.
  * Usage:
- * - /bm-imperfectritual <pos> set <ritual_id> - Place required block and activate ritual
- * - /bm-imperfectritual list - List all registered imperfect rituals with their requirements
+ * - /nv-imperfectritual <pos> set <ritual_id> - Place required block and activate ritual
+ * - /nv-imperfectritual list - List all registered imperfect rituals with their requirements
  */
 public class ImperfectRitualCommand {
 
@@ -47,7 +47,7 @@ public class ImperfectRitualCommand {
 
     public static void register(CommandDispatcher<CommandSourceStack> dispatcher) {
         dispatcher.register(
-                Commands.literal("bm-imperfectritual")
+                Commands.literal("nv-imperfectritual")
                         .requires(source -> source.hasPermission(Commands.LEVEL_GAMEMASTERS))
                         .then(
                                 Commands.argument("pos", BlockPosArgument.blockPos())
@@ -67,12 +67,12 @@ public class ImperfectRitualCommand {
         );
     }
 
-    private static TileImperfectRitualStone getIRS(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
+    private static ImperfectRitualStoneBlockEntity getIRS(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
         BlockPos pos = BlockPosArgument.getLoadedBlockPos(context, "pos");
         ServerLevel level = context.getSource().getLevel();
         BlockEntity be = level.getBlockEntity(pos);
 
-        if (!(be instanceof TileImperfectRitualStone irs)) {
+        if (!(be instanceof ImperfectRitualStoneBlockEntity irs)) {
             throw ERROR_NOT_IRS.create();
         }
 
@@ -80,7 +80,7 @@ public class ImperfectRitualCommand {
     }
 
     private static int setRitual(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
-        TileImperfectRitualStone irs = getIRS(context);
+        ImperfectRitualStoneBlockEntity irs = getIRS(context);
         ResourceLocation ritualId = ResourceLocationArgument.getId(context, "ritual");
         ServerLevel level = context.getSource().getLevel();
 
@@ -89,14 +89,13 @@ public class ImperfectRitualCommand {
             throw ERROR_UNKNOWN_RITUAL.create(ritualId);
         }
 
-        // Get the block requirement from DataMap
         var registry = RitualRegistry.getImperfectRitualRegistry();
         if (registry == null) {
             throw ERROR_UNKNOWN_RITUAL.create(ritualId);
         }
 
         Holder<ImperfectRitual> holder = registry.wrapAsHolder(ritual);
-        ImperfectRitualStats stats = holder.getData(BMDataMaps.IMPERFECT_RITUAL_STATS);
+        ImperfectRitualStats stats = holder.getData(NVDataMaps.IMPERFECT_RITUAL_STATS);
 
         Block blockToPlace = null;
         if (stats != null && stats.block().isPresent()) {
@@ -107,20 +106,16 @@ public class ImperfectRitualCommand {
             throw ERROR_NO_BLOCK_REQUIREMENT.create(ritualId);
         }
 
-        // Place the required block above the imperfect ritual stone
         BlockPos abovePos = irs.getRitualPos().above();
         level.setBlockAndUpdate(abovePos, blockToPlace.defaultBlockState());
 
-        // Force activate the ritual bypassing LP checks (admin command)
         var player = context.getSource().getPlayer();
         boolean success = ritual.onActivate(irs, player);
 
-        // Handle block consumption if enabled in stats
         if (success && stats != null && stats.consumeBlock()) {
             level.removeBlock(abovePos, false);
         }
 
-        // Show lightning effect if enabled
         if (success) {
             boolean showLightning = stats != null ? stats.lightningEffect() : ritual.isLightShow();
             if (showLightning) {
@@ -151,7 +146,7 @@ public class ImperfectRitualCommand {
             ImperfectRitual ritual = RitualRegistry.getImperfectRitual(id);
             if (ritual != null && registry != null) {
                 Holder<ImperfectRitual> holder = registry.wrapAsHolder(ritual);
-                ImperfectRitualStats stats = holder.getData(BMDataMaps.IMPERFECT_RITUAL_STATS);
+                ImperfectRitualStats stats = holder.getData(NVDataMaps.IMPERFECT_RITUAL_STATS);
 
                 String blockName = "unknown";
                 int cost = ritual.getActivationCost();

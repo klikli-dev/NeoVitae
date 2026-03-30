@@ -51,7 +51,7 @@ public class RitualMeteor extends Ritual {
             if (recipe != null) {
                 int syphonAmount = recipe.getSyphon();
 
-                if (ctx.currentEssence() < syphonAmount) {
+                if (ctx.currentEV() < syphonAmount) {
                     return;
                 }
 
@@ -59,7 +59,6 @@ public class RitualMeteor extends Ritual {
                     ctx.syphon(syphonAmount);
                 }
 
-                // Spawn meteor entity high above the ritual
                 EntityMeteor meteor = new EntityMeteor(ctx.level(),
                         ctx.masterPos().getX() + 0.5,
                         ctx.level().getMaxBuildHeight() + 10,

@@ -4,46 +4,47 @@ import org.jetbrains.annotations.Nullable;
 import com.breakinblocks.neovitae.api.altar.rune.IAltarRuneRegistry;
 import com.breakinblocks.neovitae.api.incense.ITranquilityHandler;
 import com.breakinblocks.neovitae.api.living.ILivingArmorManager;
-import com.breakinblocks.neovitae.api.soul.ISoulNetwork;
-import com.breakinblocks.neovitae.api.will.IDemonWillHandler;
+import com.breakinblocks.neovitae.api.soul.IAnima;
+import com.breakinblocks.neovitae.api.will.ISpiritusHandler;
+import com.breakinblocks.neovitae.api.will.IPlayerSpiritusHandler;
 
 import java.util.UUID;
 
 /**
- * Main interface for the Blood Magic API.
+ * Main interface for the NeoVitae API.
  *
- * <p>This interface provides access to Blood Magic's core systems for addon mods.
+ * <p>This interface provides access to NeoVitae's core systems for addon mods.
  * Access the implementation via {@link NeoVitaeAPI#getInstance()}.</p>
  *
  * <h2>Usage Example</h2>
  * <pre>{@code
  * INeoVitaeAPI api = NeoVitaeAPI.getInstance();
  *
- * // Get a player's soul network
- * ISoulNetwork network = api.getSoulNetwork(playerUUID);
- * if (network != null) {
- *     int lp = network.getCurrentEssence();
+ * // Get a player's anima
+ * IAnima anima = api.getAnima(playerUUID);
+ * if (anima != null) {
+ *     int ev = anima.getCurrentEV();
  * }
  *
  * // Register a custom altar rune type
  * api.getRuneRegistry().registerRuneType(myCustomRuneType);
  * api.getRuneRegistry().registerRuneBlock(myRuneBlock, myCustomRuneType, 1);
  *
- * // Interact with demon will in a chunk
- * IDemonWillHandler willHandler = api.getDemonWillHandler();
- * double rawWill = willHandler.getCurrentWill(level, pos, EnumWillType.DEFAULT);
+ * // Interact with spiritus in a chunk
+ * ISpiritusHandler willHandler = api.getSpiritusHandler();
+ * double rawSpiritus = willHandler.getCurrentWill(level, pos, SpiritusType.DEFAULT);
  * }</pre>
  */
 public interface INeoVitaeAPI {
 
     /**
-     * Gets the Soul Network for a player by their UUID.
+     * Gets the Anima for a player by their UUID.
      *
      * @param uuid The player's UUID
-     * @return The soul network, or null if none exists for this player
+     * @return The anima, or null if none exists for this player
      */
     @Nullable
-    ISoulNetwork getSoulNetwork(UUID uuid);
+    IAnima getAnima(UUID uuid);
 
     /**
      * Gets the Living Armor upgrade manager.
@@ -82,12 +83,12 @@ public interface INeoVitaeAPI {
     ITranquilityHandler getTranquilityHandler();
 
     /**
-     * Gets the Demon Will handler for interacting with chunk-based demon will aura.
+     * Gets the Spiritus handler for interacting with chunk-based spiritus aura.
      *
      * <p>Use this to:</p>
      * <ul>
-     *   <li>Query current demon will amounts in chunks</li>
-     *   <li>Add or drain demon will from chunks</li>
+     *   <li>Query current spiritus amounts in chunks</li>
+     *   <li>Add or drain spiritus from chunks</li>
      *   <li>Check or modify maximum will capacity (including per-chunk bonuses)</li>
      *   <li>Transfer will between chunks</li>
      * </ul>
@@ -95,9 +96,16 @@ public interface INeoVitaeAPI {
      * <p>Maximum will capacity per chunk is configurable in the server config,
      * and can be increased per-chunk via rituals or other effects.</p>
      *
-     * @return The demon will handler
+     * @return The spiritus handler
      */
-    IDemonWillHandler getDemonWillHandler();
+    ISpiritusHandler getSpiritusHandler();
+
+    /**
+     * Gets the handler for managing spiritus items in player inventories.
+     *
+     * @return The player spiritus handler
+     */
+    IPlayerSpiritusHandler getPlayerWillHandler();
 
     /**
      * Gets the current API version string.

@@ -19,7 +19,7 @@ import net.minecraft.world.item.TooltipFlag;
 import net.minecraft.world.item.component.ItemContainerContents;
 import net.minecraft.world.item.context.UseOnContext;
 import net.minecraft.world.level.Level;
-import com.breakinblocks.neovitae.common.datacomponent.BMDataComponents;
+import com.breakinblocks.neovitae.common.datacomponent.NVDataComponents;
 import com.breakinblocks.neovitae.common.datacomponent.Binding;
 import com.breakinblocks.neovitae.common.item.IBindable;
 import com.breakinblocks.neovitae.common.menu.SigilHoldingMenu;
@@ -103,7 +103,6 @@ public class ItemSigilHolding extends ItemSigilBase implements ISigil.Holding {
             return InteractionResultHolder.fail(stack);
         }
 
-        // Shift-click opens the GUI
         if (player.isShiftKeyDown()) {
             if (!world.isClientSide && player instanceof ServerPlayer serverPlayer) {
                 int slot = hand == InteractionHand.MAIN_HAND
@@ -129,15 +128,12 @@ public class ItemSigilHolding extends ItemSigilBase implements ISigil.Holding {
             }
         }
 
-        itemUsing.getItem().use(world, player, hand);
+        InteractionResultHolder<ItemStack> result = itemUsing.getItem().use(world, player, hand);
         saveInventory(stack, inv);
 
-        return InteractionResultHolder.consume(stack);
+        return result;
     }
 
-    /**
-     * Opens the Sigil of Holding GUI for the player.
-     */
     private void openGui(ServerPlayer player, ItemStack holdingStack, int slot) {
         player.openMenu(new MenuProvider() {
             @Override
@@ -186,7 +182,7 @@ public class ItemSigilHolding extends ItemSigilBase implements ISigil.Holding {
 
     public static int getCurrentItemOrdinal(ItemStack stack) {
         if (stack.getItem() instanceof ItemSigilHolding) {
-            int currentSigil = stack.getOrDefault(BMDataComponents.READER_STATE.get(), 0);
+            int currentSigil = stack.getOrDefault(NVDataComponents.READER_STATE.get(), 0);
             return Math.max(0, Math.min(currentSigil, INVENTORY_SIZE - 1));
         }
         return 0;
@@ -214,7 +210,7 @@ public class ItemSigilHolding extends ItemSigilBase implements ISigil.Holding {
                 attempts++;
             } while (inv.get(currentIndex).isEmpty() && attempts < INVENTORY_SIZE);
 
-            itemStack.set(BMDataComponents.READER_STATE.get(), currentIndex);
+            itemStack.set(NVDataComponents.READER_STATE.get(), currentIndex);
         }
     }
 }

@@ -44,9 +44,10 @@ import net.minecraft.world.phys.*;
 import net.minecraft.world.phys.shapes.VoxelShape;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.api.distmarker.OnlyIn;
-import com.breakinblocks.neovitae.common.datacomponent.EnumWillType;
-import com.breakinblocks.neovitae.common.item.BMItems;
-import com.breakinblocks.neovitae.will.PlayerDemonWillHandler;
+import com.breakinblocks.neovitae.common.attribute.NVAttributes;
+import com.breakinblocks.neovitae.common.datacomponent.SpiritusType;
+import com.breakinblocks.neovitae.common.item.NVItems;
+import com.breakinblocks.neovitae.will.PlayerSpiritusHandler;
 
 import javax.annotation.Nullable;
 import java.util.List;
@@ -54,7 +55,7 @@ import java.util.Set;
 
 /**
  * Base class for throwing dagger projectiles.
- * Handles arrow-like behavior with potion effects and demon will collection.
+ * Handles arrow-like behavior with potion effects and spiritus collection.
  */
 @OnlyIn(value = Dist.CLIENT, _interface = ItemSupplier.class)
 public abstract class AbstractEntityThrowingDagger extends ThrowableItemProjectile implements ItemSupplier {
@@ -76,7 +77,7 @@ public abstract class AbstractEntityThrowingDagger extends ThrowableItemProjecti
     private List<Entity> hitEntities;
 
     private double willDrop = 0;
-    private EnumWillType willType = EnumWillType.DEFAULT;
+    private SpiritusType willType = SpiritusType.DEFAULT;
 
     private final Set<MobEffectInstance> effects = Sets.newHashSet();
 
@@ -101,7 +102,7 @@ public abstract class AbstractEntityThrowingDagger extends ThrowableItemProjecti
 
     @Override
     protected Item getDefaultItem() {
-        return BMItems.THROWING_DAGGER.get();
+        return NVItems.THROWING_DAGGER.get();
     }
 
     @Override
@@ -126,7 +127,7 @@ public abstract class AbstractEntityThrowingDagger extends ThrowableItemProjecti
         return this.willDrop * hp / 20D;
     }
 
-    public void setWillType(EnumWillType type) {
+    public void setWillType(SpiritusType type) {
         this.willType = type;
     }
 
@@ -139,9 +140,6 @@ public abstract class AbstractEntityThrowingDagger extends ThrowableItemProjecti
         updateColor();
     }
 
-    /**
-     * Sets effects from an ItemStack's PotionContents data component.
-     */
     public void setEffectsFromItem(ItemStack stack) {
         PotionContents contents = stack.get(net.minecraft.core.component.DataComponents.POTION_CONTENTS);
         if (contents != null) {
@@ -168,7 +166,6 @@ public abstract class AbstractEntityThrowingDagger extends ThrowableItemProjecti
         boolean noClip = this.noPhysics;
         Vec3 movement = this.getDeltaMovement();
 
-        // Set initial rotation from movement
         if (this.xRotO == 0.0F && this.yRotO == 0.0F) {
             double d0 = movement.horizontalDistance();
             this.setYRot((float) (Mth.atan2(movement.x, movement.z) * (180F / (float) Math.PI)));
@@ -177,7 +174,6 @@ public abstract class AbstractEntityThrowingDagger extends ThrowableItemProjecti
             this.xRotO = this.getXRot();
         }
 
-        // Check if we're inside a block
         BlockPos blockpos = this.blockPosition();
         BlockState blockstate = this.level().getBlockState(blockpos);
         if (!blockstate.isAir() && !noClip) {
@@ -193,18 +189,15 @@ public abstract class AbstractEntityThrowingDagger extends ThrowableItemProjecti
             }
         }
 
-        // Decrement arrowShake for pickup availability
         if (this.arrowShake > 0) {
             --this.arrowShake;
         }
 
-        // Clear fire if in water or powder snow
         if (this.isInWaterOrRain() || blockstate.is(Blocks.POWDER_SNOW)) {
             this.clearFire();
         }
 
         if (this.inGround && !noClip) {
-            // In ground - check if we should fall, otherwise just tick despawn
             if (this.inBlockState != blockstate && this.shouldFall()) {
                 this.startFalling();
             } else if (!this.level().isClientSide) {
@@ -212,18 +205,15 @@ public abstract class AbstractEntityThrowingDagger extends ThrowableItemProjecti
             }
             ++this.timeInGround;
         } else {
-            // Not in ground - apply physics
             this.timeInGround = 0;
             Vec3 currentPos = this.position();
             Vec3 nextPos = currentPos.add(movement);
 
-            // Ray trace for block collision
             HitResult hitresult = this.level().clip(new ClipContext(currentPos, nextPos, ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE, this));
             if (hitresult.getType() != HitResult.Type.MISS) {
                 nextPos = hitresult.getLocation();
             }
 
-            // Check for entity collision
             while (!this.isRemoved()) {
                 EntityHitResult entityhitresult = this.rayTraceEntities(currentPos, nextPos);
                 if (entityhitresult != null) {
@@ -251,7 +241,6 @@ public abstract class AbstractEntityThrowingDagger extends ThrowableItemProjecti
                 hitresult = null;
             }
 
-            // Update movement and position
             movement = this.getDeltaMovement();
             double dx = movement.x;
             double dy = movement.y;
@@ -272,7 +261,6 @@ public abstract class AbstractEntityThrowingDagger extends ThrowableItemProjecti
             this.setXRot(lerpRotation(this.xRotO, this.getXRot()));
             this.setYRot(lerpRotation(this.yRotO, this.getYRot()));
 
-            // Apply drag
             float drag = 0.99F;
             if (this.isInWater()) {
                 drag = this.getWaterDrag();
@@ -280,7 +268,6 @@ public abstract class AbstractEntityThrowingDagger extends ThrowableItemProjecti
 
             this.setDeltaMovement(movement.scale(drag));
 
-            // Apply gravity
             if (!this.isNoGravity() && !noClip) {
                 Vec3 vel = this.getDeltaMovement();
                 this.setDeltaMovement(vel.x, vel.y - 0.05F, vel.z);
@@ -344,10 +331,14 @@ public abstract class AbstractEntityThrowingDagger extends ThrowableItemProjecti
         }
 
         if (entity.hurt(damageSource, (float) dmg)) {
-            if (!entity.isAlive() && owner instanceof Player && entity instanceof LivingEntity living) {
+            if (!entity.isAlive() && owner instanceof Player playerOwner && entity instanceof LivingEntity living) {
                 double willAmount = this.getWillDropForMobHealth(living.getMaxHealth());
+                double bonusSpiritus = playerOwner.getAttributeValue(NVAttributes.BONUS_SPIRITUS);
+                if (bonusSpiritus > 0) {
+                    willAmount *= (1 + bonusSpiritus / 100);
+                }
                 if (willAmount > 0) {
-                    PlayerDemonWillHandler.addDemonWill(willType, (Player) owner, willAmount);
+                    PlayerSpiritusHandler.addSpiritus(willType, playerOwner, willAmount);
                 }
             }
 
@@ -519,7 +510,7 @@ public abstract class AbstractEntityThrowingDagger extends ThrowableItemProjecti
         }
         this.willDrop = compound.getDouble("willDrop");
         String willTypeName = compound.getString("willType");
-        this.willType = willTypeName.isEmpty() ? EnumWillType.DEFAULT : EnumWillType.valueOf(willTypeName.toUpperCase());
+        this.willType = willTypeName.isEmpty() ? SpiritusType.DEFAULT : SpiritusType.valueOf(willTypeName.toUpperCase());
 
         if (compound.contains("CustomPotionEffects", 9)) {
             ListTag effectList = compound.getList("CustomPotionEffects", 10);

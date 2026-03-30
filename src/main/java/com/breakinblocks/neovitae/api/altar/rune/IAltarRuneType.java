@@ -4,9 +4,9 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.StringRepresentable;
 
 /**
- * Represents a type of altar rune that can provide bonuses to the Blood Altar.
+ * Represents a type of altar rune that can provide bonuses to the Ara Vitae.
  *
- * <p>Blood Magic provides built-in rune types via {@link EnumAltarRuneType}.
+ * <p>NeoVitae provides built-in rune types via {@link EnumAltarRuneType}.
  * Addon mods can implement this interface to create custom rune types with
  * their own stat bonuses and behaviors.</p>
  *

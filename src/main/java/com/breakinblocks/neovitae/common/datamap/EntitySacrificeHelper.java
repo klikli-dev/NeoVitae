@@ -22,9 +22,8 @@ import net.minecraft.world.entity.LivingEntity;
  */
 public final class EntitySacrificeHelper {
 
-    private EntitySacrificeHelper() {
-        // Utility class
-    }
+    private EntitySacrificeHelper() {}
+
 
     /**
      * Gets the sacrifice value for an entity type.
@@ -38,7 +37,7 @@ public final class EntitySacrificeHelper {
     public static EntitySacrificeValue getSacrificeValue(EntityType<?> entityType) {
         EntitySacrificeValue value = BuiltInRegistries.ENTITY_TYPE
                 .wrapAsHolder(entityType)
-                .getData(BMDataMaps.ENTITY_SACRIFICE_VALUE);
+                .getData(NVDataMaps.ENTITY_SACRIFICE_VALUE);
 
         return value != null ? value : EntitySacrificeValue.DEFAULT;
     }
@@ -81,8 +80,8 @@ public final class EntitySacrificeHelper {
      * @param entity The entity
      * @return LP generated per point of damage
      */
-    public static int getLpPerDamage(LivingEntity entity) {
-        return getSacrificeValue(entity).lpPerDamage();
+    public static int getEvPerDamage(LivingEntity entity) {
+        return getSacrificeValue(entity).evPerDamage();
     }
 
     /**
@@ -94,6 +93,6 @@ public final class EntitySacrificeHelper {
     public static boolean hasCustomValue(EntityType<?> entityType) {
         return BuiltInRegistries.ENTITY_TYPE
                 .wrapAsHolder(entityType)
-                .getData(BMDataMaps.ENTITY_SACRIFICE_VALUE) != null;
+                .getData(NVDataMaps.ENTITY_SACRIFICE_VALUE) != null;
     }
 }

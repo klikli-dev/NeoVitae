@@ -8,10 +8,11 @@ import net.minecraft.world.entity.monster.Enemy;
 import net.minecraft.world.entity.monster.Slime;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
-import com.breakinblocks.neovitae.common.datacomponent.BMDataComponents;
-import com.breakinblocks.neovitae.common.datacomponent.EnumWillType;
-import com.breakinblocks.neovitae.common.item.BMItems;
-import com.breakinblocks.neovitae.will.PlayerDemonWillHandler;
+import com.breakinblocks.neovitae.common.attribute.NVAttributes;
+import com.breakinblocks.neovitae.common.datacomponent.NVDataComponents;
+import com.breakinblocks.neovitae.common.datacomponent.SpiritusType;
+import com.breakinblocks.neovitae.common.item.NVItems;
+import com.breakinblocks.neovitae.will.PlayerSpiritusHandler;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -27,7 +28,7 @@ import java.util.List;
  *   <li>Effect duration and intensity arrays</li>
  *   <li>Soul drain and drop calculations</li>
  *   <li>On-hit effect application logic</li>
- *   <li>Demon will drop generation</li>
+ *   <li>Spiritus drop generation</li>
  *   <li>Data component access methods</li>
  * </ul>
  */
@@ -35,7 +36,6 @@ public final class SentientToolHelper {
 
     private SentientToolHelper() {} // Utility class - no instantiation
 
-    // ==================== SHARED CONSTANTS ====================
 
     /** Soul thresholds that determine power level (0-6). Each threshold unlocks stronger effects. */
     public static final int[] SOUL_BRACKET = {16, 60, 200, 400, 1000, 2000, 4000};
@@ -64,12 +64,11 @@ public final class SentientToolHelper {
     /** Dig speed bonus at each power level (for mining tools). */
     public static final double[] DEFAULT_DIG_SPEED_ADDED = {1, 1.5, 2, 3, 4, 5, 6};
 
-    // ==================== LEVEL CALCULATION ====================
 
     /**
      * Calculates the power level (0-6) based on available soul amount.
      *
-     * @param soulsRemaining the amount of demon will available
+     * @param soulsRemaining the amount of spiritus available
      * @return power level from 0-6, or -1 if below minimum threshold
      */
     public static int getLevel(double soulsRemaining) {
@@ -82,7 +81,6 @@ public final class SentientToolHelper {
         return lvl;
     }
 
-    // ==================== EFFECT APPLICATION ====================
 
     /**
      * Applies will-type-specific effects when hitting an enemy.
@@ -97,7 +95,7 @@ public final class SentientToolHelper {
      * @param target the entity being hit
      * @param attacker the attacking entity
      */
-    public static void applyEffectToEntity(EnumWillType type, int willBracket, LivingEntity target, LivingEntity attacker) {
+    public static void applyEffectToEntity(SpiritusType type, int willBracket, LivingEntity target, LivingEntity attacker) {
         if (willBracket < 0 || willBracket >= POISON_TIME.length) return;
 
         switch (type) {
@@ -114,26 +112,25 @@ public final class SentientToolHelper {
         }
     }
 
-    // ==================== SOUL DROP GENERATION ====================
 
     /**
      * Gets the appropriate monster soul item for the given will type.
      *
      * @param type the will type
-     * @return the MonsterSoulItem for that type
+     * @return the SpiritusEssenceItem for that type
      */
-    public static MonsterSoulItem getSoulItemForType(EnumWillType type) {
+    public static SpiritusEssenceItem getSoulItemForType(SpiritusType type) {
         return switch (type) {
-            case CORROSIVE -> BMItems.MONSTER_SOUL_CORROSIVE.get();
-            case DESTRUCTIVE -> BMItems.MONSTER_SOUL_DESTRUCTIVE.get();
-            case VENGEFUL -> BMItems.MONSTER_SOUL_VENGEFUL.get();
-            case STEADFAST -> BMItems.MONSTER_SOUL_STEADFAST.get();
-            default -> BMItems.MONSTER_SOUL_RAW.get();
+            case CORROSIVE -> NVItems.MONSTER_SOUL_CORROSIVE.get();
+            case DESTRUCTIVE -> NVItems.MONSTER_SOUL_DESTRUCTIVE.get();
+            case VENGEFUL -> NVItems.MONSTER_SOUL_VENGEFUL.get();
+            case STEADFAST -> NVItems.MONSTER_SOUL_STEADFAST.get();
+            default -> NVItems.MONSTER_SOUL_RAW.get();
         };
     }
 
     /**
-     * Generates random demon will drops when an entity is killed with a sentient tool.
+     * Generates random spiritus drops when an entity is killed with a sentient tool.
      *
      * @param killedEntity the entity that was killed
      * @param attackingEntity the entity that made the kill
@@ -141,7 +138,7 @@ public final class SentientToolHelper {
      * @param looting the looting enchantment level
      * @return list of monster soul item stacks to drop
      */
-    public static List<ItemStack> getRandomDemonWillDrop(LivingEntity killedEntity, LivingEntity attackingEntity,
+    public static List<ItemStack> getRandomSpiritusDrop(LivingEntity killedEntity, LivingEntity attackingEntity,
             ItemStack stack, int looting) {
         List<ItemStack> soulList = new ArrayList<>();
 
@@ -154,16 +151,24 @@ public final class SentientToolHelper {
         }
 
         double willModifier = killedEntity instanceof Slime ? 0.67 : 1;
-        EnumWillType type = getCurrentType(stack);
-        MonsterSoulItem soulItem = getSoulItemForType(type);
+        SpiritusType type = getCurrentType(stack);
+        SpiritusEssenceItem soulItem = getSoulItemForType(type);
 
         double soulDropAmount = getSoulDrop(stack);
         double staticDropAmount = getStaticDrop(stack);
 
+        double willBonus = 1;
+        if (attackingEntity instanceof Player player) {
+            double bonusSpiritus = player.getAttributeValue(NVAttributes.BONUS_SPIRITUS);
+            if (bonusSpiritus > 0) {
+                willBonus = 1 + bonusSpiritus / 100;
+            }
+        }
+
         for (int i = 0; i <= looting; i++) {
             if (i == 0 || attackingEntity.level().random.nextDouble() < 0.4) {
                 double soulAmount = willModifier * (soulDropAmount * attackingEntity.level().random.nextDouble()
-                    + staticDropAmount) * killedEntity.getMaxHealth() / 20d;
+                    + staticDropAmount) * killedEntity.getMaxHealth() / 20d * willBonus;
                 soulList.add(soulItem.createWill(soulAmount));
             }
         }
@@ -171,7 +176,6 @@ public final class SentientToolHelper {
         return soulList;
     }
 
-    // ==================== WILL DRAIN HANDLING ====================
 
     /**
      * Handles will drain when attacking with a sentient tool.
@@ -183,65 +187,64 @@ public final class SentientToolHelper {
     public static boolean handleWillDrain(ItemStack stack, Player player) {
         double drain = getDrainAmount(stack);
         if (drain > 0) {
-            EnumWillType type = getCurrentType(stack);
-            double soulsRemaining = PlayerDemonWillHandler.getTotalDemonWill(type, player);
+            SpiritusType type = getCurrentType(stack);
+            double soulsRemaining = PlayerSpiritusHandler.getTotalSpiritus(type, player);
 
             if (drain > soulsRemaining) {
                 return true; // Cancel attack - not enough will
             } else {
-                PlayerDemonWillHandler.consumeDemonWill(type, player, drain);
+                PlayerSpiritusHandler.consumeSpiritus(type, player, drain);
             }
         }
         return false; // Continue with attack
     }
 
-    // ==================== DATA COMPONENT ACCESSORS ====================
 
-    public static EnumWillType getCurrentType(ItemStack stack) {
-        return stack.getOrDefault(BMDataComponents.DEMON_WILL_TYPE, EnumWillType.DEFAULT);
+    public static SpiritusType getCurrentType(ItemStack stack) {
+        return stack.getOrDefault(NVDataComponents.SPIRITUS_TYPE, SpiritusType.DEFAULT);
     }
 
-    public static void setCurrentType(ItemStack stack, EnumWillType type) {
-        stack.set(BMDataComponents.DEMON_WILL_TYPE, type);
+    public static void setCurrentType(ItemStack stack, SpiritusType type) {
+        stack.set(NVDataComponents.SPIRITUS_TYPE, type);
     }
 
     public static double getDrainAmount(ItemStack stack) {
-        return stack.getOrDefault(BMDataComponents.SENTIENT_SWORD_DRAIN, 0.0);
+        return stack.getOrDefault(NVDataComponents.SENTIENT_SWORD_DRAIN, 0.0);
     }
 
     public static void setDrainAmount(ItemStack stack, double drain) {
-        stack.set(BMDataComponents.SENTIENT_SWORD_DRAIN, drain);
+        stack.set(NVDataComponents.SENTIENT_SWORD_DRAIN, drain);
     }
 
     public static double getDamageBonus(ItemStack stack) {
-        return stack.getOrDefault(BMDataComponents.SENTIENT_SWORD_DAMAGE, 0.0);
+        return stack.getOrDefault(NVDataComponents.SENTIENT_SWORD_DAMAGE, 0.0);
     }
 
     public static void setDamageBonus(ItemStack stack, double damage) {
-        stack.set(BMDataComponents.SENTIENT_SWORD_DAMAGE, damage);
+        stack.set(NVDataComponents.SENTIENT_SWORD_DAMAGE, damage);
     }
 
     public static double getStaticDrop(ItemStack stack) {
-        return stack.getOrDefault(BMDataComponents.SENTIENT_SWORD_STATIC_DROP, 1.0);
+        return stack.getOrDefault(NVDataComponents.SENTIENT_SWORD_STATIC_DROP, 1.0);
     }
 
     public static void setStaticDrop(ItemStack stack, double drop) {
-        stack.set(BMDataComponents.SENTIENT_SWORD_STATIC_DROP, drop);
+        stack.set(NVDataComponents.SENTIENT_SWORD_STATIC_DROP, drop);
     }
 
     public static double getSoulDrop(ItemStack stack) {
-        return stack.getOrDefault(BMDataComponents.SENTIENT_SWORD_DROP, 0.0);
+        return stack.getOrDefault(NVDataComponents.SENTIENT_SWORD_DROP, 0.0);
     }
 
     public static void setSoulDrop(ItemStack stack, double drop) {
-        stack.set(BMDataComponents.SENTIENT_SWORD_DROP, drop);
+        stack.set(NVDataComponents.SENTIENT_SWORD_DROP, drop);
     }
 
     public static double getDigSpeedBonus(ItemStack stack) {
-        return stack.getOrDefault(BMDataComponents.SENTIENT_TOOL_SPEED, 0.0);
+        return stack.getOrDefault(NVDataComponents.SENTIENT_TOOL_SPEED, 0.0);
     }
 
     public static void setDigSpeedBonus(ItemStack stack, double speed) {
-        stack.set(BMDataComponents.SENTIENT_TOOL_SPEED, speed);
+        stack.set(NVDataComponents.SENTIENT_TOOL_SPEED, speed);
     }
 }

@@ -86,7 +86,7 @@ ordering="NONE"
 side="BOTH"
 
 [[dependencies.${mod_id}]]
-modId="patchouli"
+modId="geckolib"
 type="required"
 versionRange="*"
 ordering="NONE"

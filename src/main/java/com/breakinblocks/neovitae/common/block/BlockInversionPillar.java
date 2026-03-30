@@ -13,14 +13,10 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.VoxelShape;
-import com.breakinblocks.neovitae.common.blockentity.TileInversionPillar;
+import com.breakinblocks.neovitae.common.blockentity.InversionPillarBlockEntity;
 
 import javax.annotation.Nullable;
 
-/**
- * Inversion Pillar block - teleporter portal for the dungeon system.
- * When right-clicked, teleports the player to the configured destination.
- */
 public class BlockInversionPillar extends Block implements EntityBlock {
 
     protected static final VoxelShape BODY = Block.box(2, 1, 2, 14, 15, 14);
@@ -37,14 +33,14 @@ public class BlockInversionPillar extends Block implements EntityBlock {
     @Nullable
     @Override
     public BlockEntity newBlockEntity(BlockPos pos, BlockState state) {
-        return new TileInversionPillar(pos, state);
+        return new InversionPillarBlockEntity(pos, state);
     }
 
     @Override
     public InteractionResult useWithoutItem(BlockState state, Level level, BlockPos pos, Player player, BlockHitResult hit) {
         if (!level.isClientSide) {
             BlockEntity tile = level.getBlockEntity(pos);
-            if (tile instanceof TileInversionPillar inversionPillar) {
+            if (tile instanceof InversionPillarBlockEntity inversionPillar) {
                 inversionPillar.handlePlayerInteraction(player);
             }
         }

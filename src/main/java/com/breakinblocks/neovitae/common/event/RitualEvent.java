@@ -5,26 +5,22 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
 import net.neoforged.bus.api.Event;
 import net.neoforged.bus.api.ICancellableEvent;
-import com.breakinblocks.neovitae.common.blockentity.MasterRitualStoneTile;
+import com.breakinblocks.neovitae.common.blockentity.MasterRitualStoneBlockEntity;
 import com.breakinblocks.neovitae.ritual.Ritual;
 
 import javax.annotation.Nullable;
 import java.util.UUID;
 
-/**
- * Base event for ritual-related events.
- * Allows mods to hook into ritual activation, performance, and deactivation.
- */
 public abstract class RitualEvent extends Event {
-    private final MasterRitualStoneTile masterRitualStone;
+    private final MasterRitualStoneBlockEntity masterRitualStone;
     private final Ritual ritual;
 
-    public RitualEvent(MasterRitualStoneTile masterRitualStone, Ritual ritual) {
+    public RitualEvent(MasterRitualStoneBlockEntity masterRitualStone, Ritual ritual) {
         this.masterRitualStone = masterRitualStone;
         this.ritual = ritual;
     }
 
-    public MasterRitualStoneTile getMasterRitualStone() {
+    public MasterRitualStoneBlockEntity getMasterRitualStone() {
         return masterRitualStone;
     }
 
@@ -53,15 +49,12 @@ public abstract class RitualEvent extends Event {
         private final Player player;
         private final int crystalLevel;
 
-        public Activate(MasterRitualStoneTile masterRitualStone, Ritual ritual, Player player, int crystalLevel) {
+        public Activate(MasterRitualStoneBlockEntity masterRitualStone, Ritual ritual, Player player, int crystalLevel) {
             super(masterRitualStone, ritual);
             this.player = player;
             this.crystalLevel = crystalLevel;
         }
 
-        /**
-         * The player attempting to activate the ritual.
-         */
         public Player getPlayer() {
             return player;
         }
@@ -81,7 +74,7 @@ public abstract class RitualEvent extends Event {
     public static class Activated extends RitualEvent {
         private final Player player;
 
-        public Activated(MasterRitualStoneTile masterRitualStone, Ritual ritual, Player player) {
+        public Activated(MasterRitualStoneBlockEntity masterRitualStone, Ritual ritual, Player player) {
             super(masterRitualStone, ritual);
             this.player = player;
         }
@@ -98,14 +91,11 @@ public abstract class RitualEvent extends Event {
     public static class Stop extends RitualEvent {
         private final Ritual.BreakType breakType;
 
-        public Stop(MasterRitualStoneTile masterRitualStone, Ritual ritual, Ritual.BreakType breakType) {
+        public Stop(MasterRitualStoneBlockEntity masterRitualStone, Ritual ritual, Ritual.BreakType breakType) {
             super(masterRitualStone, ritual);
             this.breakType = breakType;
         }
 
-        /**
-         * The reason the ritual is stopping.
-         */
         public Ritual.BreakType getBreakType() {
             return breakType;
         }
@@ -116,7 +106,7 @@ public abstract class RitualEvent extends Event {
      * Cancel to skip this performance cycle.
      */
     public static class Perform extends RitualEvent implements ICancellableEvent {
-        public Perform(MasterRitualStoneTile masterRitualStone, Ritual ritual) {
+        public Perform(MasterRitualStoneBlockEntity masterRitualStone, Ritual ritual) {
             super(masterRitualStone, ritual);
         }
     }

@@ -1,0 +1,55 @@
+package com.breakinblocks.neovitae.datagen.book.alchemy_array;
+
+import com.klikli_dev.modonomicon.api.datagen.CategoryProviderBase;
+import com.klikli_dev.modonomicon.api.datagen.EntryBackground;
+import com.klikli_dev.modonomicon.api.datagen.EntryProvider;
+import com.klikli_dev.modonomicon.api.datagen.book.BookIconModel;
+import com.breakinblocks.neovitae.datagen.book.page.BookLivingUpgradeTablePageModel;
+import com.mojang.datafixers.util.Pair;
+import net.minecraft.world.item.Items;
+
+public class BrillianceUpgradeEntry extends EntryProvider {
+
+    public BrillianceUpgradeEntry(CategoryProviderBase parent) {
+        super(parent);
+    }
+
+    @Override
+    protected void generatePages() {
+        this.page("intro", () -> BookLivingUpgradeTablePageModel.create()
+                .withTitle(this.context().pageTitle())
+                .withText(this.context().pageText()));
+        this.pageTitle("Brilliance");
+        this.pageText("The armour responds to the knowledge you inscribe upon living tomes, hardening "
+                + "its lattice with each lesson. Grants up to +5 [#](4A0080)Armour[#]() and +8 "
+                + "[#](4A0080)Toughness[#]().\\\n\\\n"
+                + "[#](B8860B)Trained by[#](): Crafting a living tome in the Tabula Vitae. Each tome grants "
+                + "1 level.\\\n\\\n"
+                + "[#](B8860B)Maximum level[#](): 5");
+    }
+
+    @Override
+    protected String entryName() {
+        return "Brilliance";
+    }
+
+    @Override
+    protected String entryDescription() {
+        return "Inscribe knowledge upon tomes, and the armour crystallizes into diamond-like hardness.";
+    }
+
+    @Override
+    protected Pair<Integer, Integer> entryBackground() {
+        return EntryBackground.DEFAULT;
+    }
+
+    @Override
+    protected BookIconModel entryIcon() {
+        return BookIconModel.create(Items.DIAMOND);
+    }
+
+    @Override
+    protected String entryId() {
+        return "upgrade_brilliance";
+    }
+}

@@ -1,6 +1,8 @@
 package com.breakinblocks.neovitae.ritual.types;
 
 import net.minecraft.core.BlockPos;
+import net.minecraft.network.chat.Component;
+import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.crafting.CraftingInput;
 import net.minecraft.world.item.crafting.CraftingRecipe;
@@ -10,8 +12,15 @@ import net.neoforged.neoforge.items.IItemHandler;
 import net.neoforged.neoforge.items.ItemHandlerHelper;
 import com.breakinblocks.neovitae.NeoVitae;
 import com.breakinblocks.neovitae.api.ritual.AreaDescriptor;
+import com.breakinblocks.neovitae.common.datacomponent.SpiritusType;
+import com.breakinblocks.neovitae.common.recipe.NVRecipes;
+import com.breakinblocks.neovitae.common.recipe.tabulavitae.TabulaVitaeInput;
+import com.breakinblocks.neovitae.common.recipe.tabulavitae.TabulaVitaeRecipe;
+import com.breakinblocks.neovitae.common.recipe.forge.ForgeInput;
+import com.breakinblocks.neovitae.common.recipe.forge.ForgeRecipe;
 import com.breakinblocks.neovitae.ritual.*;
 import com.breakinblocks.neovitae.ritual.RitualHelper.RitualContext;
+import com.breakinblocks.neovitae.api.will.SpiritusState;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -19,15 +28,27 @@ import java.util.Optional;
 import java.util.function.Consumer;
 
 /**
- * Rhythm of the Beating Anvil - Automated crafting ritual.
- * Uses items from adjacent inventories to craft recipes.
- * Filter the recipe by placing an item filter in a chest above.
- * This is a Dusk tier ritual.
+ * Rhythm of the Beating Anvil - Automated crafting ritual with spiritus recipe modes.
+ *
+ * <p>Spiritus effects:
+ * <ul>
+ *   <li><b>Raw (Default)</b> - Standard vanilla crafting table recipes</li>
+ *   <li><b>Steadfast</b> - Soul Forge recipe mode (tries soul forge recipes first, falls back to vanilla)</li>
+ *   <li><b>Corrosive</b> - Tabula Vitae recipe mode (tries alchemy table recipes first, falls back to vanilla)</li>
+ * </ul>
+ *
+ * <p>This is a Dusk tier ritual.
  */
 public class RitualCrafting extends Ritual {
 
     public static final String INPUT_RANGE = "inputRange";
     public static final String OUTPUT_RANGE = "outputRange";
+
+    private static final double MIN_STEADFAST = 20.0;
+    private static final double MIN_CORROSIVE = 20.0;
+
+    private static final double WILL_PER_FORGE_CRAFT = 2.0;
+    private static final double WILL_PER_ALCHEMY_CRAFT = 2.0;
 
     public RitualCrafting() {
         super("crafting", 1, 25000, "ritual." + NeoVitae.MODID + ".crafting");
@@ -43,12 +64,13 @@ public class RitualCrafting extends Ritual {
             return;
         }
 
-        // Get input and output inventories
-        List<BlockPos> inputPositions = RitualHelper.getRangePositions(ctx.master(), this, INPUT_RANGE, ctx.masterPos());
+        BlockPos masterPos = ctx.masterPos();
+
+        List<BlockPos> inputPositions = RitualHelper.getRangePositions(ctx.master(), this, INPUT_RANGE, masterPos);
         if (inputPositions.isEmpty()) return;
         BlockPos inputPos = inputPositions.get(0);
 
-        List<BlockPos> outputPositions = RitualHelper.getRangePositions(ctx.master(), this, OUTPUT_RANGE, ctx.masterPos());
+        List<BlockPos> outputPositions = RitualHelper.getRangePositions(ctx.master(), this, OUTPUT_RANGE, masterPos);
         if (outputPositions.isEmpty()) return;
         BlockPos outputPos = outputPositions.get(0);
 
@@ -57,26 +79,75 @@ public class RitualCrafting extends Ritual {
 
         if (inputHandler == null || outputHandler == null) return;
 
-        // Try to find and execute a crafting recipe
-        // Collect up to 9 items from input for a 3x3 crafting grid
+        SpiritusState will = RitualHelper.queryWill(ctx.level(), masterPos, Math.min(MIN_STEADFAST, MIN_CORROSIVE));
+
+        boolean tryHellfireForge = will.hasSteadfast();
+        boolean tryAlchemy = will.hasCorrosive();
+
         List<ItemStack> inputItems = new ArrayList<>();
         for (int i = 0; i < Math.min(9, inputHandler.getSlots()); i++) {
             ItemStack stack = inputHandler.getStackInSlot(i);
             inputItems.add(stack.copy());
         }
 
-        // Pad to 9 slots
+        // --- STEADFAST: Try Soul Forge recipes first ---
+        if (tryHellfireForge) {
+            ItemStack result = tryHellfireForgeRecipe(ctx, inputHandler, inputItems);
+            if (!result.isEmpty()) {
+                // Check if output can accept the result
+                ItemStack insertResult = ItemHandlerHelper.insertItemStacked(outputHandler, result.copy(), true);
+                if (insertResult.isEmpty()) {
+                    // Consume ingredients (up to 4 for soul forge)
+                    int consumed = 0;
+                    for (int i = 0; i < Math.min(4, inputHandler.getSlots()); i++) {
+                        if (!inputItems.get(i).isEmpty()) {
+                            inputHandler.extractItem(i, 1, false);
+                            consumed++;
+                        }
+                    }
+                    ItemHandlerHelper.insertItemStacked(outputHandler, result, false);
+                    will.use(SpiritusType.STEADFAST, WILL_PER_FORGE_CRAFT);
+                    will.drain(ctx.level(), masterPos);
+                    ctx.syphon(getRefreshCost());
+                    return;
+                }
+            }
+            // Fall through to vanilla crafting
+        }
+
+        // --- CORROSIVE: Try Tabula Vitae recipes first ---
+        if (tryAlchemy) {
+            ItemStack result = tryTabulaVitaeRecipe(ctx, inputHandler, inputItems);
+            if (!result.isEmpty()) {
+                // Check if output can accept the result
+                ItemStack insertResult = ItemHandlerHelper.insertItemStacked(outputHandler, result.copy(), true);
+                if (insertResult.isEmpty()) {
+                    // Consume ingredients (up to 6 for alchemy table)
+                    for (int i = 0; i < Math.min(6, inputHandler.getSlots()); i++) {
+                        if (!inputItems.get(i).isEmpty()) {
+                            inputHandler.extractItem(i, 1, false);
+                        }
+                    }
+                    ItemHandlerHelper.insertItemStacked(outputHandler, result, false);
+                    will.use(SpiritusType.CORROSIVE, WILL_PER_ALCHEMY_CRAFT);
+                    will.drain(ctx.level(), masterPos);
+                    ctx.syphon(getRefreshCost());
+                    return;
+                }
+            }
+            // Fall through to vanilla crafting
+        }
+
+        // --- DEFAULT: Vanilla crafting ---
         while (inputItems.size() < 9) {
             inputItems.add(ItemStack.EMPTY);
         }
 
-        // Create crafting input
         CraftingInput craftingInput = CraftingInput.of(3, 3, inputItems);
 
-        // Find matching recipe
         Optional<CraftingRecipe> recipeOpt = ctx.level().getRecipeManager()
-            .getRecipeFor(RecipeType.CRAFTING, craftingInput, ctx.level())
-            .map(holder -> holder.value());
+                .getRecipeFor(RecipeType.CRAFTING, craftingInput, ctx.level())
+                .map(holder -> holder.value());
 
         if (recipeOpt.isEmpty()) return;
 
@@ -89,18 +160,74 @@ public class RitualCrafting extends Ritual {
         ItemStack insertResult = ItemHandlerHelper.insertItemStacked(outputHandler, result.copy(), true);
         if (!insertResult.isEmpty()) return; // Output full
 
-        // Consume ingredients
         for (int i = 0; i < Math.min(9, inputHandler.getSlots()); i++) {
             if (!inputItems.get(i).isEmpty()) {
                 inputHandler.extractItem(i, 1, false);
             }
         }
 
-        // Insert result
         ItemHandlerHelper.insertItemStacked(outputHandler, result, false);
 
-        // Consume LP
         ctx.syphon(getRefreshCost());
+    }
+
+    /**
+     * Tries to find and assemble a Soul Forge recipe from the input items.
+     * Soul Forge recipes use up to 4 ingredients plus a gem.
+     */
+    private ItemStack tryHellfireForgeRecipe(RitualContext ctx, IItemHandler inputHandler, List<ItemStack> inputItems) {
+        // Build input stacks (up to 4 items)
+        List<ItemStack> forgeItems = new ArrayList<>();
+        for (int i = 0; i < Math.min(4, inputItems.size()); i++) {
+            if (!inputItems.get(i).isEmpty()) {
+                forgeItems.add(inputItems.get(i).copy());
+            }
+        }
+
+        if (forgeItems.isEmpty()) return ItemStack.EMPTY;
+
+        // Use empty gem stack (ritual doesn't have a gem slot)
+        ForgeInput forgeInput = new ForgeInput(forgeItems, ItemStack.EMPTY, -1);
+
+        Optional<ForgeRecipe> recipeOpt = ctx.level().getRecipeManager()
+                .getRecipeFor(NVRecipes.HELLFIRE_FORGE_TYPE.get(), forgeInput, ctx.level())
+                .map(holder -> holder.value());
+
+        if (recipeOpt.isPresent()) {
+            ForgeRecipe recipe = recipeOpt.get();
+            return recipe.assemble(forgeInput, ctx.level().registryAccess());
+        }
+
+        return ItemStack.EMPTY;
+    }
+
+    /**
+     * Tries to find and assemble an Tabula Vitae recipe from the input items.
+     * Tabula Vitae recipes use up to 6 ingredients.
+     */
+    private ItemStack tryTabulaVitaeRecipe(RitualContext ctx, IItemHandler inputHandler, List<ItemStack> inputItems) {
+        List<ItemStack> alchemyItems = new ArrayList<>();
+        for (int i = 0; i < Math.min(TabulaVitaeRecipe.MAX_INPUTS, inputItems.size()); i++) {
+            if (!inputItems.get(i).isEmpty()) {
+                alchemyItems.add(inputItems.get(i).copy());
+            }
+        }
+
+        if (alchemyItems.isEmpty()) return ItemStack.EMPTY;
+
+        // Use orb tier 0 since the ritual has no orb
+        TabulaVitaeInput alchemyInput = new TabulaVitaeInput(alchemyItems, 0);
+
+        Optional<TabulaVitaeRecipe> recipeOpt = ctx.level().getRecipeManager()
+                .getRecipeFor(NVRecipes.TABULA_VITAE_TYPE.get(), alchemyInput, ctx.level())
+                .map(holder -> holder.value());
+
+        if (recipeOpt.isPresent()) {
+            TabulaVitaeRecipe recipe = recipeOpt.get();
+            return recipe.assemble(alchemyInput, ctx.level().registryAccess());
+        }
+
+        return ItemStack.EMPTY;
     }
 
     @Override
@@ -111,6 +238,15 @@ public class RitualCrafting extends Ritual {
     @Override
     public int getRefreshCost() {
         return 100;
+    }
+
+    @Override
+    public Component[] provideInformationOfRitualToPlayer(Player player) {
+        return new Component[]{
+                Component.translatable(getTranslationKey() + ".info"),
+                Component.translatable(getTranslationKey() + ".will.steadfast"),
+                Component.translatable(getTranslationKey() + ".will.corrosive")
+        };
     }
 
     @Override

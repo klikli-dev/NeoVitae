@@ -12,12 +12,12 @@ import net.minecraft.world.level.storage.loot.providers.number.NumberProviders;
 import net.minecraft.world.level.storage.loot.providers.number.UniformGenerator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import com.breakinblocks.neovitae.will.IDemonWill;
+import com.breakinblocks.neovitae.will.ISpiritus;
 
 import java.util.List;
 
 /**
- * Loot function that sets the will amount on demon will items.
+ * Loot function that sets the will amount on spiritus items.
  */
 public class SetWillRange extends LootItemConditionalFunction {
     private static final Logger LOGGER = LoggerFactory.getLogger(SetWillRange.class);
@@ -37,14 +37,14 @@ public class SetWillRange extends LootItemConditionalFunction {
 
     @Override
     public LootItemFunctionType<? extends LootItemConditionalFunction> getType() {
-        return BMLootFunctions.SET_WILL_RANGE.get();
+        return NVLootFunctions.SET_WILL_RANGE.get();
     }
 
     @Override
     protected ItemStack run(ItemStack stack, LootContext context) {
-        if (stack.getItem() instanceof IDemonWill demonWill) {
+        if (stack.getItem() instanceof ISpiritus spiritus) {
             float will = willRange.getFloat(context);
-            return demonWill.createWill(will);
+            return spiritus.createWill(will);
         } else {
             LOGGER.warn("Couldn't set will of loot item {}", stack);
         }

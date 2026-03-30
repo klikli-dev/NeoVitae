@@ -36,7 +36,6 @@ public class BlockRitualStone extends Block implements IRitualStone {
 
     @Override
     public void appendHoverText(ItemStack stack, Item.TooltipContext context, List<Component> tooltip, TooltipFlag flag) {
-        tooltip.add(Component.translatable("tooltip.neovitae.decoration.safe").withStyle(ChatFormatting.GRAY));
         super.appendHoverText(stack, context, tooltip, flag);
     }
 
@@ -51,43 +50,36 @@ public class BlockRitualStone extends Block implements IRitualStone {
     }
 
     /**
-     * Sets the rune type at the given position, with protection checks.
-     *
-     * @param world    The level
-     * @param pos      The block position
-     * @param runeType The rune type to set
-     * @param player   The player responsible (null skips protection checks)
-     * @return true if the rune was successfully placed
+     * @param player The player responsible (null skips protection checks)
      */
     public boolean setRuneType(Level world, BlockPos pos, EnumRuneType runeType, @Nullable Player player) {
         Block runeBlock = this;
         switch (runeType) {
             case AIR:
-                runeBlock = BMBlocks.AIR_RITUAL_STONE.block().get();
+                runeBlock = NVBlocks.AIR_RITUAL_STONE.block().get();
                 break;
             case BLANK:
-                runeBlock = BMBlocks.BLANK_RITUAL_STONE.block().get();
+                runeBlock = NVBlocks.BLANK_RITUAL_STONE.block().get();
                 break;
             case DAWN:
-                runeBlock = BMBlocks.DAWN_RITUAL_STONE.block().get();
+                runeBlock = NVBlocks.DAWN_RITUAL_STONE.block().get();
                 break;
             case DUSK:
-                runeBlock = BMBlocks.DUSK_RITUAL_STONE.block().get();
+                runeBlock = NVBlocks.DUSK_RITUAL_STONE.block().get();
                 break;
             case EARTH:
-                runeBlock = BMBlocks.EARTH_RITUAL_STONE.block().get();
+                runeBlock = NVBlocks.EARTH_RITUAL_STONE.block().get();
                 break;
             case FIRE:
-                runeBlock = BMBlocks.FIRE_RITUAL_STONE.block().get();
+                runeBlock = NVBlocks.FIRE_RITUAL_STONE.block().get();
                 break;
             case WATER:
-                runeBlock = BMBlocks.WATER_RITUAL_STONE.block().get();
+                runeBlock = NVBlocks.WATER_RITUAL_STONE.block().get();
                 break;
         }
 
         BlockState newState = runeBlock.defaultBlockState();
 
-        // If player is provided, check protection before placing
         if (player != null) {
             return BlockProtectionHelper.tryPlaceBlock(world, pos, newState, player);
         }

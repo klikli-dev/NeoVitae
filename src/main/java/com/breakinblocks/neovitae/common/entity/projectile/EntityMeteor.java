@@ -9,7 +9,7 @@ import net.minecraft.world.entity.projectile.ThrowableProjectile;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
-import com.breakinblocks.neovitae.common.entity.BMEntities;
+import com.breakinblocks.neovitae.common.entity.NVEntities;
 import com.breakinblocks.neovitae.common.recipe.meteor.MeteorRecipe;
 import com.breakinblocks.neovitae.common.recipe.meteor.MeteorRecipeHelper;
 
@@ -26,11 +26,11 @@ public class EntityMeteor extends ThrowableProjectile {
     }
 
     public EntityMeteor(Level level, LivingEntity thrower) {
-        super(BMEntities.METEOR.get(), thrower, level);
+        super(NVEntities.METEOR.get(), thrower, level);
     }
 
     public EntityMeteor(Level level, double x, double y, double z) {
-        super(BMEntities.METEOR.get(), x, y, z, level);
+        super(NVEntities.METEOR.get(), x, y, z, level);
     }
 
     public void setContainedStack(ItemStack stack) {
@@ -78,7 +78,6 @@ public class EntityMeteor extends ThrowableProjectile {
         int k = Mth.floor(position().z);
         BlockPos blockpos = new BlockPos(i, j, k);
 
-        // Find and execute the meteor recipe
         MeteorRecipe recipe = MeteorRecipeHelper.findRecipe(level(), containedStack);
         if (recipe != null) {
             recipe.spawnMeteorInWorld(level(), blockpos);
@@ -89,7 +88,6 @@ public class EntityMeteor extends ThrowableProjectile {
 
     @Override
     protected void defineSynchedData(net.minecraft.network.syncher.SynchedEntityData.Builder builder) {
-        // No synched data needed for now
     }
 
     @Override

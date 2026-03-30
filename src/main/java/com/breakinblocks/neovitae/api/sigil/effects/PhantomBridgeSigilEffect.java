@@ -10,16 +10,12 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import com.breakinblocks.neovitae.api.sigil.SigilEffect;
-import com.breakinblocks.neovitae.common.block.BMBlocks;
-import com.breakinblocks.neovitae.common.blockentity.PhantomBridgeTile;
+import com.breakinblocks.neovitae.common.block.NVBlocks;
+import com.breakinblocks.neovitae.common.blockentity.PhantomBridgeBlockEntity;
 import com.breakinblocks.neovitae.registry.SigilEffectRegistry;
 
 import java.util.function.Supplier;
 
-/**
- * Sigil effect that creates a phantom platform of blocks below the player.
- * The phantom blocks disappear after a duration or when the player moves away.
- */
 public record PhantomBridgeSigilEffect(int range) implements SigilEffect {
 
     public static final int DEFAULT_RANGE = 2;
@@ -52,23 +48,19 @@ public record PhantomBridgeSigilEffect(int range) implements SigilEffect {
         BlockPos playerPos = player.blockPosition();
         int belowY = playerPos.getY() - 1;
 
-        // Create a platform below the player
         for (int x = -range; x <= range; x++) {
             for (int z = -range; z <= range; z++) {
                 BlockPos checkPos = new BlockPos(playerPos.getX() + x, belowY, playerPos.getZ() + z);
                 BlockState state = level.getBlockState(checkPos);
 
-                // Only place phantom blocks in air or replaceable blocks
                 if (state.isAir() || state.canBeReplaced()) {
-                    BlockState phantomState = BMBlocks.PHANTOM_BRIDGE_BLOCK.get().defaultBlockState();
+                    BlockState phantomState = NVBlocks.PHANTOM_BRIDGE_BLOCK.get().defaultBlockState();
                     level.setBlockAndUpdate(checkPos, phantomState);
-                    // Reset duration on the tile entity
                     BlockEntity be = level.getBlockEntity(checkPos);
-                    if (be instanceof PhantomBridgeTile phantomTile) {
+                    if (be instanceof PhantomBridgeBlockEntity phantomTile) {
                         phantomTile.resetDuration();
                     }
-                } else if (level.getBlockEntity(checkPos) instanceof PhantomBridgeTile existingPhantom) {
-                    // Refresh existing phantom bridge blocks
+                } else if (level.getBlockEntity(checkPos) instanceof PhantomBridgeBlockEntity existingPhantom) {
                     existingPhantom.resetDuration();
                 }
             }

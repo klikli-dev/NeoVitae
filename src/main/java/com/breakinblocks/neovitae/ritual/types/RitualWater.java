@@ -2,10 +2,16 @@ package com.breakinblocks.neovitae.ritual.types;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.material.Fluids;
+import net.neoforged.neoforge.capabilities.Capabilities;
+import net.neoforged.neoforge.fluids.FluidStack;
+import net.neoforged.neoforge.fluids.capability.IFluidHandler;
 import com.breakinblocks.neovitae.NeoVitae;
 import com.breakinblocks.neovitae.api.ritual.AreaDescriptor;
+import com.breakinblocks.neovitae.common.datacomponent.SpiritusType;
 import com.breakinblocks.neovitae.ritual.*;
 import com.breakinblocks.neovitae.ritual.RitualHelper.RitualContext;
+import com.breakinblocks.neovitae.api.will.SpiritusState;
 import com.breakinblocks.neovitae.util.helper.BlockProtectionHelper;
 
 import java.util.List;
@@ -14,7 +20,7 @@ import java.util.function.Consumer;
 
 /**
  * Ritual that generates water in a configurable area.
- * With demon will, can also fill fluid tanks.
+ * With spiritus, can also fill fluid tanks.
  */
 public class RitualWater extends Ritual {
 
@@ -48,6 +54,26 @@ public class RitualWater extends Ritual {
                     totalEffects++;
                 }
             }
+        }
+
+        // Spiritus: Fill fluid tanks with water
+        SpiritusState will = RitualHelper.queryWill(ctx.level(), ctx.masterPos(), 1.0);
+        if (will.hasDefault()) {
+            List<BlockPos> tankPositions = RitualHelper.getRangePositions(ctx.master(), this, TANK_RANGE, ctx.masterPos());
+
+            for (BlockPos tankPos : tankPositions) {
+                IFluidHandler fluidHandler = ctx.level().getCapability(Capabilities.FluidHandler.BLOCK, tankPos, null);
+                if (fluidHandler != null) {
+                    FluidStack waterStack = new FluidStack(Fluids.WATER, 1000);
+                    int filled = fluidHandler.fill(waterStack, IFluidHandler.FluidAction.EXECUTE);
+                    if (filled > 0) {
+                        will.use(SpiritusType.DEFAULT, (double) filled / 1000.0);
+                        totalEffects++;
+                    }
+                }
+            }
+
+            will.drain(ctx.level(), ctx.masterPos());
         }
 
         ctx.syphon(getRefreshCost() * totalEffects);

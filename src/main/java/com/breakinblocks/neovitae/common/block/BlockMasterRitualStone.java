@@ -26,9 +26,9 @@ import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 import net.minecraft.world.level.block.state.properties.DirectionProperty;
 import net.minecraft.world.phys.BlockHitResult;
 import org.jetbrains.annotations.Nullable;
-import com.breakinblocks.neovitae.common.blockentity.BMTiles;
-import com.breakinblocks.neovitae.common.blockentity.MasterRitualStoneTile;
-import com.breakinblocks.neovitae.common.datacomponent.BMDataComponents;
+import com.breakinblocks.neovitae.common.blockentity.NVTiles;
+import com.breakinblocks.neovitae.common.blockentity.MasterRitualStoneBlockEntity;
+import com.breakinblocks.neovitae.common.datacomponent.NVDataComponents;
 import com.breakinblocks.neovitae.common.datacomponent.Binding;
 import com.breakinblocks.neovitae.common.item.ItemActivationCrystal;
 import com.breakinblocks.neovitae.ritual.Ritual;
@@ -69,7 +69,7 @@ public class BlockMasterRitualStone extends Block implements EntityBlock {
     @Nullable
     @Override
     public BlockEntity newBlockEntity(BlockPos pos, BlockState state) {
-        MasterRitualStoneTile tile = new MasterRitualStoneTile(pos, state);
+        MasterRitualStoneBlockEntity tile = new MasterRitualStoneBlockEntity(pos, state);
         tile.setInverted(isInverted);
         return tile;
     }
@@ -77,9 +77,8 @@ public class BlockMasterRitualStone extends Block implements EntityBlock {
     @Nullable
     @Override
     public <T extends BlockEntity> BlockEntityTicker<T> getTicker(Level level, BlockState state, BlockEntityType<T> type) {
-        if (level.isClientSide()) return null;
-        return type == BMTiles.MASTER_RITUAL_STONE_TYPE.get()
-                ? (lvl, pos, st, be) -> MasterRitualStoneTile.tick(lvl, pos, st, (MasterRitualStoneTile) be)
+        return type == NVTiles.MASTER_RITUAL_STONE_TYPE.get()
+                ? (lvl, pos, st, be) -> MasterRitualStoneBlockEntity.tick(lvl, pos, st, (MasterRitualStoneBlockEntity) be)
                 : null;
     }
 
@@ -87,19 +86,16 @@ public class BlockMasterRitualStone extends Block implements EntityBlock {
     protected ItemInteractionResult useItemOn(ItemStack stack, BlockState state, Level level, BlockPos pos,
                                               Player player, InteractionHand hand, BlockHitResult hitResult) {
         BlockEntity blockEntity = level.getBlockEntity(pos);
-        if (!(blockEntity instanceof MasterRitualStoneTile tile)) {
+        if (!(blockEntity instanceof MasterRitualStoneBlockEntity tile)) {
             return ItemInteractionResult.PASS_TO_DEFAULT_BLOCK_INTERACTION;
         }
 
-        // Handle ritual diviner - let the item handle placement
         if (stack.getItem() instanceof com.breakinblocks.neovitae.common.item.ItemRitualDiviner diviner) {
-            // Client-side: spawn particles and return success
             if (level.isClientSide()) {
                 com.breakinblocks.neovitae.common.item.ItemRitualDiviner.spawnParticles(level, pos.relative(hitResult.getDirection()), 15);
                 return ItemInteractionResult.SUCCESS;
             }
 
-            // Server-side: delegate to the diviner's logic
             String ritualId = diviner.getCurrentRitualId(stack);
             if (ritualId.isEmpty()) {
                 player.displayClientMessage(
@@ -107,27 +103,26 @@ public class BlockMasterRitualStone extends Block implements EntityBlock {
                 return ItemInteractionResult.FAIL;
             }
 
-            // Try to build ritual
             if (diviner.addRuneToRitual(stack, level, pos, player)) {
                 diviner.setStoredPos(stack, pos);
                 diviner.setActivated(stack, true);
                 return ItemInteractionResult.SUCCESS;
             }
 
-            // Ritual is complete or cannot progress
-            player.displayClientMessage(
-                    Component.translatable("chat.neovitae.diviner.ritualComplete").withStyle(ChatFormatting.GREEN), true);
+            Ritual ritual = diviner.getCurrentRitual(stack);
+            if (ritual != null && tile.checkStructure(ritual)) {
+                player.displayClientMessage(
+                        Component.translatable("chat.neovitae.diviner.ritualComplete").withStyle(ChatFormatting.GREEN), true);
+            }
             return ItemInteractionResult.SUCCESS;
         }
 
-        // Client-side early return for other items
         if (level.isClientSide()) {
             return ItemInteractionResult.SUCCESS;
         }
 
-        // Handle activation crystal
         if (stack.getItem() instanceof ItemActivationCrystal crystal) {
-            Binding binding = stack.get(BMDataComponents.BINDING.get());
+            Binding binding = stack.get(NVDataComponents.BINDING.get());
             if (binding == null || binding.uuid() == null) {
                 player.displayClientMessage(
                         Component.translatable("chat.neovitae.crystal.notBound").withStyle(ChatFormatting.RED), true);
@@ -158,6 +153,7 @@ public class BlockMasterRitualStone extends Block implements EntityBlock {
                                     Component.translatable(bestMatch.getTranslationKey())).withStyle(ChatFormatting.GREEN), true);
                     return ItemInteractionResult.SUCCESS;
                 }
+                return ItemInteractionResult.FAIL;
             }
 
             player.displayClientMessage(
@@ -175,11 +171,10 @@ public class BlockMasterRitualStone extends Block implements EntityBlock {
         }
 
         BlockEntity blockEntity = level.getBlockEntity(pos);
-        if (!(blockEntity instanceof MasterRitualStoneTile tile)) {
+        if (!(blockEntity instanceof MasterRitualStoneBlockEntity tile)) {
             return InteractionResult.PASS;
         }
 
-        // Sneak-click to deactivate
         if (player.isShiftKeyDown() && tile.isActive()) {
             tile.stopRitual(Ritual.BreakType.DEACTIVATE);
             player.displayClientMessage(
@@ -187,7 +182,6 @@ public class BlockMasterRitualStone extends Block implements EntityBlock {
             return InteractionResult.SUCCESS;
         }
 
-        // Show ritual info
         if (tile.isActive() && tile.getCurrentRitual() != null) {
             tile.provideInformationOfRitualToPlayer(player);
         } else {
@@ -202,7 +196,7 @@ public class BlockMasterRitualStone extends Block implements EntityBlock {
     protected void onRemove(BlockState state, Level level, BlockPos pos, BlockState newState, boolean movedByPiston) {
         if (!state.is(newState.getBlock())) {
             BlockEntity blockEntity = level.getBlockEntity(pos);
-            if (blockEntity instanceof MasterRitualStoneTile tile) {
+            if (blockEntity instanceof MasterRitualStoneBlockEntity tile) {
                 if (tile.isActive()) {
                     tile.stopRitual(Ritual.BreakType.BREAK_MRS);
                 }
@@ -213,17 +207,12 @@ public class BlockMasterRitualStone extends Block implements EntityBlock {
 
     @Override
     public void appendHoverText(ItemStack stack, Item.TooltipContext context, List<Component> tooltip, TooltipFlag flag) {
-        tooltip.add(Component.translatable("tooltip.neovitae.decoration.safe").withStyle(ChatFormatting.GRAY));
         if (isInverted) {
             tooltip.add(Component.translatable("tooltip.neovitae.masterRitualStone.inverted").withStyle(ChatFormatting.DARK_PURPLE));
         }
         super.appendHoverText(stack, context, tooltip, flag);
     }
 
-    /**
-     * Counts the number of rune components in a ritual.
-     * Used for determining the most specific ritual match.
-     */
     private int countRitualComponents(Ritual ritual) {
         java.util.List<com.breakinblocks.neovitae.ritual.RitualComponent> components = new java.util.ArrayList<>();
         ritual.gatherComponents(components::add);

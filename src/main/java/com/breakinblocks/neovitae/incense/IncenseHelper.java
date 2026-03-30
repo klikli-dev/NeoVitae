@@ -1,7 +1,7 @@
 package com.breakinblocks.neovitae.incense;
 
 import net.minecraft.world.entity.player.Player;
-import com.breakinblocks.neovitae.common.dataattachment.BMDataAttachments;
+import com.breakinblocks.neovitae.common.dataattachment.NVDataAttachments;
 
 /**
  * Helper class for managing player incense levels.
@@ -12,18 +12,12 @@ import com.breakinblocks.neovitae.common.dataattachment.BMDataAttachments;
  */
 public class IncenseHelper {
 
-    /**
-     * Gets the current incense level for a player.
-     */
     public static double getCurrentIncense(Player player) {
-        return player.getData(BMDataAttachments.INCENSE);
+        return player.getData(NVDataAttachments.INCENSE);
     }
 
-    /**
-     * Sets the current incense level for a player.
-     */
     public static void setCurrentIncense(Player player, double amount) {
-        player.setData(BMDataAttachments.INCENSE, amount);
+        player.setData(NVDataAttachments.INCENSE, amount);
     }
 
     /**
@@ -47,17 +41,10 @@ public class IncenseHelper {
         return true;
     }
 
-    /**
-     * Clears the player's incense level (called after self-sacrifice).
-     */
     public static void clearIncense(Player player) {
         setCurrentIncense(player, 0);
     }
 
-    /**
-     * Gets the self-sacrifice modifier based on incense level.
-     * Returns (1 + incenseBonus), where incenseBonus is the incense level.
-     */
     public static double getSelfSacrificeModifier(Player player) {
         return 1.0 + getCurrentIncense(player);
     }

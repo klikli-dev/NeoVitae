@@ -5,10 +5,11 @@ import net.minecraft.tags.BlockTags;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.neoforged.neoforge.common.data.DataMapProvider;
+import com.breakinblocks.neovitae.common.block.NVBlocks;
 import net.neoforged.neoforge.registries.datamaps.DataMapType;
-import com.breakinblocks.neovitae.common.datamap.BMDataMaps;
+import com.breakinblocks.neovitae.common.datamap.NVDataMaps;
 import com.breakinblocks.neovitae.common.datamap.TranquilityValue;
-import com.breakinblocks.neovitae.common.tag.BMTags;
+import com.breakinblocks.neovitae.common.tag.NVTags;
 import com.breakinblocks.neovitae.incense.EnumTranquilityType;
 
 import java.util.function.Function;
@@ -22,7 +23,7 @@ import java.util.function.Function;
  *
  * <h2>Tag Priority</h2>
  * <p>When a block matches multiple tags, the entry with the highest value wins.
- * This is handled by the custom merger in {@link BMDataMaps#TRANQUILITY_MERGER}.</p>
+ * This is handled by the custom merger in {@link NVDataMaps#TRANQUILITY_MERGER}.</p>
  *
  * <p>Values can be overridden via datapacks at:
  * {@code data/<namespace>/data_maps/block/tranquility.json}</p>
@@ -48,35 +49,30 @@ public class TranquilityData {
     public static final double EARTHEN_VALUE = 0.5;
 
     public static void bootstrap(Function<DataMapType<Block, TranquilityValue>, DataMapProvider.Builder<TranquilityValue, Block>> setup) {
-        var builder = setup.apply(BMDataMaps.TRANQUILITY);
+        var builder = setup.apply(NVDataMaps.TRANQUILITY);
 
-        // ===== Blood Magic Tranquility Tags =====
         // These are the primary tags for modpack/datapack customization
         builder
-            .add(BMTags.Blocks.TRANQUILITY_PLANT, TranquilityValue.of(EnumTranquilityType.PLANT, STANDARD_VALUE), false)
-            .add(BMTags.Blocks.TRANQUILITY_CROP, TranquilityValue.of(EnumTranquilityType.CROP, STANDARD_VALUE), false)
-            .add(BMTags.Blocks.TRANQUILITY_TREE, TranquilityValue.of(EnumTranquilityType.TREE, STANDARD_VALUE), false)
-            .add(BMTags.Blocks.TRANQUILITY_EARTHEN, TranquilityValue.of(EnumTranquilityType.EARTHEN, STANDARD_VALUE), false)
-            .add(BMTags.Blocks.TRANQUILITY_WATER, TranquilityValue.of(EnumTranquilityType.WATER, STANDARD_VALUE), false)
-            .add(BMTags.Blocks.TRANQUILITY_FIRE, TranquilityValue.of(EnumTranquilityType.FIRE, STANDARD_VALUE), false)
-            .add(BMTags.Blocks.TRANQUILITY_LAVA, TranquilityValue.of(EnumTranquilityType.LAVA, STANDARD_VALUE), false);
+            .add(NVTags.Blocks.TRANQUILITY_PLANT, TranquilityValue.of(EnumTranquilityType.PLANT, STANDARD_VALUE), false)
+            .add(NVTags.Blocks.TRANQUILITY_CROP, TranquilityValue.of(EnumTranquilityType.CROP, STANDARD_VALUE), false)
+            .add(NVTags.Blocks.TRANQUILITY_TREE, TranquilityValue.of(EnumTranquilityType.TREE, STANDARD_VALUE), false)
+            .add(NVTags.Blocks.TRANQUILITY_EARTHEN, TranquilityValue.of(EnumTranquilityType.EARTHEN, STANDARD_VALUE), false)
+            .add(NVTags.Blocks.TRANQUILITY_WATER, TranquilityValue.of(EnumTranquilityType.WATER, STANDARD_VALUE), false)
+            .add(NVTags.Blocks.TRANQUILITY_FIRE, TranquilityValue.of(EnumTranquilityType.FIRE, STANDARD_VALUE), false)
+            .add(NVTags.Blocks.TRANQUILITY_LAVA, TranquilityValue.of(EnumTranquilityType.LAVA, STANDARD_VALUE), false);
 
-        // ===== Vanilla Tags for Tree Blocks =====
         builder
             .add(BlockTags.LOGS, TranquilityValue.of(EnumTranquilityType.TREE, STANDARD_VALUE), false)
             .add(BlockTags.LEAVES, TranquilityValue.of(EnumTranquilityType.TREE, STANDARD_VALUE), false);
 
-        // ===== Vanilla Tags for Plant Blocks =====
         builder
             .add(BlockTags.FLOWERS, TranquilityValue.of(EnumTranquilityType.PLANT, STANDARD_VALUE), false)
             .add(BlockTags.SMALL_FLOWERS, TranquilityValue.of(EnumTranquilityType.PLANT, STANDARD_VALUE), false)
             .add(BlockTags.TALL_FLOWERS, TranquilityValue.of(EnumTranquilityType.PLANT, STANDARD_VALUE), false);
 
-        // ===== Vanilla Tags for Earthen Blocks =====
         builder
             .add(BlockTags.DIRT, TranquilityValue.of(EnumTranquilityType.EARTHEN, EARTHEN_VALUE), false);
 
-        // ===== Individual Plant Blocks =====
         // Grass and ferns
         builder
             .add(BuiltInRegistries.BLOCK.wrapAsHolder(Blocks.SHORT_GRASS), TranquilityValue.of(EnumTranquilityType.PLANT, STANDARD_VALUE), false)
@@ -123,7 +119,6 @@ public class TranquilityData {
             .add(BuiltInRegistries.BLOCK.wrapAsHolder(Blocks.TWISTING_VINES), TranquilityValue.of(EnumTranquilityType.PLANT, STANDARD_VALUE), false)
             .add(BuiltInRegistries.BLOCK.wrapAsHolder(Blocks.TWISTING_VINES_PLANT), TranquilityValue.of(EnumTranquilityType.PLANT, STANDARD_VALUE), false);
 
-        // ===== Crop Blocks =====
         builder
             .add(BuiltInRegistries.BLOCK.wrapAsHolder(Blocks.WHEAT), TranquilityValue.of(EnumTranquilityType.CROP, STANDARD_VALUE), false)
             .add(BuiltInRegistries.BLOCK.wrapAsHolder(Blocks.CARROTS), TranquilityValue.of(EnumTranquilityType.CROP, STANDARD_VALUE), false)
@@ -146,7 +141,6 @@ public class TranquilityData {
             .add(BuiltInRegistries.BLOCK.wrapAsHolder(Blocks.TORCHFLOWER_CROP), TranquilityValue.of(EnumTranquilityType.CROP, STANDARD_VALUE), false)
             .add(BuiltInRegistries.BLOCK.wrapAsHolder(Blocks.PITCHER_CROP), TranquilityValue.of(EnumTranquilityType.CROP, STANDARD_VALUE), false);
 
-        // ===== Earthen Blocks =====
         // Individual blocks not in the #dirt tag
         builder
             .add(BuiltInRegistries.BLOCK.wrapAsHolder(Blocks.GRASS_BLOCK), TranquilityValue.of(EnumTranquilityType.EARTHEN, EARTHEN_VALUE), false)
@@ -161,23 +155,22 @@ public class TranquilityData {
             .add(BuiltInRegistries.BLOCK.wrapAsHolder(Blocks.SOUL_SOIL), TranquilityValue.of(EnumTranquilityType.EARTHEN, EARTHEN_VALUE), false)
             .add(BuiltInRegistries.BLOCK.wrapAsHolder(Blocks.FARMLAND), TranquilityValue.of(EnumTranquilityType.EARTHEN, EARTHEN_VALUE), false);
 
-        // ===== Fire Blocks =====
+        builder
+            .add(NVBlocks.SANDS_OF_VITAE.block(), TranquilityValue.of(EnumTranquilityType.EARTHEN, STANDARD_VALUE), false);
+
         builder
             .add(BuiltInRegistries.BLOCK.wrapAsHolder(Blocks.FIRE), TranquilityValue.of(EnumTranquilityType.FIRE, STANDARD_VALUE), false)
             .add(BuiltInRegistries.BLOCK.wrapAsHolder(Blocks.SOUL_FIRE), TranquilityValue.of(EnumTranquilityType.FIRE, STANDARD_VALUE), false)
             .add(BuiltInRegistries.BLOCK.wrapAsHolder(Blocks.CAMPFIRE), TranquilityValue.of(EnumTranquilityType.FIRE, STANDARD_VALUE), false)
             .add(BuiltInRegistries.BLOCK.wrapAsHolder(Blocks.SOUL_CAMPFIRE), TranquilityValue.of(EnumTranquilityType.FIRE, STANDARD_VALUE), false);
 
-        // ===== Water Blocks =====
         // Water source block provides water tranquility
         builder
             .add(BuiltInRegistries.BLOCK.wrapAsHolder(Blocks.WATER), TranquilityValue.of(EnumTranquilityType.WATER, STANDARD_VALUE), false);
 
-        // ===== Lava Blocks =====
         builder
             .add(BuiltInRegistries.BLOCK.wrapAsHolder(Blocks.LAVA), TranquilityValue.of(EnumTranquilityType.LAVA, STANDARD_VALUE), false);
 
-        // ===== Saplings (Tree type) =====
         builder
             .add(BuiltInRegistries.BLOCK.wrapAsHolder(Blocks.OAK_SAPLING), TranquilityValue.of(EnumTranquilityType.TREE, STANDARD_VALUE), false)
             .add(BuiltInRegistries.BLOCK.wrapAsHolder(Blocks.SPRUCE_SAPLING), TranquilityValue.of(EnumTranquilityType.TREE, STANDARD_VALUE), false)

@@ -9,7 +9,7 @@ import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.TooltipFlag;
 import net.minecraft.world.level.Level;
-import com.breakinblocks.neovitae.common.datacomponent.BMDataComponents;
+import com.breakinblocks.neovitae.common.datacomponent.NVDataComponents;
 import com.breakinblocks.neovitae.common.datacomponent.Binding;
 
 import java.util.List;
@@ -19,7 +19,7 @@ public class ItemActivationCrystal extends Item implements IBindable {
     private final CrystalType type;
 
     public ItemActivationCrystal(CrystalType type) {
-        super(new Item.Properties().stacksTo(1).component(BMDataComponents.BINDING.get(), Binding.EMPTY));
+        super(new Item.Properties().stacksTo(1).component(NVDataComponents.BINDING.get(), Binding.EMPTY));
         this.type = type;
     }
 
@@ -27,9 +27,7 @@ public class ItemActivationCrystal extends Item implements IBindable {
     public InteractionResultHolder<ItemStack> use(Level level, Player player, InteractionHand hand) {
         ItemStack stack = player.getItemInHand(hand);
 
-        // Only trigger on sneak+right-click for binding
         if (player.isShiftKeyDown()) {
-            // Swing arm for visual feedback
             player.swing(hand);
             return InteractionResultHolder.success(stack);
         }
@@ -61,9 +59,9 @@ public class ItemActivationCrystal extends Item implements IBindable {
                 level = 0;
             }
             return switch (level) {
-                case 0 -> new ItemStack(BMItems.ACTIVATION_CRYSTAL_WEAK.get());
-                case 1 -> new ItemStack(BMItems.ACTIVATION_CRYSTAL_AWAKENED.get());
-                default -> new ItemStack(BMItems.ACTIVATION_CRYSTAL_CREATIVE.get());
+                case 0 -> new ItemStack(NVItems.ACTIVATION_CRYSTAL_WEAK.get());
+                case 1 -> new ItemStack(NVItems.ACTIVATION_CRYSTAL_AWAKENED.get());
+                default -> new ItemStack(NVItems.ACTIVATION_CRYSTAL_CREATIVE.get());
             };
         }
     }

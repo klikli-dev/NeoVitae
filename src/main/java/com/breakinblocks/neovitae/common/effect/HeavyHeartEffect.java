@@ -9,11 +9,6 @@ import net.minecraft.world.entity.player.Player;
 import net.neoforged.neoforge.common.NeoForgeMod;
 import com.breakinblocks.neovitae.NeoVitae;
 
-/**
- * Heavy Heart effect - drags the target down, prevents flight.
- * Affected entities fall faster and cannot fly.
- * Uses CREATIVE_FLIGHT attribute with MULTIPLY_TOTAL 0 to disable flight.
- */
 public class HeavyHeartEffect extends MobEffect {
 
     private static final ResourceLocation HEAVY_HEART_MODIFIER_ID =
@@ -21,24 +16,27 @@ public class HeavyHeartEffect extends MobEffect {
 
     public HeavyHeartEffect(MobEffectCategory category, int color) {
         super(category, color);
-        // Use MULTIPLY_TOTAL with 0 to forcibly disable creative flight
-        addAttributeModifier(
-                NeoForgeMod.CREATIVE_FLIGHT,
-                HEAVY_HEART_MODIFIER_ID,
-                0.0,
-                AttributeModifier.Operation.ADD_MULTIPLIED_TOTAL
-        );
+        // Flight cancellation is handled in applyEffectTick and onEffectAdded
     }
 
     @Override
     public boolean applyEffectTick(LivingEntity entity, int amplifier) {
-        // Apply downward force
+        if (entity.level().isClientSide && entity.tickCount % 4 == 0) {
+            double x = entity.getX() + (entity.getRandom().nextDouble() - 0.5) * 0.6;
+            double y = entity.getY() + entity.getRandom().nextDouble() * 0.3;
+            double z = entity.getZ() + (entity.getRandom().nextDouble() - 0.5) * 0.6;
+            entity.level().addParticle(
+                    new com.breakinblocks.neovitae.client.particle.ColoredParticleOptions(
+                            com.breakinblocks.neovitae.common.particle.NVParticles.BLOOD_FLAME.get(), 0x8B0000),
+                    x, y, z, 0, -0.04, 0);
+        }
+
         if (!entity.onGround() && entity.getDeltaMovement().y > -1.0) {
             double downwardForce = 0.05 * (amplifier + 1);
             entity.setDeltaMovement(entity.getDeltaMovement().add(0, -downwardForce, 0));
         }
 
-        // Stop active flying for players (attribute handles the mayfly permission)
+        // Attribute disables mayfly, but we must also cancel active flight mid-air
         if (entity instanceof Player player && !player.isCreative() && !player.isSpectator()) {
             if (player.getAbilities().flying) {
                 player.getAbilities().flying = false;
@@ -51,13 +49,11 @@ public class HeavyHeartEffect extends MobEffect {
 
     @Override
     public boolean shouldApplyEffectTickThisTick(int duration, int amplifier) {
-        // Apply every tick
         return true;
     }
 
     @Override
     public void onEffectAdded(LivingEntity entity, int amplifier) {
-        // Stop active flying when effect is added
         if (entity instanceof Player player && !player.isCreative() && !player.isSpectator()) {
             player.getAbilities().flying = false;
             player.onUpdateAbilities();

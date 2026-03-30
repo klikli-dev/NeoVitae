@@ -1,9 +1,10 @@
 package com.breakinblocks.neovitae.common.item;
 
 import net.minecraft.core.BlockPos;
-import net.minecraft.core.particles.DustParticleOptions;
+import net.minecraft.network.chat.Component;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
+import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
@@ -11,23 +12,45 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.neoforged.neoforge.common.util.FakePlayer;
-import com.breakinblocks.neovitae.common.blockentity.BloodAltarTile;
-import com.breakinblocks.neovitae.common.damagesource.BMDamageSources;
-import com.breakinblocks.neovitae.util.AltarUtil;
+import com.breakinblocks.neovitae.api.stream.StreamPresets;
+import com.breakinblocks.neovitae.common.attribute.NVAttributes;
+import com.breakinblocks.neovitae.common.blockentity.AraVitaeTile;
+import com.breakinblocks.neovitae.common.damagesource.NVDamageSources;
+import com.breakinblocks.neovitae.common.datamap.EntitySacrificeHelper;
 
-/**
- * Dagger of Sacrifice - kills mobs near a Blood Altar to fill it with LP.
- * The amount of LP gained is based on the mob's max health and a configurable ratio.
- */
 public class DaggerOfSacrificeItem extends Item {
-
-    /**
-     * Default LP per health point for entities not explicitly configured.
-     */
-    private static final int DEFAULT_SACRIFICE_VALUE = 25;
 
     public DaggerOfSacrificeItem() {
         super(new Properties().stacksTo(1));
+    }
+
+    @Override
+    public void appendHoverText(ItemStack stack, Item.TooltipContext context, java.util.List<net.minecraft.network.chat.Component> tooltip, net.minecraft.world.item.TooltipFlag flag) {
+        tooltip.add(net.minecraft.network.chat.Component.translatable("tooltip.neovitae.dagger_of_sacrifice.desc")
+                .withStyle(net.minecraft.ChatFormatting.ITALIC, net.minecraft.ChatFormatting.DARK_RED));
+    }
+
+    /**
+     * Called BEFORE Player.attack() processes. If sacrifice conditions are met,
+     * silence the entity so the melee hit doesn't play a hurt sound.
+     */
+    @Override
+    public boolean onLeftClickEntity(ItemStack stack, Player player, Entity entity) {
+        if (player.level().isClientSide()) return false;
+        if (!(entity instanceof LivingEntity target)) return false;
+        if (player instanceof FakePlayer) return false;
+        if (target instanceof Player) return false;
+        if (target.getHealth() < 0.5F) return false;
+
+        int sacrificeValue = getSacrificeValue(target);
+        if (sacrificeValue <= 0) return false;
+
+        BlockPos altarPos = findAltar(target.level(), target.blockPosition());
+        if (altarPos == null) return false;
+
+        // Sacrifice conditions met - silence before the melee damage processes
+        target.setSilent(true);
+        return false; // let the attack proceed (hurtEnemy will handle the sacrifice)
     }
 
     @Override
@@ -44,84 +67,73 @@ public class DaggerOfSacrificeItem extends Item {
             return false;
         }
 
-        // Cannot sacrifice players
         if (target instanceof Player) {
             return false;
         }
 
-        // Target must be alive
         if (target.getHealth() < 0.5F) {
             return false;
         }
 
-        // Calculate LP from the mob's current health
         int sacrificeValue = getSacrificeValue(target);
         if (sacrificeValue <= 0) {
             return false;
         }
 
-        int lifeEssence = (int) (sacrificeValue * target.getHealth());
+        int ev = (int) (sacrificeValue * target.getHealth());
 
-        // Baby mobs give half LP
         if (target.isBaby()) {
-            lifeEssence = (int) (lifeEssence * 0.5F);
+            ev = (int) (ev * 0.5F);
         }
 
-        // Find a nearby altar (search radius matches self-sacrifice dagger)
+        double bonusSacrifice = player.getAttributeValue(NVAttributes.BONUS_SACRIFICE);
+        if (bonusSacrifice > 0) {
+            ev = (int) (ev * (1 + bonusSacrifice / 100));
+        }
+
         BlockPos altarPos = findAltar(target.level(), target.blockPosition());
         if (altarPos == null) {
+            target.setSilent(false); // restore if we silenced in onLeftClickEntity
+            player.displayClientMessage(Component.translatable("message.neovitae.too_far_from_altar"), true);
             return false;
         }
 
         BlockEntity be = target.level().getBlockEntity(altarPos);
-        if (!(be instanceof BloodAltarTile altar)) {
+        if (!(be instanceof AraVitaeTile altar)) {
+            target.setSilent(false);
             return false;
         }
 
-        // Fill the altar with LP (true = mob sacrifice, uses sacrifice rune modifier)
-        altar.sacrificialDaggerCall(lifeEssence, true);
+        altar.addSacrificeEV(ev, true);
 
-        // Kill the mob
-        target.hurt(target.level().damageSources().source(BMDamageSources.SACRIFICE, player), Float.MAX_VALUE);
-
-        // Effects
-        Level level = target.level();
-        double posX = target.getX();
-        double posY = target.getY();
-        double posZ = target.getZ();
-
-        level.playSound(null, target.blockPosition(), SoundEvents.FIRE_EXTINGUISH, SoundSource.BLOCKS, 0.5F, 2.6F + (level.random.nextFloat() - level.random.nextFloat()) * 0.8F);
-        for (int i = 0; i < 8; i++) {
-            level.addParticle(DustParticleOptions.REDSTONE,
-                    posX + level.random.nextDouble() - level.random.nextDouble(),
-                    posY + level.random.nextDouble() - level.random.nextDouble(),
-                    posZ + level.random.nextDouble() - level.random.nextDouble(),
-                    0, 0, 0);
+        // Send blood tendril from the sacrificed entity to the altar
+        if (player.level() instanceof net.minecraft.server.level.ServerLevel serverLevel) {
+            StreamPresets.bloodTendril(target, altarPos)
+                    .build()
+                    .sendToNearby(serverLevel, altarPos, 128);
         }
+
+        // Kill the entity (still silent from onLeftClickEntity, suppresses death sound too)
+        Level level = target.level();
+        target.hurt(target.level().damageSources().source(NVDamageSources.SACRIFICE, player), Float.MAX_VALUE);
+
+        level.playSound(null, target.blockPosition(), SoundEvents.WARDEN_HEARTBEAT, SoundSource.BLOCKS, 0.3F, 1.0F);
+        level.playSound(null, target.blockPosition(), SoundEvents.BEEHIVE_DRIP, SoundSource.BLOCKS, 0.6F, 0.8F + level.random.nextFloat() * 0.4F);
 
         return true;
     }
 
-    /**
-     * Gets the LP-per-health-point value for an entity.
-     * Returns the default value for all entities. Can be extended to support
-     * per-entity configuration.
-     */
     private int getSacrificeValue(LivingEntity entity) {
-        return DEFAULT_SACRIFICE_VALUE;
+        return EntitySacrificeHelper.getEvPerDamage(entity);
     }
 
-    /**
-     * Finds a Blood Altar near the given position.
-     * Searches a 5x5x4 area (±2 horizontal, -2 to +1 vertical) matching original behavior.
-     */
     private BlockPos findAltar(Level level, BlockPos pos) {
         for (int x = -2; x <= 2; x++) {
             for (int y = -2; y <= 1; y++) {
                 for (int z = -2; z <= 2; z++) {
                     BlockPos testPos = pos.offset(x, y, z);
                     BlockEntity be = level.getBlockEntity(testPos);
-                    if (be instanceof BloodAltarTile) {
+                    if (be instanceof AraVitaeTile) {
                         return testPos;
                     }
                 }

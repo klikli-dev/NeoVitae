@@ -19,14 +19,11 @@ import net.minecraft.world.level.block.state.StateDefinition;
 import net.minecraft.world.level.block.state.properties.BooleanProperty;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.VoxelShape;
-import com.breakinblocks.neovitae.common.blockentity.routing.RoutingNodeTile;
-import com.breakinblocks.neovitae.common.routing.IRoutingNode;
+import com.breakinblocks.neovitae.common.blockentity.routing.RoutingNodeBlockEntity;
+import com.breakinblocks.neovitae.api.routing.*;
 
 import javax.annotation.Nullable;
 
-/**
- * Base block for routing nodes.
- */
 public class BlockRoutingNode extends BaseEntityBlock {
 
     public static final MapCodec<BlockRoutingNode> CODEC = simpleCodec(BlockRoutingNode::new);
@@ -76,7 +73,7 @@ public class BlockRoutingNode extends BaseEntityBlock {
             BlockPos attachedPos = pos.relative(dir);
             BlockState attachedState = level.getBlockState(attachedPos);
             BooleanProperty prop = getPropertyForDirection(dir);
-            state = state.setValue(prop, canConnect(attachedState));
+            state = state.setValue(prop, canConnect(attachedState, level, attachedPos, dir));
         }
 
         return state;
@@ -86,11 +83,12 @@ public class BlockRoutingNode extends BaseEntityBlock {
     public BlockState updateShape(BlockState state, Direction direction, BlockState neighborState,
                                    LevelAccessor level, BlockPos pos, BlockPos neighborPos) {
         BooleanProperty prop = getPropertyForDirection(direction);
-        return state.setValue(prop, canConnect(neighborState));
+        return state.setValue(prop, canConnect(neighborState, level, neighborPos, direction));
     }
 
-    protected boolean canConnect(BlockState state) {
-        return state.getBlock() instanceof BlockRoutingNode;
+    protected boolean canConnect(BlockState state, BlockGetter level, BlockPos neighborPos, Direction direction) {
+        if (state.getBlock() instanceof BlockRoutingNode) return true;
+        return state.isFaceSturdy(level, neighborPos, direction.getOpposite());
     }
 
     private BooleanProperty getPropertyForDirection(Direction dir) {
@@ -123,7 +121,7 @@ public class BlockRoutingNode extends BaseEntityBlock {
     @Nullable
     @Override
     public BlockEntity newBlockEntity(BlockPos pos, BlockState state) {
-        return new RoutingNodeTile(pos, state);
+        return new RoutingNodeBlockEntity(pos, state);
     }
 
     @Nullable
@@ -131,7 +129,7 @@ public class BlockRoutingNode extends BaseEntityBlock {
     public <T extends BlockEntity> BlockEntityTicker<T> getTicker(Level level, BlockState state, BlockEntityType<T> type) {
         if (level.isClientSide) return null;
         return (lvl, pos, st, be) -> {
-            if (be instanceof RoutingNodeTile tile) {
+            if (be instanceof RoutingNodeBlockEntity tile) {
                 tile.tick(lvl, pos, st);
             }
         };

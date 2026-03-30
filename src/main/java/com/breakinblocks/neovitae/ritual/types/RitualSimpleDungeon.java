@@ -13,14 +13,14 @@ import com.breakinblocks.neovitae.ritual.Ritual;
 import com.breakinblocks.neovitae.ritual.RitualComponent;
 import com.breakinblocks.neovitae.structures.DungeonSynthesizer;
 import com.breakinblocks.neovitae.structures.ModRoomPools;
-import com.breakinblocks.neovitae.util.helper.SoulNetworkHelper;
+import com.breakinblocks.neovitae.util.helper.AnimaHelper;
 
 import java.util.function.Consumer;
 
 /**
  * "Edge of the Hidden Realm" ritual - creates a simple dungeon instance.
  * This ritual activates once and creates a portal pillar to a mini-dungeon
- * in the Blood Magic dungeon dimension.
+ * in the NeoVitae dungeon dimension.
  */
 public class RitualSimpleDungeon extends DungeonRitualBase {
 
@@ -47,7 +47,7 @@ public class RitualSimpleDungeon extends DungeonRitualBase {
         }
 
         // Get the spawn position for this dungeon (the controller position)
-        BlockPos dungeonControllerPos = SoulNetworkHelper.getSpawnPositionOfDungeon();
+        BlockPos dungeonControllerPos = AnimaHelper.getSpawnPositionOfDungeon();
         if (dungeonControllerPos == null) {
             LOGGER.warn("Could not get dungeon spawn position");
             masterRitualStone.stopRitual(Ritual.BreakType.DEACTIVATE);

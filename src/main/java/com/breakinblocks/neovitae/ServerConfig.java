@@ -1,7 +1,7 @@
 package com.breakinblocks.neovitae;
 
 import net.neoforged.neoforge.common.ModConfigSpec;
-import com.breakinblocks.neovitae.common.datacomponent.EnumWillType;
+import com.breakinblocks.neovitae.common.datacomponent.SpiritusType;
 
 import java.util.EnumMap;
 
@@ -11,14 +11,12 @@ public class ServerConfig {
     public final ModConfigSpec.ConfigValue<Integer> DEFAULT_UPGRADE_POINTS;
     public final ModConfigSpec.ConfigValue<Integer> EVOLUTION_UPGRADE_POINTS;
 
-    // Demon Will System Configuration
     public final ModConfigSpec.DoubleValue WILL_MAX_DEFAULT;
     public final ModConfigSpec.DoubleValue WILL_MAX_CORROSIVE;
     public final ModConfigSpec.DoubleValue WILL_MAX_DESTRUCTIVE;
     public final ModConfigSpec.DoubleValue WILL_MAX_VENGEFUL;
     public final ModConfigSpec.DoubleValue WILL_MAX_STEADFAST;
 
-    // Demon Crystal Growth Configuration
     public final ModConfigSpec.DoubleValue CRYSTAL_WILL_TO_FORM;
     public final ModConfigSpec.DoubleValue CRYSTAL_FORMATION_TIME;
     public final ModConfigSpec.DoubleValue CRYSTAL_SAME_WILL_RATE;
@@ -28,42 +26,49 @@ public class ServerConfig {
     public final ModConfigSpec.DoubleValue CRYSTAL_GROWTH_THRESHOLD;
     public final ModConfigSpec.IntValue CRYSTAL_MAX_COUNT;
 
+    // Blood Siphon / Blood Shield config
+    public final ModConfigSpec.IntValue BLOOD_SIPHON_PLAYER_MULTIPLIER;
+    public final ModConfigSpec.IntValue BLOOD_SIPHON_MOB_MULTIPLIER;
+    public final ModConfigSpec.IntValue BLOOD_SHIELD_LP_COST_MULTIPLIER;
+    public final ModConfigSpec.IntValue SANGUINE_WARD_DRAIN_PER_SECOND;
+    public final ModConfigSpec.IntValue SANGUINE_WARD_MIN_EV;
+
     protected ServerConfig(ModConfigSpec.Builder builder) {
         SELF_SACRIFICE_CONVERSION = builder.define("self_sacrifice_conversion", 100);
         DEFAULT_UPGRADE_POINTS = builder.define("default_upgrade_points", 100);
         EVOLUTION_UPGRADE_POINTS = builder.define("evolution_upgrade_points", 300);
 
-        builder.comment("Demon Will System Configuration",
-                "These values define the base maximum demon will that can be stored per chunk.",
+        builder.comment("Spiritus System Configuration",
+                "These values define the base maximum spiritus that can be stored per chunk.",
                 "Different will types can have different maximum capacities.",
                 "Rituals and other effects can add bonuses on top of these base values.");
-        builder.push("demon_will");
+        builder.push("spiritus");
 
         WILL_MAX_DEFAULT = builder
-                .comment("Base maximum Raw (Default) demon will per chunk")
+                .comment("Base maximum Raw (Default) spiritus per chunk")
                 .defineInRange("max_default_will", 100.0, 1.0, 10000.0);
         WILL_MAX_CORROSIVE = builder
-                .comment("Base maximum Corrosive demon will per chunk")
+                .comment("Base maximum Corrosive spiritus per chunk")
                 .defineInRange("max_corrosive_will", 100.0, 1.0, 10000.0);
         WILL_MAX_DESTRUCTIVE = builder
-                .comment("Base maximum Destructive demon will per chunk")
+                .comment("Base maximum Destructive spiritus per chunk")
                 .defineInRange("max_destructive_will", 100.0, 1.0, 10000.0);
         WILL_MAX_VENGEFUL = builder
-                .comment("Base maximum Vengeful demon will per chunk")
+                .comment("Base maximum Vengeful spiritus per chunk")
                 .defineInRange("max_vengeful_will", 100.0, 1.0, 10000.0);
         WILL_MAX_STEADFAST = builder
-                .comment("Base maximum Steadfast demon will per chunk")
+                .comment("Base maximum Steadfast spiritus per chunk")
                 .defineInRange("max_steadfast_will", 100.0, 1.0, 10000.0);
 
         builder.pop();
 
         builder.comment("Demon Crystal Growth Configuration",
                 "These values control how demon crystals form and grow.",
-                "Crystals are created by Demon Crystallizers and grow based on chunk will.");
-        builder.push("demon_crystal");
+                "Crystals are created by Crystallarium Maleficums and grow based on chunk will.");
+        builder.push("spiritus_crystal");
 
         CRYSTAL_WILL_TO_FORM = builder
-                .comment("Amount of demon will required to form a new crystal")
+                .comment("Amount of spiritus required to form a new crystal")
                 .defineInRange("will_to_form", 99.0, 1.0, 1000.0);
         CRYSTAL_FORMATION_TIME = builder
                 .comment("Total time (in ticks) for crystal formation in the Crystallizer")
@@ -88,15 +93,31 @@ public class ServerConfig {
                 .defineInRange("max_count", 7, 1, 20);
 
         builder.pop();
+
+        builder.comment("Blood Attribute Configuration",
+                "Configure LP multipliers for Blood Siphon and Blood Shield attributes.");
+        builder.push("blood_attributes");
+
+        BLOOD_SIPHON_PLAYER_MULTIPLIER = builder
+                .comment("LP multiplier when Blood Siphon drains from a player target")
+                .defineInRange("siphon_player_multiplier", 100, 1, 10000);
+        BLOOD_SIPHON_MOB_MULTIPLIER = builder
+                .comment("LP multiplier when Blood Siphon drains from a non-player target")
+                .defineInRange("siphon_mob_multiplier", 10, 1, 10000);
+        BLOOD_SHIELD_LP_COST_MULTIPLIER = builder
+                .comment("LP cost per point of damage prevented by Blood Shield")
+                .defineInRange("shield_lp_cost_multiplier", 100, 1, 10000);
+        SANGUINE_WARD_DRAIN_PER_SECOND = builder
+                .comment("EV drained per second while the Sanguine Ward is active")
+                .defineInRange("sanguine_ward_drain_per_second", 50, 0, 10000);
+        SANGUINE_WARD_MIN_EV = builder
+                .comment("Minimum EV required to activate the Sanguine Ward")
+                .defineInRange("sanguine_ward_min_ev", 200, 0, 100000);
+
+        builder.pop();
     }
 
-    /**
-     * Gets the configured base maximum will for a specific type.
-     *
-     * @param type The will type
-     * @return The base maximum will for that type
-     */
-    public double getBaseMaxWill(EnumWillType type) {
+    public double getBaseMaxWill(SpiritusType type) {
         return switch (type) {
             case DEFAULT -> WILL_MAX_DEFAULT.get();
             case CORROSIVE -> WILL_MAX_CORROSIVE.get();
@@ -106,14 +127,9 @@ public class ServerConfig {
         };
     }
 
-    /**
-     * Gets all base maximum will values as an EnumMap.
-     *
-     * @return EnumMap of will type to base maximum
-     */
-    public EnumMap<EnumWillType, Double> getAllBaseMaxWill() {
-        EnumMap<EnumWillType, Double> result = new EnumMap<>(EnumWillType.class);
-        for (EnumWillType type : EnumWillType.values()) {
+    public EnumMap<SpiritusType, Double> getAllBaseMaxWill() {
+        EnumMap<SpiritusType, Double> result = new EnumMap<>(SpiritusType.class);
+        for (SpiritusType type : SpiritusType.values()) {
             result.put(type, getBaseMaxWill(type));
         }
         return result;

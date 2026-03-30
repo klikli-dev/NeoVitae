@@ -11,12 +11,12 @@ import net.minecraft.world.item.TooltipFlag;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.neoforged.neoforge.items.IItemHandler;
-import com.breakinblocks.neovitae.common.datacomponent.BMDataComponents;
+import com.breakinblocks.neovitae.common.datacomponent.NVDataComponents;
 import com.breakinblocks.neovitae.common.datacomponent.FilterInventory;
 import com.breakinblocks.neovitae.common.datacomponent.NestedFilterInventory;
 import com.breakinblocks.neovitae.common.routing.BasicItemFilter;
 import com.breakinblocks.neovitae.common.routing.BlacklistItemFilter;
-import com.breakinblocks.neovitae.common.routing.IItemFilter;
+import com.breakinblocks.neovitae.api.routing.*;
 import com.breakinblocks.neovitae.util.GhostItemHelper;
 
 import java.util.ArrayList;
@@ -35,7 +35,6 @@ public class ItemCompositeFilter extends ItemRouterFilter implements ICompositeI
 
     @Override
     public InteractionResultHolder<ItemStack> use(Level level, Player player, InteractionHand hand) {
-        // Composite filter doesn't have its own GUI - it uses nesting from routing nodes
         return InteractionResultHolder.pass(player.getItemInHand(hand));
     }
 
@@ -92,7 +91,6 @@ public class ItemCompositeFilter extends ItemRouterFilter implements ICompositeI
 
     @Override
     public IFilterKey getFilterKey(ItemStack filterStack, int slot, ItemStack ghostStack, int amount) {
-        // Composite filter returns null for individual filter keys - it builds composite keys instead
         return null;
     }
 
@@ -113,13 +111,9 @@ public class ItemCompositeFilter extends ItemRouterFilter implements ICompositeI
             int amount = GhostItemHelper.getItemGhostAmount(stack);
             ItemStack ghostStack = GhostItemHelper.getSingleStackFromGhost(stack);
 
-            // Create a composite key that combines all nested filter keys
             CompositeFilterKey compositeKey = new CompositeFilterKey(amount);
-
-            // Add the basic filter key for this ghost item
             compositeKey.addFilterKey(new BasicFilterKey(ghostStack, amount));
 
-            // Add filter keys from all nested filters
             for (ItemStack nestedStack : nestedList) {
                 if (nestedStack.getItem() instanceof INestableItemFilterProvider nestedFilter) {
                     IFilterKey nestedKey = nestedFilter.getFilterKey(nestedStack, i, ghostStack, amount);
@@ -156,13 +150,9 @@ public class ItemCompositeFilter extends ItemRouterFilter implements ICompositeI
                 amount = Integer.MAX_VALUE;
             }
 
-            // Create a composite key that combines all nested filter keys
             CompositeFilterKey compositeKey = new CompositeFilterKey(amount);
-
-            // Add the basic filter key for this ghost item
             compositeKey.addFilterKey(new BasicFilterKey(ghostStack, amount));
 
-            // Add filter keys from all nested filters
             for (ItemStack nestedStack : nestedList) {
                 if (nestedStack.getItem() instanceof INestableItemFilterProvider nestedFilter) {
                     IFilterKey nestedKey = nestedFilter.getFilterKey(nestedStack, i, ghostStack, amount);
@@ -188,11 +178,11 @@ public class ItemCompositeFilter extends ItemRouterFilter implements ICompositeI
     }
 
     public static NestedFilterInventory getNestedFilterInventory(ItemStack filterStack) {
-        return filterStack.getOrDefault(BMDataComponents.NESTED_FILTERS, NestedFilterInventory.empty());
+        return filterStack.getOrDefault(NVDataComponents.NESTED_FILTERS, NestedFilterInventory.empty());
     }
 
     public static void setNestedFilterInventory(ItemStack filterStack, NestedFilterInventory inventory) {
-        filterStack.set(BMDataComponents.NESTED_FILTERS, inventory);
+        filterStack.set(NVDataComponents.NESTED_FILTERS, inventory);
     }
 
     public List<ItemStack> getNestedFilters(ItemStack mainFilterStack) {
@@ -210,12 +200,10 @@ public class ItemCompositeFilter extends ItemRouterFilter implements ICompositeI
 
         NestedFilterInventory inv = getNestedFilterInventory(mainStack);
 
-        // Check if there's an empty slot
         if (inv.getFirstEmptySlot() == -1) {
             return false;
         }
 
-        // Don't allow duplicate filter types
         if (inv.containsFilterType(nestedStack)) {
             return false;
         }

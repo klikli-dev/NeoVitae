@@ -4,6 +4,7 @@ import net.minecraft.ChatFormatting;
 import net.minecraft.advancements.CriteriaTriggers;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.network.chat.Component;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.stats.Stats;
 import net.minecraft.world.InteractionHand;
@@ -14,7 +15,7 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.*;
 import net.minecraft.world.item.alchemy.PotionContents;
 import net.minecraft.world.level.Level;
-import com.breakinblocks.neovitae.common.datacomponent.BMDataComponents;
+import com.breakinblocks.neovitae.common.datacomponent.NVDataComponents;
 import com.breakinblocks.neovitae.common.datacomponent.EffectHolder;
 import com.breakinblocks.neovitae.common.datacomponent.FlaskEffects;
 
@@ -46,10 +47,15 @@ public class ItemAlchemyFlask extends Item {
         tooltip.add(Component.translatable("tooltip.neovitae.arctool.uses", getRemainingUses(stack))
                 .withStyle(ChatFormatting.GOLD));
 
-        // Add potion effect tooltips from PotionContents (synced from FlaskEffects)
         PotionContents contents = stack.get(DataComponents.POTION_CONTENTS);
         if (contents != null) {
             contents.addPotionTooltip(tooltip::add, 1.0F, context.tickRate());
+        }
+
+        FlaskEffects effects = getFlaskEffects(stack);
+        if (effects.effects().size() > 1) {
+            tooltip.add(Component.translatable("tooltip.neovitae.flask.combination")
+                    .withStyle(ChatFormatting.DARK_PURPLE, ChatFormatting.ITALIC));
         }
     }
 
@@ -75,7 +81,6 @@ public class ItemAlchemyFlask extends Item {
             return InteractionResultHolder.pass(heldStack);
         }
 
-        // Check if flask has any effects (check FlaskEffects first, then PotionContents)
         if (!hasFlaskEffects(heldStack) && !hasEffects(heldStack)) {
             return InteractionResultHolder.pass(heldStack);
         }
@@ -92,7 +97,6 @@ public class ItemAlchemyFlask extends Item {
         }
 
         if (!level.isClientSide) {
-            // Apply effects from FlaskEffects if present, otherwise from PotionContents
             FlaskEffects flaskEffects = getFlaskEffects(stack);
             if (!flaskEffects.isEmpty()) {
                 for (MobEffectInstance effectInstance : flaskEffects.toEffectInstances(false, true)) {
@@ -124,39 +128,42 @@ public class ItemAlchemyFlask extends Item {
             if (!player.getAbilities().instabuild) {
                 stack.setDamageValue(stack.getDamageValue() + 1);
             }
+
+            if (level instanceof ServerLevel serverLevel) {
+                int color = 0xAA0000;
+                PotionContents contents = stack.get(DataComponents.POTION_CONTENTS);
+                if (contents != null && contents.hasEffects()) {
+                    color = contents.getColor();
+                }
+                serverLevel.sendParticles(
+                        new com.breakinblocks.neovitae.client.particle.ColoredParticleOptions(
+                                com.breakinblocks.neovitae.common.particle.NVParticles.BLOOD_FLAME.get(), color),
+                        player.getX(), player.getY() + 1.0, player.getZ(), 6, 0.2, 0.3, 0.2, 0.02);
+                serverLevel.sendParticles(
+                        new com.breakinblocks.neovitae.client.particle.ColoredParticleOptions(
+                                com.breakinblocks.neovitae.common.particle.NVParticles.BLOOD_GLOW.get(), color),
+                        player.getX(), player.getY() + 1.2, player.getZ(), 3, 0.15, 0.2, 0.15, 0.01);
+            }
         }
 
         return stack;
     }
 
-    // ==================== FlaskEffects methods ====================
 
-    /**
-     * Get the FlaskEffects from this flask.
-     */
     public static FlaskEffects getFlaskEffects(ItemStack stack) {
-        return stack.getOrDefault(BMDataComponents.FLASK_EFFECTS.get(), FlaskEffects.EMPTY);
+        return stack.getOrDefault(NVDataComponents.FLASK_EFFECTS.get(), FlaskEffects.EMPTY);
     }
 
-    /**
-     * Set the FlaskEffects on this flask and sync to PotionContents for display.
-     */
     public static void setFlaskEffects(ItemStack stack, FlaskEffects effects) {
-        stack.set(BMDataComponents.FLASK_EFFECTS.get(), effects);
+        stack.set(NVDataComponents.FLASK_EFFECTS.get(), effects);
         resyncPotionContents(stack);
     }
 
-    /**
-     * Check if the flask has FlaskEffects.
-     */
     public static boolean hasFlaskEffects(ItemStack stack) {
-        FlaskEffects effects = stack.get(BMDataComponents.FLASK_EFFECTS.get());
+        FlaskEffects effects = stack.get(NVDataComponents.FLASK_EFFECTS.get());
         return effects != null && !effects.isEmpty();
     }
 
-    /**
-     * Sync FlaskEffects to PotionContents for vanilla tooltip/color display.
-     */
     public static void resyncPotionContents(ItemStack stack) {
         FlaskEffects flaskEffects = getFlaskEffects(stack);
         if (flaskEffects.isEmpty()) {
@@ -165,29 +172,25 @@ public class ItemAlchemyFlask extends Item {
         }
 
         List<MobEffectInstance> effectList = flaskEffects.toEffectInstances(false, true);
-        PotionContents contents = new PotionContents(Optional.empty(), Optional.empty(), effectList);
+        List<MobEffectInstance> stable = new ArrayList<>();
+        for (MobEffectInstance inst : effectList) {
+            MobEffectInstance copy = new MobEffectInstance(inst.getEffect(), inst.getDuration(), inst.getAmplifier(), inst.isAmbient(), inst.isVisible());
+            copy.getCures().clear();
+            stable.add(copy);
+        }
+        PotionContents contents = new PotionContents(Optional.empty(), Optional.empty(), stable);
         stack.set(DataComponents.POTION_CONTENTS, contents);
     }
 
-    /**
-     * Get the list of EffectHolders from this flask.
-     */
     public static List<EffectHolder> getEffectHolders(ItemStack stack) {
         return getFlaskEffects(stack).toMutableList();
     }
 
-    /**
-     * Set the list of EffectHolders on this flask.
-     */
     public static void setEffectHolders(ItemStack stack, List<EffectHolder> holders) {
         setFlaskEffects(stack, new FlaskEffects(holders));
     }
 
-    // ==================== Legacy PotionContents methods ====================
 
-    /**
-     * Set the potion contents of this flask (legacy method for compatibility).
-     */
     public static ItemStack setEffects(ItemStack stack, Iterable<MobEffectInstance> effects) {
         List<MobEffectInstance> effectList = new ArrayList<>();
         effects.forEach(effectList::add);
@@ -196,16 +199,10 @@ public class ItemAlchemyFlask extends Item {
         return stack;
     }
 
-    /**
-     * Get the potion contents of this flask.
-     */
     public static PotionContents getContents(ItemStack stack) {
         return stack.getOrDefault(DataComponents.POTION_CONTENTS, PotionContents.EMPTY);
     }
 
-    /**
-     * Check if the flask has any effects (from PotionContents).
-     */
     public static boolean hasEffects(ItemStack stack) {
         PotionContents contents = stack.get(DataComponents.POTION_CONTENTS);
         return contents != null && contents.hasEffects();

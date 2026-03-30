@@ -1,11 +1,11 @@
 {
   "parent": "minecraft:recipes/root",
   "criteria": {
-    "has_life_essence": {
+    "has_essentia_vitae": {
       "conditions": {
         "items": [
           {
-            "items": "neovitae:life_essence_bucket"
+            "items": "neovitae:essentia_vitae_bucket"
           }
         ]
       },
@@ -21,7 +21,7 @@
   "requirements": [
     [
       "has_the_recipe",
-      "has_life_essence"
+      "has_essentia_vitae"
     ]
   ],
   "rewards": {

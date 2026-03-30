@@ -34,9 +34,9 @@ public class SigilTypes {
     public static final ResourceKey<SigilType> PHANTOM_BRIDGE = SigilTypeRegistry.key("phantom_bridge");
 
     public static void bootstrap(BootstrapContext<SigilType> context) {
-        // Divination sigils - information display, no active effect
-        context.register(DIVINATION, simple(100, new DivinationSigilEffect(false)));
-        context.register(SEER, simple(100, new DivinationSigilEffect(true)));
+        // Divination sigils - information display, no LP cost
+        context.register(DIVINATION, simple(0, new DivinationSigilEffect(false)));
+        context.register(SEER, simple(0, new DivinationSigilEffect(true)));
 
         // Fluid placement sigils
         context.register(WATER, simple(100, new PlaceFluidSigilEffect(net.minecraft.world.level.material.Fluids.WATER, 1000)));
@@ -55,7 +55,7 @@ public class SigilTypes {
 
         // Single-use sigils
         context.register(AIR, simple(50, new AirSigilEffect()));
-        context.register(BLOOD_LIGHT, simple(10, new BloodLightSigilEffect(6000)));
+        context.register(BLOOD_LIGHT, simple(10, new BloodLightSigilEffect(15)));
         context.register(TELEPOSITION, simple(1000, new TelepositionSigilEffect()));
     }
 

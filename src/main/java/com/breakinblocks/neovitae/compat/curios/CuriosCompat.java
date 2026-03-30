@@ -8,7 +8,6 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.fml.ModList;
-import net.neoforged.fml.event.lifecycle.InterModEnqueueEvent;
 import net.neoforged.neoforge.items.IItemHandlerModifiable;
 import top.theillusivec4.curios.api.CuriosApi;
 import top.theillusivec4.curios.api.SlotResult;
@@ -17,7 +16,7 @@ import top.theillusivec4.curios.api.type.inventory.ICurioStacksHandler;
 import com.breakinblocks.neovitae.NeoVitae;
 import com.breakinblocks.neovitae.common.living.LivingHelper;
 import com.breakinblocks.neovitae.common.living.LivingUpgrade;
-import com.breakinblocks.neovitae.common.registry.BMRegistries;
+import com.breakinblocks.neovitae.common.registry.NVRegistries;
 
 import java.util.List;
 import java.util.Map;
@@ -25,9 +24,9 @@ import java.util.Optional;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
- * Curios API integration for Blood Magic.
+ * Curios API integration for NeoVitae.
  * Provides:
- * - Curio slots for sigils, tartaric gems, and training bracelet
+ * - Curio slots for sigils, Spiritus Gems, and training bracelet
  * - Living Armor socket slots that scale with the Curios Socket upgrade
  */
 public class CuriosCompat {
@@ -35,36 +34,22 @@ public class CuriosCompat {
     public static final String CURIOS_MODID = "curios";
     public static final String LIVING_ARMOUR_SOCKET_SLOT = "living_armour_socket";
 
-    // ResourceKey for the curios_socket upgrade (matches datagen LivingUpgrades.CURIOS_SOCKET)
     public static final ResourceKey<LivingUpgrade> CURIOS_SOCKET_UPGRADE = ResourceKey.create(
-            BMRegistries.Keys.LIVING_UPGRADES,
+            NVRegistries.Keys.LIVING_UPGRADES,
             NeoVitae.rl("curios_socket")
     );
 
     private static boolean curiosLoaded = false;
 
-    /**
-     * Checks if Curios is loaded.
-     */
     public static boolean isCuriosLoaded() {
         return curiosLoaded;
     }
 
-    /**
-     * Initialize Curios compatibility.
-     * Call this during mod construction.
-     */
     public static void init(IEventBus modBus) {
         curiosLoaded = ModList.get().isLoaded(CURIOS_MODID);
         if (curiosLoaded) {
             NeoVitae.LOGGER.info("Curios detected - enabling compatibility");
-            modBus.addListener(CuriosCompat::onInterModEnqueue);
         }
-    }
-
-    private static void onInterModEnqueue(InterModEnqueueEvent event) {
-        // Curios 1.21+ uses data-driven slot registration via JSON
-        // No IMC needed for slot registration
     }
 
     /**
@@ -159,11 +144,9 @@ public class CuriosCompat {
         if (LivingHelper.hasFullSet(player)) {
             int curiosLevel = getCuriosSocketLevel(player);
 
-            // Remove existing modifier
             livingArmourSockets.removeModifier(modifierId);
 
             if (curiosLevel > 0) {
-                // Add slots based on upgrade level (1 slot per level, up to 5)
                 int bonusSlots = Math.min(curiosLevel, 5);
                 livingArmourSockets.addTransientModifier(
                         new AttributeModifier(modifierId, bonusSlots, AttributeModifier.Operation.ADD_VALUE)
@@ -171,7 +154,6 @@ public class CuriosCompat {
             }
             return curiosLevel;
         } else {
-            // No living armor - remove any bonus slots
             livingArmourSockets.removeModifier(modifierId);
             return 0;
         }

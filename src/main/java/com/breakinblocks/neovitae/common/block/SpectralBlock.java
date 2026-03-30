@@ -14,17 +14,12 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.phys.shapes.VoxelShape;
-import com.breakinblocks.neovitae.common.blockentity.BMTiles;
-import com.breakinblocks.neovitae.common.blockentity.SpectralBlockTile;
+import com.breakinblocks.neovitae.common.blockentity.NVTiles;
+import com.breakinblocks.neovitae.common.blockentity.SpectralBlockEntity;
 import com.breakinblocks.neovitae.util.helper.BlockEntityHelper;
 
 import javax.annotation.Nullable;
 
-/**
- * Spectral Block - An invisible placeholder that temporarily replaces fluids.
- * Used by the Sigil of Suppression to suppress fluids in an area.
- * When it expires, it restores the original fluid block.
- */
 public class SpectralBlock extends BaseEntityBlock {
 
     public static final MapCodec<SpectralBlock> CODEC = simpleCodec(p -> new SpectralBlock());
@@ -46,7 +41,7 @@ public class SpectralBlock extends BaseEntityBlock {
     @Nullable
     @Override
     public BlockEntity newBlockEntity(BlockPos pos, BlockState state) {
-        return new SpectralBlockTile(pos, state);
+        return new SpectralBlockEntity(pos, state);
     }
 
     @Nullable
@@ -55,7 +50,7 @@ public class SpectralBlock extends BaseEntityBlock {
         if (level.isClientSide()) {
             return null;
         }
-        return BlockEntityHelper.getTicker(blockEntityType, BMTiles.SPECTRAL_BLOCK_TYPE.get(), SpectralBlockTile::tick);
+        return BlockEntityHelper.getTicker(blockEntityType, NVTiles.SPECTRAL_BLOCK_TYPE.get(), SpectralBlockEntity::tick);
     }
 
     @Override
@@ -82,9 +77,7 @@ public class SpectralBlock extends BaseEntityBlock {
     protected void onRemove(BlockState state, Level level, BlockPos pos, BlockState newState, boolean movedByPiston) {
         if (!state.is(newState.getBlock())) {
             BlockEntity be = level.getBlockEntity(pos);
-            if (be instanceof SpectralBlockTile spectral) {
-                // If being replaced by something other than spectral, don't restore
-                // This handles cases where something else placed a block here
+            if (be instanceof SpectralBlockEntity spectral) {
             }
         }
         super.onRemove(state, level, pos, newState, movedByPiston);

@@ -6,9 +6,9 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.phys.AABB;
 import com.breakinblocks.neovitae.NeoVitae;
-import com.breakinblocks.neovitae.common.datacomponent.BMDataComponents;
+import com.breakinblocks.neovitae.common.datacomponent.NVDataComponents;
 import com.breakinblocks.neovitae.common.datacomponent.LivingStats;
-import com.breakinblocks.neovitae.common.tag.BMTags;
+import com.breakinblocks.neovitae.common.tag.NVTags;
 import com.breakinblocks.neovitae.ritual.*;
 import com.breakinblocks.neovitae.ritual.RitualHelper.RitualContext;
 
@@ -34,38 +34,35 @@ public class RitualUpgradeRemove extends Ritual {
             return;
         }
 
-        // Check for player standing on the ritual
         AABB checkArea = new AABB(ctx.masterPos()).inflate(1, 2, 1);
         List<Player> players = ctx.level().getEntitiesOfClass(Player.class, checkArea);
 
         for (Player player : players) {
-            // Check all armor pieces for living armor
             boolean cleansedAny = false;
 
             for (int i = 0; i < player.getInventory().armor.size(); i++) {
                 ItemStack armorPiece = player.getInventory().armor.get(i);
-                if (armorPiece.isEmpty() || !armorPiece.is(BMTags.Items.LIVING_SET)) {
+                if (armorPiece.isEmpty() || !armorPiece.is(NVTags.Items.LIVING_SET)) {
                     continue;
                 }
 
                 // Get living stats
-                LivingStats stats = armorPiece.get(BMDataComponents.UPGRADES.get());
+                LivingStats stats = armorPiece.get(NVDataComponents.UPGRADES.get());
                 if (stats == null || stats.upgrades().isEmpty()) {
                     continue;
                 }
 
                 // Remove all upgrades
                 LivingStats newStats = new LivingStats(new Object2FloatOpenHashMap<>());
-                armorPiece.set(BMDataComponents.UPGRADES.get(), newStats);
+                armorPiece.set(NVDataComponents.UPGRADES.get(), newStats);
 
                 // Reset used points
-                armorPiece.set(BMDataComponents.CURRENT_UPGRADE_POINTS.get(), 0);
+                armorPiece.set(NVDataComponents.CURRENT_UPGRADE_POINTS.get(), 0);
 
                 cleansedAny = true;
             }
 
             if (cleansedAny) {
-                // Consume LP and deactivate
                 ctx.syphon(getRefreshCost());
                 masterRitualStone.stopRitual(BreakType.DEACTIVATE);
                 return;

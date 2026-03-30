@@ -12,16 +12,14 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.context.UseOnContext;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
+import com.breakinblocks.neovitae.common.attribute.NVAttributes;
 import com.breakinblocks.neovitae.common.datacomponent.Binding;
-import com.breakinblocks.neovitae.common.datacomponent.SoulNetwork;
+import com.breakinblocks.neovitae.common.datacomponent.Anima;
 import com.breakinblocks.neovitae.common.datamap.SigilStats;
 import com.breakinblocks.neovitae.common.item.IActivatable;
-import com.breakinblocks.neovitae.api.soul.SoulTicket;
-import com.breakinblocks.neovitae.util.helper.SoulNetworkHelper;
+import com.breakinblocks.neovitae.api.soul.AnimaTicket;
+import com.breakinblocks.neovitae.util.helper.AnimaHelper;
 
-/**
- * Base class for all toggleable sigils.
- */
 public class ItemSigilToggleable extends ItemSigil implements IActivatable {
 
     public ItemSigilToggleable(Item.Properties property, int lpUsed) {
@@ -35,7 +33,6 @@ public class ItemSigilToggleable extends ItemSigil implements IActivatable {
             return InteractionResultHolder.fail(player.getItemInHand(hand));
         }
 
-        // Must be bound before use
         Binding binding = getBinding(stack);
         if (binding == null) {
             return InteractionResultHolder.consume(player.getItemInHand(hand));
@@ -58,15 +55,9 @@ public class ItemSigilToggleable extends ItemSigil implements IActivatable {
         Level world = context.getLevel();
         BlockPos blockpos = context.getClickedPos();
         Player player = context.getPlayer();
-        ItemStack stack = context.getItemInHand();
-
-        // Handle Sigil of Holding
-        if (stack.getItem() instanceof ISigil.Holding holding) {
-            stack = holding.getHeldItem(stack, player);
-        }
+        ItemStack stack = ISigil.resolveHeldStack(context.getItemInHand(), player);
 
         Binding binding = getBinding(stack);
-        // Make sure Sigils are bound before handling. Also ignores while toggling state
         if (binding == null || player.isShiftKeyDown()) {
             return InteractionResult.CONSUME;
         }
@@ -98,9 +89,10 @@ public class ItemSigilToggleable extends ItemSigil implements IActivatable {
             if (entityIn.tickCount % drainInterval == 0) {
                 Binding binding = getBinding(stack);
                 if (binding != null) {
-                    SoulNetwork network = SoulNetworkHelper.getSoulNetwork(binding);
+                    Anima network = AnimaHelper.getAnima(binding);
                     if (network != null) {
-                        if (!network.syphonAndDamage(player, SoulTicket.create(getLpUsed())).success()) {
+                        int cost = getReducedCost(getLpUsed(), player);
+                        if (!network.syphonAndDamage(player, AnimaTicket.create(cost)).success()) {
                             setActivatedState(stack, false);
                         }
                     }
@@ -133,5 +125,14 @@ public class ItemSigilToggleable extends ItemSigil implements IActivatable {
      * @param isSelected Whether the sigil is currently selected
      */
     public void onSigilUpdate(ItemStack stack, Level world, Player player, int itemSlot, boolean isSelected) {
+    }
+
+    private static int getReducedCost(int baseCost, Player player) {
+        if (baseCost <= 0) return baseCost;
+        double reduction = player.getAttributeValue(NVAttributes.SIGIL_COST_REDUCTION);
+        if (reduction > 0) {
+            return Math.max(1, (int) (baseCost * (1 - reduction / 100)));
+        }
+        return baseCost;
     }
 }

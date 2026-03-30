@@ -10,7 +10,7 @@ This guide covers all the data-driven systems in Neo Vitae that modpack makers c
    - [Sigil Stats](#sigil-stats)
    - [Ritual Stats](#ritual-stats)
    - [Imperfect Ritual Stats](#imperfect-ritual-stats)
-   - [Tartaric Gem Capacities](#tartaric-gem-capacities)
+   - [Spiritus Gem Capacities](#spiritus-gem-capacities)
 3. [Sigil Types (Effect Definitions)](#sigil-types-effect-definitions)
 4. [Recipe Types](#recipe-types)
 5. [Tags](#tags)
@@ -18,7 +18,8 @@ This guide covers all the data-driven systems in Neo Vitae that modpack makers c
 7. [Living Armor Upgrades](#living-armor-upgrades)
 8. [Curios Integration](#curios-integration)
 9. [KubeJS Event Hooks](#kubejs-event-hooks)
-10. [Examples](#examples)
+10. [Custom Player Attributes](#custom-player-attributes)
+11. [Examples](#examples)
 
 ---
 
@@ -41,7 +42,7 @@ your_datapack/
         │   ├── item/
         │   │   ├── blood_orb_stats.json
         │   │   ├── sigil_stats.json
-        │   │   └── tartaric_gem_max.json
+        │   │   └── spiritus_gem_max.json
         │   └── neovitae/
         │       ├── ritual/
         │       │   └── ritual_stats.json
@@ -93,6 +94,22 @@ Customize the tier, capacity, and fill rate of blood orbs.
 | Magician | 2 | 150,000 | 15 |
 | Master | 3 | 1,000,000 | 25 |
 | Archmage | 4 | 10,000,000 | 50 |
+
+### Blood Orb Internal Fluid Tank
+
+Each Blood Orb has an internal fluid reservoir that stores Essentia Vitae. The capacity of this reservoir is calculated as `4000 + (tier * 2000)` mB. When the altar fills the player's Anima (soul network), it also fills the orb's internal tank with the same amount.
+
+**Dual-Mode Altar Behavior:**
+
+When a Blood Orb is placed in an Ara Vitae, the altar checks whether the orb's internal tank contains fluid:
+
+1. **Orb has fluid (draining mode):** The altar drains the orb's internal tank at 10x the orb's normal fill rate. If the altar basin has at least 1,000 mB of room, the drained fluid goes into the altar. If the altar is nearly full (less than 1,000 mB of room), the drained fluid is channeled into the player's Anima instead.
+
+2. **Orb is empty (normal mode):** The altar operates normally, draining its own LP into the player's Anima at the orb's standard fill rate.
+
+This means players can pre-fill orbs with Essentia Vitae (for example, from fluid pipes or the Athanor) and then use those orbs to rapidly refill an altar or top off their network. The 10x transfer rate makes this significantly faster than normal altar filling.
+
+**Debug Command:** Use `/neovitae setorbfill <amount>` (or `/nvsetorbfill <amount>`) to manually set the fluid amount in a held Blood Orb for testing purposes. Requires operator permissions.
 
 ---
 
@@ -255,9 +272,9 @@ Customize imperfect rituals - simple one-time effects triggered by placing a blo
 
 ---
 
-### Tartaric Gem Capacities
+### Spiritus Gem Capacities
 
-**Location:** `data/neovitae/data_maps/item/tartaric_gem_max.json`
+**Location:** `data/neovitae/data_maps/item/spiritus_gem_max.json`
 
 Customize how much Demon Will each soul gem tier can hold.
 
@@ -330,13 +347,13 @@ Sigil types define the behavior of sigils using a codec-based effect system. Eac
 
 Neo Vitae adds several recipe types that can be customized via datapacks.
 
-### Blood Altar Recipes
+### Ara Vitae Recipes
 
 **Location:** `data/neovitae/recipes/altar/`
 
 ```json
 {
-  "type": "neovitae:blood_altar",
+  "type": "neovitae:ara_vitae",
   "ingredient": {
     "item": "minecraft:diamond"
   },
@@ -359,13 +376,13 @@ Neo Vitae adds several recipe types that can be customized via datapacks.
 | `craftSpeed` | LP consumed per craft tick |
 | `drainSpeed` | Max LP drained from altar per tick |
 
-### Tartaric Forge (Hellfire Forge) Recipes
+### Hellfire Forge Recipes
 
-**Location:** `data/neovitae/recipes/soul_forge/`
+**Location:** `data/neovitae/recipes/hellfire_forge/`
 
 ```json
 {
-  "type": "neovitae:soul_forge",
+  "type": "neovitae:hellfire_forge",
   "ingredients": [
     { "item": "minecraft:iron_ingot" },
     { "item": "minecraft:redstone" }
@@ -379,13 +396,13 @@ Neo Vitae adds several recipe types that can be customized via datapacks.
 }
 ```
 
-### Alchemy Table Recipes
+### Tabula Vitae Recipes
 
-**Location:** `data/neovitae/recipes/alchemy_table/`
+**Location:** `data/neovitae/recipes/tabula_vitae/`
 
 ```json
 {
-  "type": "neovitae:alchemy_table",
+  "type": "neovitae:tabula_vitae",
   "ingredients": [
     { "item": "minecraft:glass_bottle" },
     { "item": "neovitae:reagent_water" }
@@ -399,15 +416,15 @@ Neo Vitae adds several recipe types that can be customized via datapacks.
 }
 ```
 
-### Alchemical Reaction Chamber (ARC) Recipes
+### Athanor (ARC) Recipes
 
-**Location:** `data/neovitae/recipes/arc/`
+**Location:** `data/neovitae/recipes/athanor/`
 
 ```json
 {
-  "type": "neovitae:arc",
+  "type": "neovitae:athanor",
   "input": { "item": "minecraft:iron_ore" },
-  "tool": { "tag": "neovitae:arc_tool/explosives" },
+  "tool": { "tag": "neovitae:athanor_tool/explosives" },
   "output": {
     "id": "neovitae:iron_fragment",
     "count": 3
@@ -477,10 +494,10 @@ Tags control various gameplay mechanics. Override or extend these in your datapa
 | Tag | Purpose |
 |-----|---------|
 | `soul_gems` | Items that hold Demon Will |
-| `arc_tool` | Tools usable in the ARC |
-| `arc_tool/explosives` | Explosive tools (ore doubling) |
-| `arc_tool/cutting_fluids` | Cutting tools |
-| `arc_tool/furnace` | Smelting tools |
+| `athanor_tool` | Tools usable in the Athanor |
+| `athanor_tool/explosives` | Explosive tools (ore doubling) |
+| `athanor_tool/cutting_fluids` | Cutting tools |
+| `athanor_tool/furnace` | Smelting tools |
 | `crystals/demon` | Demon crystal items |
 | `charges` | Explosive charges |
 
@@ -787,7 +804,7 @@ NeoForgeEvents.onEvent('com.breakinblocks.neovitae.common.event.ImperfectRitualE
 })
 ```
 
-### Blood Altar Craft Events
+### Ara Vitae Craft Events
 
 Hook into altar crafting to modify outputs or add side effects:
 
@@ -795,7 +812,7 @@ Hook into altar crafting to modify outputs or add side effects:
 // server_scripts/blood_magic_altar.js
 
 // Modify or cancel altar crafting
-NeoForgeEvents.onEvent('com.breakinblocks.neovitae.common.event.BloodAltarCraftEvent$Crafting', event => {
+NeoForgeEvents.onEvent('com.breakinblocks.neovitae.common.event.AraVitaeCraftEvent$Crafting', event => {
     const input = event.getInput()
     const output = event.getOutput()
     const tier = event.getTier()
@@ -816,7 +833,7 @@ NeoForgeEvents.onEvent('com.breakinblocks.neovitae.common.event.BloodAltarCraftE
 })
 
 // React after successful craft
-NeoForgeEvents.onEvent('com.breakinblocks.neovitae.common.event.BloodAltarCraftEvent$Crafted', event => {
+NeoForgeEvents.onEvent('com.breakinblocks.neovitae.common.event.AraVitaeCraftEvent$Crafted', event => {
     const output = event.getOutput()
     console.log(`Crafted: ${output.getId()}`)
 })
@@ -832,10 +849,10 @@ NeoForgeEvents.onEvent('com.breakinblocks.neovitae.common.event.BloodAltarCraftE
 | `RitualEvent$Stop` | No | When ritual stops |
 | `ImperfectRitualEvent$Activate` | Yes | Before imperfect ritual |
 | `ImperfectRitualEvent$Activated` | No | After imperfect ritual |
-| `BloodAltarCraftEvent$Crafting` | Yes | Before altar craft completes |
-| `BloodAltarCraftEvent$Crafted` | No | After altar craft completes |
+| `AraVitaeCraftEvent$Crafting` | Yes | Before altar craft completes |
+| `AraVitaeCraftEvent$Crafted` | No | After altar craft completes |
 | `ItemBindEvent` | Yes | When binding item to player |
-| `SacrificialDaggerEvent` | Yes | When dagger drains health |
+| `LaminaMaleficusEvent` | Yes | When dagger drains health |
 | `LivingArmourEvent` | Varies | Living armor upgrade events |
 | `AlchemyArrayCraftEvent` | Yes | Alchemy array crafting |
 
@@ -850,6 +867,153 @@ Neo Vitae's event system provides several advantages for modpack customization:
 5. **Flexible**: Combine with other KubeJS features (quests, rewards, etc.)
 
 For truly new ritual types (new effects, new multiblock structures), those require Java mods. But for 90% of modpack needs, events provide sufficient customization.
+
+---
+
+## Custom Player Attributes
+
+Neo Vitae registers several custom player attributes that can be modified via equipment, effects, data packs, or addon mods using standard Minecraft attribute modifiers.
+
+### Attribute Reference
+
+| Attribute | Registry ID | Default | Max | Description |
+|-----------|------------|---------|-----|-------------|
+| Self Sacrifice Multiplier | `neovitae:player.self_sacrifice_multiplier` | 1.0 | 100.0 | Multiplier for LP gained from self-sacrifice (PercentageAttribute) |
+| Bonus Sacrifice | `neovitae:bonus_sacrifice` | 0.0 | 1000.0 | % bonus to LP gained from Lamina Exhauriens mob kills |
+| Bonus Self Sacrifice | `neovitae:bonus_self_sacrifice` | 0.0 | 1000.0 | % bonus to LP gained from Lamina Maleficus self-sacrifice |
+| Bonus Demon Will | `neovitae:bonus_demon_will` | 0.0 | 1000.0 | % bonus to Demon Will drops from sentient weapons and soul snares |
+| Sigil Cost Reduction | `neovitae:sigil_cost_reduction` | 0.0 | 100.0 | % reduction to all sigil LP costs (capped at near-zero, minimum 1 LP) |
+| Blood Siphon | `neovitae:blood_siphon` | 0.0 | 1024.0 | Converts damage dealt into LP. Base LP = min(attribute, damage), then multiplied |
+| Blood Shield | `neovitae:blood_shield` | 0.0 | 10.0 | Reduces incoming damage by 10% per point (capped at 99%), drains LP for prevented damage |
+
+### Blood Siphon Details
+
+When a player with Blood Siphon deals damage:
+- **LP gained** = min(blood_siphon_value, damage_dealt) x multiplier
+- **vs Players (PvP)**: LP is drained directly from the target player's soul network and added to the attacker's. This is a true LP transfer — the victim loses the same amount the attacker gains. Multiplier = configurable (default: 100)
+- **vs Mobs (PvE)**: LP is generated from nothing and added to the attacker's network. Multiplier = configurable (default: 10)
+- Example (PvE): Blood Siphon 5, deal 10 damage to a mob = 5 x 10 = 50 LP gained
+- Example (PvP): Blood Siphon 5, deal 10 damage to a player = 5 x 100 = 500 LP stolen from their network
+
+### Blood Shield Details
+
+When a player with Blood Shield takes damage:
+- **Damage reduction** = 10% per attribute point (e.g., Blood Shield 5 = 50% reduction)
+- **Hard cap**: 99% maximum reduction (at Blood Shield 10)
+- **LP cost** = damage_prevented x configurable multiplier (default: 100)
+- If insufficient LP: partial shield uses available LP, remaining damage passes through
+- Example: Blood Shield 3, take 20 damage = 6 damage prevented, costs 600 LP, take 14 damage
+
+### Server Configuration
+
+**File:** `config/neovitae-server.toml`
+
+Blood attribute multipliers under `[blood_attributes]`:
+
+| Config Key | Default | Description |
+|-----------|---------|-------------|
+| `siphon_player_multiplier` | 100 | LP multiplier for Blood Siphon vs players |
+| `siphon_mob_multiplier` | 10 | LP multiplier for Blood Siphon vs mobs |
+| `shield_lp_cost_multiplier` | 100 | LP cost per damage point prevented by Blood Shield |
+
+### Applying Attributes via Data Packs
+
+Use standard NeoForge attribute modifier syntax on items or equipment:
+
+```json
+{
+  "type": "minecraft:attribute_modifiers",
+  "modifiers": [
+    {
+      "type": "neovitae:blood_siphon",
+      "id": "mypack:blood_siphon_bonus",
+      "amount": 2.0,
+      "operation": "add_value",
+      "slot": "mainhand"
+    }
+  ]
+}
+```
+
+---
+
+## Data-Driven Material System
+
+Neo Vitae's ore processing system is fully data-driven. Materials (dusts, gravels, fragments) are defined in a JSON config file and items are generated at startup.
+
+### Config File
+
+**Location:** `config/neovitae/materials.json`
+
+Each entry defines a processable material:
+
+```json
+{
+  "name": "tin",
+  "color": "#C8C8D0",
+  "stages": ["fragment", "gravel", "dust"],
+  "smelt_to": "create:tin_ingot",
+  "smelt_xp": 0.7,
+  "ore_tag": "c:ores/tin",
+  "raw_tag": "c:raw_materials/tin",
+  "ingot_tag": "c:ingots/tin",
+  "display_name": "Tin"
+}
+```
+
+| Field | Required | Description |
+|-------|----------|-------------|
+| `name` | Yes | Unique material name. Used in item IDs (`neovitae:tin_dust`). |
+| `color` | Yes | Hex color for item tinting (e.g., `#C8C8D0`). |
+| `stages` | Yes | Processing stages to create: `fragment`, `gravel`, `dust`. |
+| `smelt_to` | No | Item ID for smelting output. Omit to skip smelting recipes. |
+| `smelt_xp` | No | XP from smelting (default: 0). |
+| `ore_tag` | No | Tag for ore blocks (e.g., `c:ores/tin`). Enables ore processing recipes. |
+| `raw_tag` | No | Tag for raw materials (e.g., `c:raw_materials/tin`). |
+| `ingot_tag` | No | Tag for ingots/gems (e.g., `c:ingots/tin`). Enables ingot-to-dust recipe. |
+| `display_name` | No | Override display name. Defaults to capitalized material name. |
+| `id_overrides` | No | Map to override generated item IDs per stage. |
+
+### Auto-Generated Content
+
+For each material, the system automatically generates:
+
+- **Items**: Fragment, gravel, and/or dust items with color-tinted base textures
+- **Tags**: `c:fragments/{name}`, `c:gravels/{name}`, `c:dusts/{name}`
+- **Smelting/blasting recipes**: Dust to output item (if `smelt_to` is defined)
+- **Athanor recipes**: Full ore processing chain (ore/raw to fragments, fragments to gravel, gravel to dust, etc.)
+- **Tabula Vitae recipes**: Ore to dust, fragments to gravel with corrupted dust
+- **Item models and translations**: Generated in-memory, no files needed
+
+All recipes use `neoforge:item_exists` conditions so they silently disable if the output item's mod is not installed.
+
+### Auto-Discovery Command
+
+**`/nvgenerate`** (or `/neovitae generate`) - Requires op permissions.
+
+Scans all `c:ores/*` tags from installed mods and:
+1. Discovers ore materials not already in the config
+2. Looks up smelting recipes to find the output item
+3. Falls back to `c:ingots/{name}` or `c:gems/{name}` tag matching
+4. Extracts the ore's characteristic color from its block texture (filtering out stone-colored pixels)
+5. Appends new material entries to the config
+
+A game restart is required after running the command for new items to appear.
+
+### First-Run Auto-Discovery
+
+On the very first launch (when `materials.json` does not exist), the mod automatically runs the ore discovery process after the world loads. Any detected ores are added to the config and a notification is sent to players on join indicating a restart is needed.
+
+### Adding a Custom Material Manually
+
+1. Open `config/neovitae/materials.json`
+2. Add a new entry to the JSON array
+3. Restart the game
+4. The new material's items, models, tags, and recipes appear automatically
+
+### Removing a Material
+
+Remove the entry from `materials.json` and restart. Existing items in the world will become unknown items.
 
 ---
 

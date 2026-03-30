@@ -21,7 +21,7 @@ public class RoutingNodeHelper {
      */
     @Nullable
     public static RoutingNodeStats getStats(Block block) {
-        return BuiltInRegistries.BLOCK.wrapAsHolder(block).getData(BMDataMaps.ROUTING_NODE_STATS);
+        return BuiltInRegistries.BLOCK.wrapAsHolder(block).getData(NVDataMaps.ROUTING_NODE_STATS);
     }
 
     /**
@@ -67,12 +67,6 @@ public class RoutingNodeHelper {
         return getStatsOrDefault(block, RoutingNodeStats.DEFAULT_MASTER);
     }
 
-    // === Convenience methods for common lookups ===
-
-    /**
-     * Gets the maximum number of connections for a node block.
-     * @return max connections, or -1 for unlimited
-     */
     public static int getMaxConnections(Block block) {
         return getNodeStats(block).getMaxConnections();
     }
@@ -191,6 +185,15 @@ public class RoutingNodeHelper {
         RoutingNodeStats stats = getMasterStats(block);
         int baseTransfer = stats.getBaseFluidTransfer();
         int perUpgrade = stats.getFluidTransferPerUpgrade();
+        int maxUpgrades = stats.getMaxStackUpgrades();
+        int effectiveUpgrades = Math.min(stackUpgrades, maxUpgrades);
+        return baseTransfer + (effectiveUpgrades * perUpgrade);
+    }
+
+    public static int getEffectiveEnergyTransfer(Block block, int stackUpgrades) {
+        RoutingNodeStats stats = getMasterStats(block);
+        int baseTransfer = stats.getBaseEnergyTransfer();
+        int perUpgrade = stats.getEnergyTransferPerUpgrade();
         int maxUpgrades = stats.getMaxStackUpgrades();
         int effectiveUpgrades = Math.min(stackUpgrades, maxUpgrades);
         return baseTransfer + (effectiveUpgrades * perUpgrade);

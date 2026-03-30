@@ -2,61 +2,73 @@ package com.breakinblocks.neovitae.common.block;
 
 import com.mojang.serialization.MapCodec;
 import net.minecraft.core.BlockPos;
-import net.minecraft.core.particles.DustParticleOptions;
-import net.minecraft.server.level.ServerLevel;
+import net.minecraft.network.chat.Component;
 import net.minecraft.util.RandomSource;
+import net.minecraft.world.InteractionResult;
+import net.minecraft.world.ItemInteractionResult;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
 import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.BaseEntityBlock;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.RenderShape;
+import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.StateDefinition;
+import net.minecraft.world.level.block.state.properties.BooleanProperty;
 import net.minecraft.world.level.block.state.properties.IntegerProperty;
+import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.phys.shapes.VoxelShape;
-import org.joml.Vector3f;
+import com.breakinblocks.neovitae.client.particle.ColoredParticleOptions;
+import com.breakinblocks.neovitae.common.blockentity.BloodLightBlockEntity;
+import com.breakinblocks.neovitae.common.particle.NVParticles;
+import com.breakinblocks.neovitae.util.helper.ColorHelper;
+import com.breakinblocks.neovitae.util.helper.BloodLightHelper;
+import org.jetbrains.annotations.Nullable;
 
-/**
- * Blood Light - a temporary light source created by the Blood Light Sigil.
- * Fades over time and eventually disappears.
- */
-public class BloodLightBlock extends Block {
+public class BloodLightBlock extends BaseEntityBlock {
 
     public static final MapCodec<BloodLightBlock> CODEC = simpleCodec(p -> new BloodLightBlock());
 
-    // Lifespan in ticks (0 = about to expire, 15 = fresh)
-    public static final IntegerProperty LIFESPAN = IntegerProperty.create("lifespan", 0, 15);
+    public static final IntegerProperty BRIGHTNESS = IntegerProperty.create("brightness", 1, 15);
+    public static final BooleanProperty POWERED = BooleanProperty.create("powered");
 
-    // Small centered hitbox for selection/breaking (2x2x2 pixels centered)
-    protected static final VoxelShape BODY = Block.box(7, 7, 7, 9, 9, 9);
+    protected static final VoxelShape BODY = Block.box(5, 5, 5, 11, 11, 11);
 
-    // Red particle for ambient effect
-    private static final DustParticleOptions BLOOD_PARTICLE = new DustParticleOptions(new Vector3f(1.0f, 0.0f, 0.0f), 1.0f);
-
-    // Default lifespan when placed (about 5 minutes at 15 * 20 ticks = 300 ticks per decrement, 15 decrements)
-    public static final int DEFAULT_LIFESPAN = 15;
-    public static final int TICKS_PER_DECREMENT = 400; // 20 seconds per level
+    public static final int DEFAULT_BRIGHTNESS = 15;
 
     public BloodLightBlock() {
         super(Properties.of()
                 .noCollission()
                 .noOcclusion()
                 .instabreak()
-                .lightLevel(state -> state.getValue(LIFESPAN) + 1) // Light level 1-16 based on lifespan
+                .lightLevel(BloodLightBlock::getLightLevel)
                 .replaceable()
                 .noLootTable());
-        registerDefaultState(stateDefinition.any().setValue(LIFESPAN, DEFAULT_LIFESPAN));
+        registerDefaultState(stateDefinition.any()
+                .setValue(BRIGHTNESS, DEFAULT_BRIGHTNESS)
+                .setValue(POWERED, false));
+    }
+
+    private static int getLightLevel(BlockState state) {
+        if (state.getValue(POWERED)) {
+            return state.getValue(BRIGHTNESS);
+        }
+        return 0;
     }
 
     @Override
-    protected MapCodec<? extends Block> codec() {
+    protected MapCodec<? extends BaseEntityBlock> codec() {
         return CODEC;
     }
 
     @Override
     protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> builder) {
-        builder.add(LIFESPAN);
+        builder.add(BRIGHTNESS, POWERED);
     }
 
     @Override
@@ -75,24 +87,65 @@ public class BloodLightBlock extends Block {
     }
 
     @Override
-    protected void onPlace(BlockState state, Level level, BlockPos pos, BlockState oldState, boolean movedByPiston) {
-        if (!level.isClientSide()) {
-            // Schedule first tick
-            level.scheduleTick(pos, this, TICKS_PER_DECREMENT);
+    protected ItemInteractionResult useItemOn(ItemStack stack, BlockState state, Level level, BlockPos pos, Player player, net.minecraft.world.InteractionHand hand, BlockHitResult hitResult) {
+        if (stack.is(Items.REDSTONE)) {
+            if (!level.isClientSide) {
+                BlockEntity be = level.getBlockEntity(pos);
+                if (be instanceof BloodLightBlockEntity ble) {
+                    boolean newState = !ble.isRedstoneControlled();
+                    ble.setRedstoneControlled(newState);
+                    updatePoweredState(level, pos, state, ble);
+                    String key = newState ? "message.neovitae.blood_light.redstone_on" : "message.neovitae.blood_light.redstone_off";
+                    player.displayClientMessage(Component.translatable(key), true);
+                }
+            }
+            return ItemInteractionResult.sidedSuccess(level.isClientSide);
+        }
+        return ItemInteractionResult.PASS_TO_DEFAULT_BLOCK_INTERACTION;
+    }
+
+    @Override
+    protected InteractionResult useWithoutItem(BlockState state, Level level, BlockPos pos, Player player, BlockHitResult hitResult) {
+        int current = state.getValue(BRIGHTNESS);
+        boolean sneaking = player.isShiftKeyDown();
+        int newBrightness = sneaking ? Math.max(1, current - 1) : Math.min(15, current + 1);
+        if (current != newBrightness && !level.isClientSide) {
+            level.setBlock(pos, state.setValue(BRIGHTNESS, newBrightness), Block.UPDATE_ALL);
+            BloodLightHelper.playSound(level, pos);
+        }
+        player.displayClientMessage(Component.translatable("message.neovitae.blood_light.brightness", newBrightness), true);
+        return InteractionResult.sidedSuccess(level.isClientSide);
+    }
+
+    @Override
+    protected void neighborChanged(BlockState state, Level level, BlockPos pos, Block neighborBlock, BlockPos neighborPos, boolean movedByPiston) {
+        if (!level.isClientSide) {
+            BlockEntity be = level.getBlockEntity(pos);
+            if (be instanceof BloodLightBlockEntity ble && ble.isRedstoneControlled()) {
+                updatePoweredState(level, pos, state, ble);
+            }
         }
     }
 
     @Override
-    protected void tick(BlockState state, ServerLevel level, BlockPos pos, RandomSource random) {
-        int currentLifespan = state.getValue(LIFESPAN);
+    protected void onPlace(BlockState state, Level level, BlockPos pos, BlockState oldState, boolean movedByPiston) {
+        if (!level.isClientSide && !oldState.is(this)) {
+            BlockEntity be = level.getBlockEntity(pos);
+            if (be instanceof BloodLightBlockEntity ble) {
+                updatePoweredState(level, pos, state, ble);
+            }
+        }
+    }
 
-        if (currentLifespan <= 0) {
-            // Light has expired, remove it
-            level.removeBlock(pos, false);
+    private void updatePoweredState(Level level, BlockPos pos, BlockState state, BloodLightBlockEntity ble) {
+        boolean shouldBeOn;
+        if (ble.isRedstoneControlled()) {
+            shouldBeOn = level.hasNeighborSignal(pos);
         } else {
-            // Decrement lifespan and schedule next tick
-            level.setBlock(pos, state.setValue(LIFESPAN, currentLifespan - 1), Block.UPDATE_ALL);
-            level.scheduleTick(pos, this, TICKS_PER_DECREMENT);
+            shouldBeOn = true;
+        }
+        if (state.getValue(POWERED) != shouldBeOn) {
+            level.setBlock(pos, state.setValue(POWERED, shouldBeOn), Block.UPDATE_ALL);
         }
     }
 
@@ -101,14 +154,38 @@ public class BloodLightBlock extends Block {
         return true;
     }
 
+    @Nullable
+    @Override
+    public BlockEntity newBlockEntity(BlockPos pos, BlockState state) {
+        return new BloodLightBlockEntity(pos, state);
+    }
+
     @Override
     public void animateTick(BlockState state, Level level, BlockPos pos, RandomSource random) {
-        // Spawn particles 2 out of 3 ticks on average
-        if (random.nextInt(3) != 0) {
-            double x = pos.getX() + 0.5 + random.nextGaussian() / 8;
-            double y = pos.getY() + 0.5;
-            double z = pos.getZ() + 0.5 + random.nextGaussian() / 8;
-            level.addParticle(BLOOD_PARTICLE, x, y, z, 0, 0, 0);
+        if (!state.getValue(POWERED)) return;
+
+        int color = ColorHelper.fromDye(net.minecraft.world.item.DyeColor.RED);
+        BlockEntity be = level.getBlockEntity(pos);
+        if (be instanceof BloodLightBlockEntity ble) {
+            color = ColorHelper.fromDye(ble.getColor());
+        }
+
+        for (int i = 0; i < 2; i++) {
+            double x = pos.getX() + 0.5 + random.nextGaussian() * 0.03;
+            double y = pos.getY() + 0.45 + random.nextGaussian() * 0.03;
+            double z = pos.getZ() + 0.5 + random.nextGaussian() * 0.03;
+
+            double vx = random.nextGaussian() * 0.003;
+            double vy = random.nextFloat() * 0.008;
+            double vz = random.nextGaussian() * 0.003;
+
+            level.addParticle(new ColoredParticleOptions(NVParticles.BLOOD_FLAME.get(), color), x, y, z, vx, vy, vz);
+        }
+
+        if (random.nextInt(3) == 0) {
+            level.addParticle(new ColoredParticleOptions(NVParticles.BLOOD_GLOW.get(), color),
+                    pos.getX() + 0.5, pos.getY() + 0.49, pos.getZ() + 0.5,
+                    0, 0, 0);
         }
     }
 }

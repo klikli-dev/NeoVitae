@@ -1,11 +1,25 @@
 package com.breakinblocks.neovitae.ritual;
 
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Holder;
+import net.minecraft.core.registries.Registries;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
+import net.minecraft.world.item.enchantment.Enchantment;
+import net.minecraft.world.item.enchantment.Enchantments;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.phys.AABB;
 import com.breakinblocks.neovitae.api.ritual.AreaDescriptor;
-import com.breakinblocks.neovitae.common.datacomponent.SoulNetwork;
+import com.breakinblocks.neovitae.common.blockentity.AraVitaeTile;
+import com.breakinblocks.neovitae.api.will.SpiritusHandler;
+import com.breakinblocks.neovitae.api.will.SpiritusState;
+import com.breakinblocks.neovitae.common.datacomponent.Anima;
 
 import javax.annotation.Nullable;
 import java.util.Collections;
@@ -14,28 +28,14 @@ import java.util.List;
 /**
  * Utility class providing common operations used by rituals.
  * Eliminates code duplication across ritual implementations.
- *
- * <p>Common patterns extracted:
- * <ul>
- *   <li>Server-side validation</li>
- *   <li>Essence availability checking</li>
- *   <li>Range fallback logic</li>
- *   <li>Entity enumeration within ranges</li>
- *   <li>LP syphoning with cost capping</li>
- * </ul>
  */
 public final class RitualHelper {
 
-    private RitualHelper() {} // Utility class - no instantiation
-    
+    private RitualHelper() {}
 
     /**
-     * Creates a ritual context containing all commonly-needed data for ritual execution.
-     * Returns null if the ritual cannot execute (client-side, no network, etc.).
-     *
-     * @param masterRitualStone the master ritual stone
-     * @param minEssence minimum essence required (usually getRefreshCost())
-     * @return context if ritual can execute, null otherwise
+     * Creates a ritual context. Returns null if the ritual cannot execute
+     * (client-side, no network, or insufficient essence).
      */
     @Nullable
     public static RitualContext createContext(IMasterRitualStone masterRitualStone, int minEssence) {
@@ -44,41 +44,27 @@ public final class RitualHelper {
             return null;
         }
 
-        SoulNetwork network = masterRitualStone.getOwnerNetwork();
+        Anima network = masterRitualStone.getOwnerNetwork();
         if (network == null) {
             return null;
         }
 
-        int currentEssence = network.getCurrentEssence();
-        if (currentEssence < minEssence) {
+        int currentEV = network.getCurrentEV();
+        if (currentEV < minEssence) {
             return null;
         }
 
-        return new RitualContext(level, network, currentEssence, masterRitualStone.getBlockPos(), masterRitualStone);
+        return new RitualContext(level, network, currentEV, masterRitualStone.getBlockPos(), masterRitualStone);
     }
 
-    /**
-     * Creates a ritual context without checking minimum essence.
-     * Useful for rituals that can partially execute with any essence.
-     *
-     * @param masterRitualStone the master ritual stone
-     * @return context if ritual can execute, null otherwise
-     */
     @Nullable
     public static RitualContext createContext(IMasterRitualStone masterRitualStone) {
         return createContext(masterRitualStone, 0);
     }
 
-    // RANGE OPERATIONS 
-    
     /**
-     * Gets the effective range for a ritual, checking the master's customized range first
+     * Gets the effective range, checking the master's customized range first
      * and falling back to the ritual's default if not set.
-     *
-     * @param masterRitualStone the master ritual stone (may have customized ranges)
-     * @param ritual the ritual (has default ranges)
-     * @param rangeKey the key identifying the range
-     * @return the effective area descriptor, never null if key is valid
      */
     public static AreaDescriptor getEffectiveRange(IMasterRitualStone masterRitualStone, Ritual ritual, String rangeKey) {
         AreaDescriptor range = masterRitualStone.getBlockRange(rangeKey);
@@ -88,48 +74,18 @@ public final class RitualHelper {
         return range;
     }
 
-    /**
-     * Gets the AABB for a range, handling the fallback logic.
-     *
-     * @param masterRitualStone the master ritual stone
-     * @param ritual the ritual
-     * @param rangeKey the key identifying the range
-     * @param masterPos the position of the master ritual stone
-     * @return the AABB for the range, or null if range not found
-     */
     @Nullable
     public static AABB getRangeAABB(IMasterRitualStone masterRitualStone, Ritual ritual, String rangeKey, BlockPos masterPos) {
         AreaDescriptor range = getEffectiveRange(masterRitualStone, ritual, rangeKey);
         return range != null ? range.getAABB(masterPos) : null;
     }
 
-    /**
-     * Gets contained positions for a range, handling the fallback logic.
-     *
-     * @param masterRitualStone the master ritual stone
-     * @param ritual the ritual
-     * @param rangeKey the key identifying the range
-     * @param masterPos the position of the master ritual stone
-     * @return list of contained positions, or empty list if range not found
-     */
     public static List<BlockPos> getRangePositions(IMasterRitualStone masterRitualStone, Ritual ritual,
             String rangeKey, BlockPos masterPos) {
         AreaDescriptor range = getEffectiveRange(masterRitualStone, ritual, rangeKey);
         return range != null ? range.getContainedPositions(masterPos) : Collections.emptyList();
     }
 
-    // ENTITY OPERATIONS 
-    
-
-    /**
-     * Gets all entities of a specific type within a ritual's range.
-     *
-     * @param context the ritual context
-     * @param ritual the ritual
-     * @param rangeKey the key identifying the range
-     * @param entityClass the class of entities to find
-     * @return list of entities in range, or empty list if range not found
-     */
     public static <T extends Entity> List<T> getEntitiesInRange(RitualContext context, Ritual ritual,
             String rangeKey, Class<T> entityClass) {
         AABB aabb = getRangeAABB(context.master(), ritual, rangeKey, context.masterPos());
@@ -139,16 +95,6 @@ public final class RitualHelper {
         return context.level().getEntitiesOfClass(entityClass, aabb);
     }
 
-    /**
-     * Gets all entities of a specific type within a ritual's range with a filter.
-     *
-     * @param context the ritual context
-     * @param ritual the ritual
-     * @param rangeKey the key identifying the range
-     * @param entityClass the class of entities to find
-     * @param filter predicate to filter entities
-     * @return list of filtered entities in range
-     */
     public static <T extends Entity> List<T> getEntitiesInRange(RitualContext context, Ritual ritual,
             String rangeKey, Class<T> entityClass, java.util.function.Predicate<T> filter) {
         AABB aabb = getRangeAABB(context.master(), ritual, rangeKey, context.masterPos());
@@ -158,62 +104,117 @@ public final class RitualHelper {
         return context.level().getEntitiesOfClass(entityClass, aabb, filter);
     }
 
-    // LP OPERATIONS 
-    
+    public static List<LivingEntity> getAliveLivingEntities(RitualContext context, Ritual ritual, String rangeKey) {
+        return getEntitiesInRange(context, ritual, rangeKey, LivingEntity.class, LivingEntity::isAlive);
+    }
+
+    public static List<LivingEntity> getAliveMobsInRange(RitualContext context, Ritual ritual, String rangeKey) {
+        return getEntitiesInRange(context, ritual, rangeKey, LivingEntity.class,
+                entity -> entity.isAlive() && !(entity instanceof Player));
+    }
+
+    public static List<Player> getAlivePlayersInRange(RitualContext context, Ritual ritual, String rangeKey) {
+        return getEntitiesInRange(context, ritual, rangeKey, Player.class,
+                player -> player.isAlive() && !player.isSpectator());
+    }
+
     /**
-     * Syphons LP from the network, capping at the available essence.
-     *
-     * @param context the ritual context
-     * @param cost the desired LP cost
+     * Finds a AraVitaeTile within a ritual's range, using a cached offset if available.
      */
-    public static void syphonLP(RitualContext context, int cost) {
+    public static AltarSearchResult findAltar(RitualContext context, Ritual ritual,
+            String rangeKey, @Nullable BlockPos cachedOffset) {
+        BlockPos masterPos = context.masterPos();
+
+        if (cachedOffset != null) {
+            BlockPos altarPos = masterPos.offset(cachedOffset);
+            BlockEntity be = context.level().getBlockEntity(altarPos);
+            if (be instanceof AraVitaeTile altarTile) {
+                return new AltarSearchResult(altarTile, cachedOffset);
+            }
+        }
+
+        List<BlockPos> positions = getRangePositions(context.master(), ritual, rangeKey, masterPos);
+        for (BlockPos pos : positions) {
+            BlockEntity be = context.level().getBlockEntity(pos);
+            if (be instanceof AraVitaeTile altarTile) {
+                return new AltarSearchResult(altarTile, pos.subtract(masterPos));
+            }
+        }
+
+        return new AltarSearchResult(null, null);
+    }
+
+    public record AltarSearchResult(@Nullable AraVitaeTile altar, @Nullable BlockPos offset) {}
+
+    @Nullable
+    public static BlockPos readAltarOffset(CompoundTag tag) {
+        if (tag.contains("altarOffsetX")) {
+            return new BlockPos(
+                    tag.getInt("altarOffsetX"),
+                    tag.getInt("altarOffsetY"),
+                    tag.getInt("altarOffsetZ")
+            );
+        }
+        return null;
+    }
+
+    public static void writeAltarOffset(CompoundTag tag, @Nullable BlockPos offset) {
+        if (offset != null) {
+            tag.putInt("altarOffsetX", offset.getX());
+            tag.putInt("altarOffsetY", offset.getY());
+            tag.putInt("altarOffsetZ", offset.getZ());
+        }
+    }
+
+    /**
+     * Queries all spiritus types for a chunk and returns a snapshot with threshold checks.
+     * Convenience method delegating to {@link SpiritusHandler#queryWill(Level, BlockPos, double)}.
+     */
+    public static SpiritusState queryWill(Level level, BlockPos pos, double threshold) {
+        return SpiritusHandler.INSTANCE.queryWill(level, pos, threshold);
+    }
+
+    /**
+     * Creates a netherite pickaxe with optional Fortune or Silk Touch enchantment.
+     * Used by block-breaking rituals for loot table context.
+     */
+    public static ItemStack createMiningTool(ServerLevel level, boolean fortune, boolean silkTouch) {
+        ItemStack tool = new ItemStack(Items.NETHERITE_PICKAXE);
+        if (fortune) {
+            Holder<Enchantment> ench = level.registryAccess()
+                    .lookupOrThrow(Registries.ENCHANTMENT).getOrThrow(Enchantments.FORTUNE);
+            tool.enchant(ench, 3);
+        } else if (silkTouch) {
+            Holder<Enchantment> ench = level.registryAccess()
+                    .lookupOrThrow(Registries.ENCHANTMENT).getOrThrow(Enchantments.SILK_TOUCH);
+            tool.enchant(ench, 1);
+        }
+        return tool;
+    }
+
+    public static void syphonEV(RitualContext context, int cost) {
         if (cost > 0) {
-            int actualCost = Math.min(cost, context.currentEssence());
+            int actualCost = Math.min(cost, context.currentEV());
             context.network().syphon(context.master().ticket(actualCost));
         }
     }
 
-    /**
-     * Calculates the maximum number of operations possible with available essence.
-     *
-     * @param context the ritual context
-     * @param costPerOperation LP cost for each operation
-     * @return maximum operations possible
-     */
     public static int getMaxOperations(RitualContext context, int costPerOperation) {
         if (costPerOperation <= 0) return Integer.MAX_VALUE;
-        return context.currentEssence() / costPerOperation;
+        return context.currentEV() / costPerOperation;
     }
 
-    // CONTEXT RECORD 
-    
-    /**
-     * Encapsulates common data needed for ritual execution.
-     * Created once at the start of performRitual() and passed to helper methods.
-     *
-     * @param level the server level
-     * @param network the owner's soul network
-     * @param currentEssence current LP available
-     * @param masterPos position of the master ritual stone
-     * @param master the master ritual stone interface
-     */
     public record RitualContext(
             Level level,
-            SoulNetwork network,
-            int currentEssence,
+            Anima network,
+            int currentEV,
             BlockPos masterPos,
             IMasterRitualStone master
     ) {
-        /**
-         * Convenience method to syphon LP.
-         */
         public void syphon(int cost) {
-            RitualHelper.syphonLP(this, cost);
+            RitualHelper.syphonEV(this, cost);
         }
 
-        /**
-         * Convenience method to get max operations.
-         */
         public int maxOperations(int costPerOperation) {
             return RitualHelper.getMaxOperations(this, costPerOperation);
         }

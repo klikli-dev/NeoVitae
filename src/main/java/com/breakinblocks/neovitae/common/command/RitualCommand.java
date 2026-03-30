@@ -18,18 +18,18 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.level.block.entity.BlockEntity;
-import com.breakinblocks.neovitae.common.blockentity.MasterRitualStoneTile;
+import com.breakinblocks.neovitae.common.blockentity.MasterRitualStoneBlockEntity;
 import com.breakinblocks.neovitae.ritual.Ritual;
 import com.breakinblocks.neovitae.ritual.RitualRegistry;
 
 /**
  * Admin command for managing rituals.
  * Usage:
- * - /bm-ritual <pos> info - Show ritual info at position
- * - /bm-ritual <pos> stop - Force stop the ritual
- * - /bm-ritual <pos> set <ritual_id> - Force set a ritual (without activation cost)
- * - /bm-ritual <pos> cooldown <ticks> - Set cooldown
- * - /bm-ritual list - List all registered rituals
+ * - /nv-ritual <pos> info - Show ritual info at position
+ * - /nv-ritual <pos> stop - Force stop the ritual
+ * - /nv-ritual <pos> set <ritual_id> - Force set a ritual (without activation cost)
+ * - /nv-ritual <pos> cooldown <ticks> - Set cooldown
+ * - /nv-ritual list - List all registered rituals
  */
 public class RitualCommand {
 
@@ -46,7 +46,7 @@ public class RitualCommand {
 
     public static void register(CommandDispatcher<CommandSourceStack> dispatcher) {
         dispatcher.register(
-                Commands.literal("bm-ritual")
+                Commands.literal("nv-ritual")
                         .requires(source -> source.hasPermission(Commands.LEVEL_GAMEMASTERS))
                         .then(
                                 Commands.argument("pos", BlockPosArgument.blockPos())
@@ -81,12 +81,12 @@ public class RitualCommand {
         );
     }
 
-    private static MasterRitualStoneTile getMRS(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
+    private static MasterRitualStoneBlockEntity getMRS(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
         BlockPos pos = BlockPosArgument.getLoadedBlockPos(context, "pos");
         ServerLevel level = context.getSource().getLevel();
         BlockEntity be = level.getBlockEntity(pos);
 
-        if (!(be instanceof MasterRitualStoneTile mrs)) {
+        if (!(be instanceof MasterRitualStoneBlockEntity mrs)) {
             throw ERROR_NOT_MRS.create();
         }
 
@@ -94,7 +94,7 @@ public class RitualCommand {
     }
 
     private static int showInfo(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
-        MasterRitualStoneTile mrs = getMRS(context);
+        MasterRitualStoneBlockEntity mrs = getMRS(context);
         CommandSourceStack source = context.getSource();
 
         if (!mrs.isActive() || mrs.getCurrentRitual() == null) {
@@ -123,7 +123,7 @@ public class RitualCommand {
     }
 
     private static int stopRitual(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
-        MasterRitualStoneTile mrs = getMRS(context);
+        MasterRitualStoneBlockEntity mrs = getMRS(context);
 
         if (!mrs.isActive() || mrs.getCurrentRitual() == null) {
             throw ERROR_NO_RITUAL.create();
@@ -139,7 +139,7 @@ public class RitualCommand {
     }
 
     private static int setRitual(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
-        MasterRitualStoneTile mrs = getMRS(context);
+        MasterRitualStoneBlockEntity mrs = getMRS(context);
         ResourceLocation ritualId = ResourceLocationArgument.getId(context, "ritual");
 
         Ritual ritual = RitualRegistry.getRitual(ritualId);
@@ -147,7 +147,6 @@ public class RitualCommand {
             throw ERROR_UNKNOWN_RITUAL.create(ritualId);
         }
 
-        // Stop any current ritual
         if (mrs.isActive() && mrs.getCurrentRitual() != null) {
             mrs.stopRitual(Ritual.BreakType.DEACTIVATE);
         }
@@ -163,7 +162,7 @@ public class RitualCommand {
     }
 
     private static int setCooldown(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
-        MasterRitualStoneTile mrs = getMRS(context);
+        MasterRitualStoneBlockEntity mrs = getMRS(context);
         int ticks = IntegerArgumentType.getInteger(context, "ticks");
 
         mrs.setCooldown(ticks);

@@ -9,11 +9,18 @@ tasks.named('wrapper', Wrapper).configure {
     distributionType = Wrapper.DistributionType.BIN
 }
 
-version = mod_version
+version = "${minecraft_version}-${mod_version}"
 group = mod_group_id
 
 repositories {
     mavenLocal()
+    maven {
+        name = "Geckolib"
+        url = "https://dl.cloudsmith.io/public/geckolib3/geckolib/maven/"
+        content {
+            includeGroup "software.bernie.geckolib"
+        }
+    }
     maven {
         // location of the maven that hosts JEI files since January 2023
         name = "Jared's maven"
@@ -39,10 +46,6 @@ repositories {
             includeGroup "curse.maven"
         }
     }
-    maven {
-        name = "Patchouli"
-        url = "https://maven.blamejared.com"
-    }
 }
 
 base {
@@ -50,46 +53,17 @@ base {
 }
 
 sourceSets {
-    api {
-        // Will be configured below
-    }
     datagen {
+        compileClasspath += main.output + main.compileClasspath
+        runtimeClasspath += main.output + main.runtimeClasspath
+    }
+    test {
         compileClasspath += main.output + main.compileClasspath
         runtimeClasspath += main.output + main.runtimeClasspath
     }
 }
 
-// API gets same dependencies as main (Minecraft, NeoForge, etc.)
-sourceSets.api.compileClasspath += configurations.compileClasspath
-sourceSets.api.runtimeClasspath += configurations.runtimeClasspath
-
-// Main depends on API output
-sourceSets.main.compileClasspath += sourceSets.api.output
-sourceSets.main.runtimeClasspath += sourceSets.api.output
-
-// Ensure API is compiled before main
-tasks.named('compileJava').configure {
-    dependsOn tasks.named('compileApiJava')
-}
-
-// Datagen also depends on API output
-sourceSets.datagen.compileClasspath += sourceSets.api.output
-sourceSets.datagen.runtimeClasspath += sourceSets.api.output
-
-task apiJar(type: Jar) {
-    from sourceSets.api.output
-    archiveClassifier = 'api'
-}
-
-// Include API classes in the main JAR
-tasks.named('jar', Jar).configure {
-    from sourceSets.api.output
-    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
-}
-
-artifacts {
-    archives apiJar
-}
+// API classes are now in the main source set
 
 java.toolchain.languageVersion = JavaLanguageVersion.of(21)
 
@@ -103,11 +77,10 @@ neoForge {
 
     mods {
         "mod" {
-            sourceSet(sourceSets.api)
             sourceSet(sourceSets.main)
+            sourceSet(sourceSets.test)
         }
         "data" {
-            sourceSet(sourceSets.api)
             sourceSet(sourceSets.main)
             sourceSet(sourceSets.datagen)
         }
@@ -129,6 +102,7 @@ neoForge {
         gameTestServer {
             type = "gameTestServer"
             systemProperty 'neoforge.enabledGameTestNamespaces', project.mod_id
+            gameDirectory = project.file('run-gametest')
         }
 
         data {
@@ -153,11 +127,15 @@ configurations {
 }
 
 dependencies {
+    // Geckolib - Animated entity rendering
+    implementation("software.bernie.geckolib:geckolib-neoforge-${minecraft_version}:${geckolib_version}")
+
     // Jade - WAILA fork for block/entity tooltips (optional dev dependency)
+    compileOnly("curse.maven:jade-324717:6853386")
     runtimeOnly("curse.maven:jade-324717:6853386")
 
-    // Patchouli - In-game documentation/guide book
-    implementation("vazkii.patchouli:Patchouli:${patchouli_version}")
+    // Modonomicon - In-game documentation
+    implementation "curse.maven:modonomicon-538392:7771524"
 
     compileOnly("mezz.jei:jei-${mc_version}-neoforge-api:${jei_version}")
     compileOnly("top.theillusivec4.curios:curios-neoforge:${curios_version}+${minecraft_version}:api")
@@ -193,15 +171,18 @@ publishing {
     publications {
         register('mavenJava', MavenPublication) {
             from components.java
-            // Include the API jar as an additional artifact
-            artifact(apiJar) {
-                classifier = 'api'
-            }
         }
     }
     repositories {
         maven {
-            url = "file://${project.projectDir}/repo"
+            name = "BreakInBlocks"
+            url = version.toString().endsWith("-SNAPSHOT") ?
+                "https://maven.breakinblocks.com/snapshots" :
+                "https://maven.breakinblocks.com/releases"
+            credentials {
+                username = System.getenv("MAVEN_USER") ?: ""
+                password = System.getenv("MAVEN_TOKEN") ?: ""
+            }
         }
     }
 }
@@ -215,6 +196,5 @@ idea {
     module {
         downloadSources = true
         downloadJavadoc = true
-        sourceDirs += sourceSets.api.java.srcDirs
     }
 }

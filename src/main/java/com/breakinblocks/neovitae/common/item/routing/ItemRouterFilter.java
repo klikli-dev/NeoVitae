@@ -15,12 +15,12 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.neoforged.neoforge.items.IItemHandler;
 import org.apache.commons.lang3.tuple.Pair;
-import com.breakinblocks.neovitae.common.datacomponent.BMDataComponents;
+import com.breakinblocks.neovitae.common.datacomponent.NVDataComponents;
 import com.breakinblocks.neovitae.common.datacomponent.FilterInventory;
 import com.breakinblocks.neovitae.common.menu.FilterMenu;
 import com.breakinblocks.neovitae.common.routing.BasicItemFilter;
 import com.breakinblocks.neovitae.common.routing.BlacklistItemFilter;
-import com.breakinblocks.neovitae.common.routing.IItemFilter;
+import com.breakinblocks.neovitae.api.routing.*;
 import com.breakinblocks.neovitae.util.GhostItemHelper;
 
 import java.util.ArrayList;
@@ -33,13 +33,11 @@ import java.util.List;
 public class ItemRouterFilter extends Item implements MenuProvider, IItemFilterProvider {
     public static final int INVENTORY_SIZE = 9;
 
-    // Data slot indices for the menu ContainerData
     public static final int DATA_SLOT = 0;
     public static final int DATA_BWLIST = DATA_SLOT + 1;
     public static final int DATA_TAG = DATA_BWLIST + 1; // + slot (0-8)
     public static final int DATA_COUNT = DATA_TAG + 9;
 
-    // Button IDs for clickMenuButton
     public static final int BUTTON_BWLIST = 0;
     public static final int BUTTON_TAG = 1;
 
@@ -87,19 +85,19 @@ public class ItemRouterFilter extends Item implements MenuProvider, IItemFilterP
     }
 
     public static int getBlacklistState(ItemStack filterStack) {
-        return filterStack.getOrDefault(BMDataComponents.FILTER_BLACKLIST, 0);
+        return filterStack.getOrDefault(NVDataComponents.FILTER_BLACKLIST, 0);
     }
 
     public static void setBlacklistState(ItemStack filterStack, int state) {
-        filterStack.set(BMDataComponents.FILTER_BLACKLIST, state);
+        filterStack.set(NVDataComponents.FILTER_BLACKLIST, state);
     }
 
     public static FilterInventory getFilterInventory(ItemStack filterStack) {
-        return filterStack.getOrDefault(BMDataComponents.FILTER_INVENTORY, FilterInventory.empty());
+        return filterStack.getOrDefault(NVDataComponents.FILTER_INVENTORY, FilterInventory.empty());
     }
 
     public static void setFilterInventory(ItemStack filterStack, FilterInventory inventory) {
-        filterStack.set(BMDataComponents.FILTER_INVENTORY, inventory);
+        filterStack.set(NVDataComponents.FILTER_INVENTORY, inventory);
     }
 
     @Override

@@ -1,6 +1,7 @@
 package com.breakinblocks.neovitae.common.item.sigil;
 
 import net.minecraft.ChatFormatting;
+import net.minecraft.world.item.DyeColor;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.Holder;
@@ -21,15 +22,21 @@ import net.minecraft.world.phys.Vec3;
 import com.breakinblocks.neovitae.api.sigil.ISigilEffect;
 import com.breakinblocks.neovitae.api.sigil.SigilEffect;
 import com.breakinblocks.neovitae.api.sigil.SigilType;
-import com.breakinblocks.neovitae.api.soul.SoulTicket;
-import com.breakinblocks.neovitae.common.datacomponent.BMDataComponents;
+import com.breakinblocks.neovitae.api.soul.AnimaTicket;
+import com.breakinblocks.neovitae.common.NVSounds;
+import com.breakinblocks.neovitae.client.particle.ColoredParticleOptions;
+import com.breakinblocks.neovitae.common.particle.NVParticles;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.sounds.SoundSource;
+import com.breakinblocks.neovitae.common.attribute.NVAttributes;
+import com.breakinblocks.neovitae.common.datacomponent.NVDataComponents;
 import com.breakinblocks.neovitae.common.datacomponent.Binding;
-import com.breakinblocks.neovitae.common.datacomponent.SoulNetwork;
+import com.breakinblocks.neovitae.common.datacomponent.Anima;
 import com.breakinblocks.neovitae.common.item.IActivatable;
 import com.breakinblocks.neovitae.common.item.IBindable;
 import com.breakinblocks.neovitae.registry.SigilTypeRegistry;
 import com.breakinblocks.neovitae.util.helper.PlayerHelper;
-import com.breakinblocks.neovitae.util.helper.SoulNetworkHelper;
+import com.breakinblocks.neovitae.util.helper.AnimaHelper;
 
 import javax.annotation.Nullable;
 import java.util.List;
@@ -45,33 +52,21 @@ public class SigilItem extends Item implements IBindable, IActivatable, ISigil {
     private final ResourceKey<SigilType> defaultSigilType;
     private final String tooltipBase;
 
-    /**
-     * Creates a sigil item with the specified default sigil type.
-     *
-     * @param sigilTypeKey The resource key for the default sigil type
-     */
     public SigilItem(ResourceKey<SigilType> sigilTypeKey) {
         super(new Item.Properties().stacksTo(1));
         this.defaultSigilType = sigilTypeKey;
         this.tooltipBase = "tooltip.neovitae.sigil." + sigilTypeKey.location().getPath() + ".";
     }
 
-    /**
-     * Creates a sigil item with the specified default sigil type and custom properties.
-     */
     public SigilItem(ResourceKey<SigilType> sigilTypeKey, Item.Properties properties) {
         super(properties.stacksTo(1));
         this.defaultSigilType = sigilTypeKey;
         this.tooltipBase = "tooltip.neovitae.sigil." + sigilTypeKey.location().getPath() + ".";
     }
 
-    /**
-     * Gets the sigil type for this stack, checking data components first,
-     * then falling back to the default type.
-     */
     @Nullable
     public SigilType getSigilType(ItemStack stack, Level level) {
-        Holder<SigilType> holder = stack.get(BMDataComponents.SIGIL_TYPE.get());
+        Holder<SigilType> holder = stack.get(NVDataComponents.SIGIL_TYPE.get());
         if (holder != null) {
             return holder.value();
         }
@@ -86,9 +81,6 @@ public class SigilItem extends Item implements IBindable, IActivatable, ISigil {
         return null;
     }
 
-    /**
-     * Gets the sigil effect for this stack.
-     */
     @Nullable
     public ISigilEffect getSigilEffect(ItemStack stack, Level level) {
         SigilType type = getSigilType(stack, level);
@@ -97,35 +89,26 @@ public class SigilItem extends Item implements IBindable, IActivatable, ISigil {
 
     public boolean isUnusable(ItemStack stack) {
         if (stack.isEmpty()) return false;
-        return stack.getOrDefault(BMDataComponents.SIGIL_UNUSABLE.get(), false);
+        return stack.getOrDefault(NVDataComponents.SIGIL_UNUSABLE.get(), false);
     }
 
     public ItemStack setUnusable(ItemStack stack, boolean unusable) {
         if (!stack.isEmpty()) {
-            stack.set(BMDataComponents.SIGIL_UNUSABLE.get(), unusable);
+            stack.set(NVDataComponents.SIGIL_UNUSABLE.get(), unusable);
         }
         return stack;
     }
 
-    /**
-     * Gets the LP cost for the specified use context.
-     */
     public int getLpCost(ItemStack stack, Level level, SigilType.UseContext context) {
         SigilType type = getSigilType(stack, level);
         return type != null ? type.getCostForContext(context) : 0;
     }
 
-    /**
-     * Checks if this sigil is toggleable.
-     */
     public boolean isToggleable(ItemStack stack, Level level) {
         SigilType type = getSigilType(stack, level);
         return type != null && type.isToggleable();
     }
 
-    /**
-     * Gets the drain interval for toggleable sigils.
-     */
     public int getDrainInterval(ItemStack stack, Level level) {
         SigilType type = getSigilType(stack, level);
         return type != null ? type.drainInterval() : SigilType.DEFAULT_DRAIN_INTERVAL;
@@ -133,23 +116,40 @@ public class SigilItem extends Item implements IBindable, IActivatable, ISigil {
 
     @Override
     public void appendHoverText(ItemStack stack, TooltipContext context, List<Component> tooltip, TooltipFlag flag) {
-        // Add sigil-specific description
         tooltip.add(Component.translatable(tooltipBase + "desc")
                 .withStyle(ChatFormatting.ITALIC)
                 .withStyle(ChatFormatting.GRAY));
 
-        // Add binding info
         Binding binding = getBinding(stack);
         if (binding != null) {
             tooltip.add(Component.translatable("tooltip.neovitae.currentOwner", binding.name())
                     .withStyle(ChatFormatting.GRAY));
         }
 
-        // Add activation state for toggleable sigils
         Level level = context.level();
         if (level != null && isToggleable(stack, level)) {
             String stateKey = getActivated(stack) ? "tooltip.neovitae.activated" : "tooltip.neovitae.deactivated";
             tooltip.add(Component.translatable(stateKey).withStyle(ChatFormatting.GRAY));
+        }
+
+        Integer brightness = stack.get(NVDataComponents.BLOOD_LIGHT_BRIGHTNESS.get());
+        if (brightness != null) {
+            tooltip.add(Component.translatable("tooltip.neovitae.sigil.blood_light.brightness", brightness)
+                    .withStyle(ChatFormatting.GOLD));
+        }
+
+        DyeColor color = stack.get(NVDataComponents.BLOOD_LIGHT_COLOR.get());
+        if (color != null) {
+            boolean rainbow = stack.getOrDefault(NVDataComponents.BLOOD_LIGHT_RAINBOW.get(), false);
+            if (rainbow) {
+                tooltip.add(Component.translatable("tooltip.neovitae.sigil.blood_light.color",
+                        Component.translatable("tooltip.neovitae.sigil.blood_light.rainbow"))
+                        .withStyle(ChatFormatting.GRAY));
+            } else {
+                tooltip.add(Component.translatable("tooltip.neovitae.sigil.blood_light.color",
+                        Component.translatable("color.minecraft." + color.getSerializedName()))
+                        .withStyle(ChatFormatting.GRAY));
+            }
         }
     }
 
@@ -162,28 +162,43 @@ public class SigilItem extends Item implements IBindable, IActivatable, ISigil {
 
         Binding binding = getBinding(stack);
         if (binding == null) {
-            return InteractionResultHolder.consume(player.getItemInHand(hand));
-        }
-
-        // Handle toggleable sigils - right-click toggles activation
-        if (isToggleable(stack, level)) {
-            if (!level.isClientSide && !isUnusable(stack)) {
-                setActivatedState(stack, !getActivated(stack));
+            if (!level.isClientSide) {
+                bind(player, stack);
             }
             return InteractionResultHolder.success(player.getItemInHand(hand));
         }
 
-        // Execute the sigil effect for non-toggleable sigils
+        if (isToggleable(stack, level)) {
+            if (!level.isClientSide && !isUnusable(stack)) {
+                boolean newState = !getActivated(stack);
+                setActivatedState(stack, newState);
+                level.playSound(null, player.blockPosition(), newState ? NVSounds.SIGIL_TOGGLE_ON.get() : NVSounds.SIGIL_TOGGLE_OFF.get(), SoundSource.PLAYERS, 0.4f, 1.0f);
+                ServerLevel serverLevel = (ServerLevel) level;
+                for (int i = 0; i < 8; i++) {
+                    double angle = (2 * Math.PI / 8) * i;
+                    double offX = Math.cos(angle) * 0.6;
+                    double offZ = Math.sin(angle) * 0.6;
+                    double vx = newState ? offX * 0.1 : -offX * 0.1;
+                    double vz = newState ? offZ * 0.1 : -offZ * 0.1;
+                    serverLevel.sendParticles(new ColoredParticleOptions(NVParticles.BLOOD_FLAME.get(), 0xAA0000), player.getX() + offX, player.getY() + 1, player.getZ() + offZ, 1, 0, 0, 0, 0);
+                }
+            }
+            return InteractionResultHolder.success(player.getItemInHand(hand));
+        }
+
         if (!isUnusable(stack)) {
             ISigilEffect effect = getSigilEffect(stack, level);
             if (effect != null && effect.useOnAir(level, player, stack)) {
-                // Consume LP on success
-                if (!level.isClientSide && !player.isCreative()) {
-                    int cost = getLpCost(stack, level, SigilType.UseContext.AIR);
-                    if (cost > 0) {
-                        SoulNetwork network = SoulNetworkHelper.getSoulNetwork(binding);
-                        if (network != null) {
-                            setUnusable(stack, !network.syphonAndDamage(player, SoulTicket.create(cost)).success());
+                if (!level.isClientSide) {
+                    level.playSound(null, player.blockPosition(), NVSounds.SIGIL_ACTIVATE.get(), SoundSource.PLAYERS, 0.4f, 1.0f);
+                    ((ServerLevel) level).sendParticles(new ColoredParticleOptions(NVParticles.BLOOD_GLOW.get(), 0xAA0000), player.getX(), player.getY() + 1, player.getZ(), 4, 0.2, 0.1, 0.2, 0);
+                    if (!player.isCreative()) {
+                        int cost = getReducedCost(getLpCost(stack, level, SigilType.UseContext.AIR), player);
+                        if (cost > 0) {
+                            Anima network = AnimaHelper.getAnima(binding);
+                            if (network != null) {
+                                setUnusable(stack, !network.syphonAndDamage(player, AnimaTicket.create(cost)).success());
+                            }
                         }
                     }
                 }
@@ -199,16 +214,14 @@ public class SigilItem extends Item implements IBindable, IActivatable, ISigil {
         Level level = context.getLevel();
         BlockPos blockPos = context.getClickedPos();
         Player player = context.getPlayer();
-        ItemStack stack = context.getItemInHand();
-
-        // Handle Sigil of Holding
-        if (stack.getItem() instanceof ISigil.Holding holding) {
-            stack = holding.getHeldItem(stack, player);
-        }
+        ItemStack stack = ISigil.resolveHeldStack(context.getItemInHand(), player);
 
         Binding binding = getBinding(stack);
         if (binding == null) {
-            return InteractionResult.CONSUME;
+            if (!level.isClientSide && player != null) {
+                bind(player, stack);
+            }
+            return InteractionResult.SUCCESS;
         }
 
         ISigilEffect effect = getSigilEffect(stack, level);
@@ -217,13 +230,12 @@ public class SigilItem extends Item implements IBindable, IActivatable, ISigil {
             Vec3 hitVec = context.getClickLocation();
 
             if (effect.useOnBlock(level, player, stack, blockPos, side, hitVec)) {
-                // Consume LP on success
                 if (!level.isClientSide && player != null && !player.isCreative()) {
-                    int cost = getLpCost(stack, level, SigilType.UseContext.BLOCK);
+                    int cost = getReducedCost(getLpCost(stack, level, SigilType.UseContext.BLOCK), player);
                     if (cost > 0) {
-                        SoulNetwork network = SoulNetworkHelper.getSoulNetwork(binding);
+                        Anima network = AnimaHelper.getAnima(binding);
                         if (network != null) {
-                            setUnusable(stack, !network.syphonAndDamage(player, SoulTicket.create(cost)).success());
+                            setUnusable(stack, !network.syphonAndDamage(player, AnimaTicket.create(cost)).success());
                         }
                     }
                 }
@@ -236,10 +248,7 @@ public class SigilItem extends Item implements IBindable, IActivatable, ISigil {
 
     @Override
     public InteractionResult interactLivingEntity(ItemStack stack, Player player, net.minecraft.world.entity.LivingEntity target, InteractionHand hand) {
-        ItemStack useStack = stack;
-        if (stack.getItem() instanceof ISigil.Holding holding) {
-            useStack = holding.getHeldItem(stack, player);
-        }
+        ItemStack useStack = ISigil.resolveHeldStack(stack, player);
 
         Binding binding = getBinding(useStack);
         if (binding == null) {
@@ -249,13 +258,12 @@ public class SigilItem extends Item implements IBindable, IActivatable, ISigil {
         Level level = player.level();
         ISigilEffect effect = getSigilEffect(useStack, level);
         if (effect != null && effect.useOnEntity(level, player, useStack, target)) {
-            // Consume LP on success
             if (!level.isClientSide && !player.isCreative()) {
-                int cost = getLpCost(useStack, level, SigilType.UseContext.ENTITY);
+                int cost = getReducedCost(getLpCost(useStack, level, SigilType.UseContext.ENTITY), player);
                 if (cost > 0) {
-                    SoulNetwork network = SoulNetworkHelper.getSoulNetwork(binding);
+                    Anima network = AnimaHelper.getAnima(binding);
                     if (network != null) {
-                        setUnusable(useStack, !network.syphonAndDamage(player, SoulTicket.create(cost)).success());
+                        setUnusable(useStack, !network.syphonAndDamage(player, AnimaTicket.create(cost)).success());
                     }
                 }
             }
@@ -271,7 +279,6 @@ public class SigilItem extends Item implements IBindable, IActivatable, ISigil {
             return;
         }
 
-        // Only tick if toggleable and activated
         if (!isToggleable(stack, level) || !getActivated(stack)) {
             return;
         }
@@ -281,14 +288,13 @@ public class SigilItem extends Item implements IBindable, IActivatable, ISigil {
             return;
         }
 
-        // Drain LP at intervals
         int drainInterval = getDrainInterval(stack, level);
         if (entity.tickCount % drainInterval == 0) {
-            int cost = getLpCost(stack, level, SigilType.UseContext.ACTIVE);
+            int cost = getReducedCost(getLpCost(stack, level, SigilType.UseContext.ACTIVE), player);
             if (cost > 0) {
-                SoulNetwork network = SoulNetworkHelper.getSoulNetwork(binding);
+                Anima network = AnimaHelper.getAnima(binding);
                 if (network != null) {
-                    if (!network.syphonAndDamage(player, SoulTicket.create(cost)).success()) {
+                    if (!network.syphonAndDamage(player, AnimaTicket.create(cost)).success()) {
                         setActivatedState(stack, false);
                         return;
                     }
@@ -296,49 +302,36 @@ public class SigilItem extends Item implements IBindable, IActivatable, ISigil {
             }
         }
 
-        // Execute active tick
         ISigilEffect effect = getSigilEffect(stack, level);
         if (effect != null) {
             effect.activeTick(level, player, stack, itemSlot, isSelected);
         }
     }
 
-    /**
-     * Resolves the sigil stack for use, handling Sigil of Holding.
-     * Returns null if the player is a fake player (automation not allowed).
-     */
     @Nullable
     protected ItemStack resolveStackForUse(Player player, InteractionHand hand) {
-        ItemStack stack = player.getItemInHand(hand);
-
-        if (stack.getItem() instanceof ISigil.Holding holding) {
-            stack = holding.getHeldItem(stack, player);
-        }
-
-        if (PlayerHelper.isFakePlayer(player)) {
-            return null;
-        }
-
-        return stack;
+        return ISigil.resolveForUse(player, hand);
     }
 
-    /**
-     * Gets the default sigil type key for this item.
-     */
     public ResourceKey<SigilType> getDefaultSigilType() {
         return defaultSigilType;
     }
 
-    /**
-     * Gets the tooltip base for this sigil.
-     */
     public String getTooltipBase() {
         return tooltipBase;
     }
 
+    private static int getReducedCost(int baseCost, Player player) {
+        if (baseCost <= 0) return baseCost;
+        double reduction = player.getAttributeValue(NVAttributes.SIGIL_COST_REDUCTION);
+        if (reduction > 0) {
+            return Math.max(1, (int) (baseCost * (1 - reduction / 100)));
+        }
+        return baseCost;
+    }
+
     @Override
     public boolean onEntitySwing(ItemStack stack, LivingEntity entity, InteractionHand hand) {
-        // Prevent the attack/swing animation when using sigils
         return true;
     }
 }

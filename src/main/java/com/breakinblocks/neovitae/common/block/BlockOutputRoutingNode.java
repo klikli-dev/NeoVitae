@@ -10,14 +10,11 @@ import net.minecraft.world.level.block.BaseEntityBlock;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.BlockHitResult;
-import com.breakinblocks.neovitae.common.blockentity.BMTiles;
-import com.breakinblocks.neovitae.common.blockentity.routing.OutputRoutingNodeTile;
+import com.breakinblocks.neovitae.common.blockentity.NVTiles;
+import com.breakinblocks.neovitae.common.blockentity.routing.OutputRoutingNodeBlockEntity;
 
 import javax.annotation.Nullable;
 
-/**
- * Output routing node - pushes items to adjacent inventories.
- */
 public class BlockOutputRoutingNode extends BlockRoutingNode {
 
     public static final MapCodec<BlockOutputRoutingNode> CODEC = simpleCodec(BlockOutputRoutingNode::new);
@@ -34,7 +31,7 @@ public class BlockOutputRoutingNode extends BlockRoutingNode {
     @Nullable
     @Override
     public BlockEntity newBlockEntity(BlockPos pos, BlockState state) {
-        return new OutputRoutingNodeTile(pos, state);
+        return new OutputRoutingNodeBlockEntity(pos, state);
     }
 
     @Override
@@ -42,7 +39,7 @@ public class BlockOutputRoutingNode extends BlockRoutingNode {
                                                 Player player, BlockHitResult hitResult) {
         if (!level.isClientSide && player instanceof ServerPlayer serverPlayer) {
             BlockEntity tile = level.getBlockEntity(pos);
-            if (tile instanceof OutputRoutingNodeTile menuProvider) {
+            if (tile instanceof OutputRoutingNodeBlockEntity menuProvider) {
                 serverPlayer.openMenu(menuProvider, buf -> buf.writeBlockPos(pos));
             }
         }

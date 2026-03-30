@@ -12,8 +12,7 @@ import net.minecraft.world.item.component.CustomData;
 import net.minecraft.world.item.context.UseOnContext;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
-import com.breakinblocks.neovitae.common.routing.IMasterRoutingNode;
-import com.breakinblocks.neovitae.common.routing.IRoutingNode;
+import com.breakinblocks.neovitae.api.routing.*;
 import com.breakinblocks.neovitae.util.Constants;
 
 import java.util.LinkedList;
@@ -67,7 +66,6 @@ public class ItemNodeRouter extends Item {
             return InteractionResult.SUCCESS;
         }
 
-        // Check distance
         if (containedPos.distSqr(pos) > 16 * 16) {
             player.displayClientMessage(Component.translatable("chat.neovitae.routing.distance"), true);
             return InteractionResult.SUCCESS;
@@ -84,14 +82,12 @@ public class ItemNodeRouter extends Item {
             return InteractionResult.FAIL;
         }
 
-        // Handle master node connections
         if (pastNode instanceof IMasterRoutingNode master) {
             return connectToMaster(level, player, stack, node, master, pos, containedPos);
         } else if (node instanceof IMasterRoutingNode master) {
             return connectToMaster(level, player, stack, pastNode, master, containedPos, pos);
         }
 
-        // Both are regular nodes
         return connectNodes(level, player, stack, node, pastNode, pos, containedPos);
     }
 

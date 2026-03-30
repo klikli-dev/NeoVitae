@@ -5,7 +5,7 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockState;
 import com.breakinblocks.neovitae.NeoVitae;
-import com.breakinblocks.neovitae.common.block.BMBlocks;
+import com.breakinblocks.neovitae.common.block.NVBlocks;
 import com.breakinblocks.neovitae.api.ritual.AreaDescriptor;
 import com.breakinblocks.neovitae.ritual.*;
 import com.breakinblocks.neovitae.ritual.RitualHelper.RitualContext;
@@ -47,8 +47,7 @@ public class RitualCrystalHarvest extends Ritual {
             Block block = state.getBlock();
 
             // Check if it's a demon crystal block
-            if (isDemonCrystal(block)) {
-                // Check protection before breaking
+            if (isSpiritusCrystal(block)) {
                 if (BlockProtectionHelper.tryBreakBlock(ctx.level(), pos, owner)) {
                     crystalsHarvested++;
                 }
@@ -58,12 +57,12 @@ public class RitualCrystalHarvest extends Ritual {
         ctx.syphon(getRefreshCost() * crystalsHarvested);
     }
 
-    private boolean isDemonCrystal(Block block) {
-        return block == BMBlocks.RAW_DEMON_CRYSTAL.block().get() ||
-               block == BMBlocks.CORROSIVE_DEMON_CRYSTAL.block().get() ||
-               block == BMBlocks.DESTRUCTIVE_DEMON_CRYSTAL.block().get() ||
-               block == BMBlocks.VENGEFUL_DEMON_CRYSTAL.block().get() ||
-               block == BMBlocks.STEADFAST_DEMON_CRYSTAL.block().get();
+    private boolean isSpiritusCrystal(Block block) {
+        return block == NVBlocks.RAW_SPIRITUS_CRYSTAL.block().get() ||
+               block == NVBlocks.CORROSIVE_SPIRITUS_CRYSTAL.block().get() ||
+               block == NVBlocks.DESTRUCTIVE_SPIRITUS_CRYSTAL.block().get() ||
+               block == NVBlocks.VENGEFUL_SPIRITUS_CRYSTAL.block().get() ||
+               block == NVBlocks.STEADFAST_SPIRITUS_CRYSTAL.block().get();
     }
 
     @Override

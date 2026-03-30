@@ -1,7 +1,13 @@
 package com.breakinblocks.neovitae.common.recipe.meteor;
 
+import com.mojang.serialization.Codec;
+import com.mojang.serialization.MapCodec;
+import com.mojang.serialization.codecs.RecordCodecBuilder;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.HolderLookup;
+import net.minecraft.network.RegistryFriendlyByteBuf;
+import net.minecraft.network.codec.ByteBufCodecs;
+import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.crafting.Ingredient;
 import net.minecraft.world.item.crafting.Recipe;
@@ -9,7 +15,7 @@ import net.minecraft.world.item.crafting.RecipeSerializer;
 import net.minecraft.world.item.crafting.RecipeType;
 import net.minecraft.world.level.Level;
 import com.breakinblocks.neovitae.common.meteor.MeteorLayer;
-import com.breakinblocks.neovitae.common.recipe.BMRecipes;
+import com.breakinblocks.neovitae.common.recipe.NVRecipes;
 
 import java.util.*;
 
@@ -20,6 +26,21 @@ import java.util.*;
 public class MeteorRecipe implements Recipe<MeteorInput> {
 
     public static final String RECIPE_TYPE_NAME = "meteor";
+
+    public static final MapCodec<MeteorRecipe> CODEC = RecordCodecBuilder.mapCodec(instance -> instance.group(
+            Ingredient.CODEC_NONEMPTY.fieldOf("input").forGetter(MeteorRecipe::getInput),
+            Codec.INT.fieldOf("syphon").forGetter(MeteorRecipe::getSyphon),
+            Codec.FLOAT.fieldOf("explosion").forGetter(MeteorRecipe::getExplosionRadius),
+            MeteorLayer.CODEC.listOf().fieldOf("layers").forGetter(MeteorRecipe::getLayerList)
+    ).apply(instance, MeteorRecipe::new));
+
+    public static final StreamCodec<RegistryFriendlyByteBuf, MeteorRecipe> STREAM_CODEC = StreamCodec.composite(
+            Ingredient.CONTENTS_STREAM_CODEC, MeteorRecipe::getInput,
+            ByteBufCodecs.INT, MeteorRecipe::getSyphon,
+            ByteBufCodecs.FLOAT, MeteorRecipe::getExplosionRadius,
+            MeteorLayer.STREAM_CODEC.apply(ByteBufCodecs.list()), MeteorRecipe::getLayerList,
+            MeteorRecipe::new
+    );
 
     private final Ingredient input;
     private final int syphon;
@@ -33,23 +54,17 @@ public class MeteorRecipe implements Recipe<MeteorInput> {
         this.layerList = new ArrayList<>(layerList);
     }
 
-    /**
-     * Spawns the meteor in the world at the given position.
-     * Creates an explosion if configured, then builds layers from inside out.
-     */
     public void spawnMeteorInWorld(Level level, BlockPos centerPos) {
         if (explosionRadius > 0) {
             level.explode(null, centerPos.getX(), centerPos.getY(), centerPos.getZ(),
                     explosionRadius, Level.ExplosionInteraction.TNT);
         }
 
-        // Build a map of layers by radius
         Map<Integer, MeteorLayer> layerMap = new HashMap<>();
         for (MeteorLayer layer : layerList) {
             layerMap.put(layer.getLayerRadius(), layer);
         }
 
-        // Sort radii and build from smallest to largest
         List<Integer> keyList = new ArrayList<>(layerMap.keySet());
         Collections.sort(keyList);
 
@@ -83,15 +98,13 @@ public class MeteorRecipe implements Recipe<MeteorInput> {
 
     @Override
     public RecipeSerializer<?> getSerializer() {
-        return BMRecipes.METEOR_SERIALIZER.get();
+        return NVRecipes.METEOR_SERIALIZER.get();
     }
 
     @Override
     public RecipeType<?> getType() {
-        return BMRecipes.METEOR_TYPE.get();
+        return NVRecipes.METEOR_TYPE.get();
     }
-
-    // Getters
 
     public Ingredient getInput() {
         return input;

@@ -15,23 +15,19 @@ import net.minecraft.world.item.TooltipFlag;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.neoforged.neoforge.common.util.FakePlayer;
-import com.breakinblocks.neovitae.common.blockentity.BloodAltarTile;
+import com.breakinblocks.neovitae.common.blockentity.AraVitaeTile;
 import com.breakinblocks.neovitae.util.AltarUtil;
 
 import java.util.List;
 
-/**
- * An item that provides LP directly to a nearby blood altar when used.
- * Used for items like the Slate Ampoule that add LP without requiring sacrifice.
- */
 public class ItemBloodProvider extends Item {
     protected final String tooltipBase;
-    public final int lpProvided;
+    public final int evProvided;
 
-    public ItemBloodProvider(String name, int lpProvided) {
+    public ItemBloodProvider(String name, int evProvided) {
         super(new Item.Properties().stacksTo(64));
         this.tooltipBase = "tooltip.neovitae.blood_provider." + name + ".";
-        this.lpProvided = lpProvided;
+        this.evProvided = evProvided;
     }
 
     public ItemBloodProvider(String name) {
@@ -49,7 +45,7 @@ public class ItemBloodProvider extends Item {
         BlockPos altarPos = AltarUtil.findAltar(level, player.blockPosition(), 2);
         if (altarPos != null) {
             BlockEntity be = level.getBlockEntity(altarPos);
-            if (be instanceof BloodAltarTile altar) {
+            if (be instanceof AraVitaeTile altar) {
                 double posX = player.getX();
                 double posY = player.getY();
                 double posZ = player.getZ();
@@ -66,8 +62,7 @@ public class ItemBloodProvider extends Item {
                 }
 
                 if (!level.isClientSide) {
-                    // Add LP directly without sacrifice modifiers (pass false for isSacrifice, use 0 mod)
-                    altar.sacrificialDaggerCall(lpProvided, false);
+                    altar.addSacrificeEV(evProvided, false);
 
                     if (!player.getAbilities().instabuild) {
                         stack.shrink(1);

@@ -2,23 +2,41 @@ package com.breakinblocks.neovitae.ritual.types;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.effect.MobEffectInstance;
+import net.minecraft.world.effect.MobEffects;
+import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.phys.AABB;
 import com.breakinblocks.neovitae.NeoVitae;
-import com.breakinblocks.neovitae.common.effect.BMMobEffects;
 import com.breakinblocks.neovitae.api.ritual.AreaDescriptor;
+import com.breakinblocks.neovitae.common.datacomponent.SpiritusType;
+import com.breakinblocks.neovitae.common.effect.NVMobEffects;
 import com.breakinblocks.neovitae.ritual.*;
 import com.breakinblocks.neovitae.ritual.RitualHelper.RitualContext;
+import com.breakinblocks.neovitae.api.will.SpiritusState;
 
 import java.util.List;
 import java.util.function.Consumer;
 
 /**
- * The Sinner's Burden - Prevents flight for entities in the area.
- * Applies Heavy Heart debuff which drags players down and prevents flight.
+ * The Sinner's Burden - Prevents flight and grounds entities in the area.
+ *
+ * <p>Spiritus effects:
+ * <ul>
+ *   <li><b>Raw (Default)</b> - Player-only targeting with Grounded + Gravity effects</li>
+ *   <li><b>Destructive</b> - Apply Heavy Heart to ALL entities (including non-players), amplifier 1</li>
+ *   <li><b>Corrosive</b> - Apply Suspended (floating) instead of grounding</li>
+ *   <li><b>Vengeful</b> - Apply Levitation (amplifier 10) instead of grounding</li>
+ *   <li><b>Steadfast</b> - Include boss entities (normally skipped)</li>
+ * </ul>
+ *
+ * <p>Effect priority: Corrosive (Suspended) > Vengeful (Levitation) > Default (Grounded + Gravity)</p>
  */
 public class RitualGrounding extends Ritual {
 
     public static final String GROUNDING_RANGE = "groundingRange";
+
+    private static final double MIN_WILL = 0.5;
+    private static final double WILL_PER_ENTITY = 0.2;
 
     public RitualGrounding() {
         super("grounding", 0, 2000, "ritual." + NeoVitae.MODID + ".grounding");
@@ -28,35 +46,105 @@ public class RitualGrounding extends Ritual {
 
     @Override
     public void performRitual(IMasterRitualStone masterRitualStone) {
-        RitualContext ctx = RitualHelper.createContext(masterRitualStone, getRefreshCost());
+        // Volume-based cost: max(1, volume / 10000)
+        AABB aabb = getBlockRange(GROUNDING_RANGE).getAABB(masterRitualStone.getBlockPos());
+        int volume = (int) (aabb.getXsize() * aabb.getYsize() * aabb.getZsize());
+        int refreshCost = Math.max(1, volume / 10000);
+
+        RitualContext ctx = RitualHelper.createContext(masterRitualStone, refreshCost);
         if (ctx == null) {
             masterRitualStone.stopRitual(BreakType.DEACTIVATE);
             return;
         }
 
-        List<Player> players = RitualHelper.getEntitiesInRange(ctx, this, GROUNDING_RANGE, Player.class);
+        BlockPos masterPos = ctx.masterPos();
+
+        SpiritusState will = RitualHelper.queryWill(ctx.level(), masterPos, MIN_WILL);
+
+        double rawUsed = 0;
+        double corrosiveUsed = 0;
+        double destructiveUsed = 0;
+        double vengefulUsed = 0;
+        double steadfastUsed = 0;
 
         int totalCost = 0;
-        for (Player player : players) {
-            // Skip the ritual owner and creative/spectator players
-            if (player.getUUID().equals(ctx.master().getOwner()) ||
-                player.isCreative() || player.isSpectator()) {
-                continue;
-            }
 
-            // Apply Heavy Heart effect - drags down and prevents flight
-            player.addEffect(new MobEffectInstance(BMMobEffects.HEAVY_HEART, 30, 0, true, true));
-            totalCost += getRefreshCost();
+        if (will.hasDestructive()) {
+            // DESTRUCTIVE: Heavy Heart on ALL living entities
+            List<LivingEntity> entities = RitualHelper.getAliveLivingEntities(ctx, this, GROUNDING_RANGE);
+
+            for (LivingEntity entity : entities) {
+                // Skip creative players
+                if (entity instanceof Player player && player.isCreative()) continue;
+
+                // Skip boss entities unless steadfast will is present
+                if (!will.hasSteadfast() && !entity.canChangeDimensions(ctx.level(), ctx.level())) continue;
+
+                if ((will.getDestructive() - destructiveUsed) < WILL_PER_ENTITY) break;
+
+                entity.addEffect(new MobEffectInstance(NVMobEffects.HEAVY_HEART, 100, 1, true, true));
+                destructiveUsed += WILL_PER_ENTITY;
+                if (will.hasSteadfast() && !entity.canChangeDimensions(ctx.level(), ctx.level())) {
+                    steadfastUsed += WILL_PER_ENTITY;
+                }
+                totalCost += refreshCost;
+            }
+        } else if (will.hasDefault()) {
+            // RAW WILL: Player-only targeting with will-based effects
+            List<Player> players = RitualHelper.getEntitiesInRange(ctx, this, GROUNDING_RANGE, Player.class,
+                    player -> player.isAlive() && !player.isCreative() && !player.isSpectator());
+
+            for (Player player : players) {
+                if ((will.getDefault() - rawUsed) < WILL_PER_ENTITY) break;
+
+                // Effect priority: Corrosive > Vengeful > Default
+                if (will.hasCorrosive() && (will.getCorrosive() - corrosiveUsed) >= WILL_PER_ENTITY) {
+                    // Corrosive: Suspended (floating)
+                    player.addEffect(new MobEffectInstance(NVMobEffects.SUSPENDED, 20, 0, true, false));
+                    corrosiveUsed += WILL_PER_ENTITY;
+                } else if (will.hasVengeful() && (will.getVengeful() - vengefulUsed) >= WILL_PER_ENTITY) {
+                    // Vengeful: Levitation (amplifier 10 for strong upward force)
+                    player.addEffect(new MobEffectInstance(MobEffects.LEVITATION, 20, 10, true, false));
+                    vengefulUsed += WILL_PER_ENTITY;
+                } else {
+                    // Default: Grounded + Gravity
+                    player.addEffect(new MobEffectInstance(NVMobEffects.GROUNDED, 20, 0, true, false));
+                    player.addEffect(new MobEffectInstance(NVMobEffects.GRAVITY, 20, 0, true, false));
+                }
+
+                rawUsed += WILL_PER_ENTITY;
+                totalCost += refreshCost;
+            }
+        } else {
+            // NO WILL: Basic Heavy Heart on non-owner players (original behavior)
+            List<Player> players = RitualHelper.getEntitiesInRange(ctx, this, GROUNDING_RANGE, Player.class);
+
+            for (Player player : players) {
+                if (player.getUUID().equals(ctx.master().getOwner()) ||
+                        player.isCreative() || player.isSpectator()) {
+                    continue;
+                }
+
+                player.addEffect(new MobEffectInstance(NVMobEffects.HEAVY_HEART, 30, 0, true, true));
+                totalCost += refreshCost;
+            }
         }
 
         if (totalCost > 0) {
-            ctx.syphon(Math.min(totalCost, ctx.currentEssence()));
+            ctx.syphon(Math.min(totalCost, ctx.currentEV()));
         }
+
+        will.use(SpiritusType.DEFAULT, rawUsed);
+        will.use(SpiritusType.CORROSIVE, corrosiveUsed);
+        will.use(SpiritusType.DESTRUCTIVE, destructiveUsed);
+        will.use(SpiritusType.VENGEFUL, vengefulUsed);
+        will.use(SpiritusType.STEADFAST, steadfastUsed);
+        will.drain(ctx.level(), masterPos);
     }
 
     @Override
     public int getRefreshTime() {
-        return 10;
+        return 1;
     }
 
     @Override

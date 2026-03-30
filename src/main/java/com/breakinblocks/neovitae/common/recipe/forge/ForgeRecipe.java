@@ -1,14 +1,20 @@
 package com.breakinblocks.neovitae.common.recipe.forge;
 
+import com.mojang.serialization.Codec;
+import com.mojang.serialization.MapCodec;
+import com.mojang.serialization.codecs.RecordCodecBuilder;
 import net.minecraft.core.HolderLookup;
+import net.minecraft.network.RegistryFriendlyByteBuf;
+import net.minecraft.network.codec.ByteBufCodecs;
+import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.crafting.*;
 import net.minecraft.world.level.Level;
-import com.breakinblocks.neovitae.common.blockentity.HellfireForgeTile;
-import com.breakinblocks.neovitae.common.datacomponent.BMDataComponents;
-import com.breakinblocks.neovitae.common.datacomponent.EnumWillType;
-import com.breakinblocks.neovitae.common.recipe.BMRecipes;
-import com.breakinblocks.neovitae.common.tag.BMTags;
+import com.breakinblocks.neovitae.common.blockentity.HellfireForgeBlockEntity;
+import com.breakinblocks.neovitae.common.datacomponent.NVDataComponents;
+import com.breakinblocks.neovitae.common.datacomponent.SpiritusType;
+import com.breakinblocks.neovitae.common.recipe.NVRecipes;
+import com.breakinblocks.neovitae.common.tag.NVTags;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -16,13 +22,30 @@ import java.util.Optional;
 
 public class ForgeRecipe implements Recipe<ForgeInput> {
 
-    public static final String RECIPE_TYPE_NAME = "soul_forge";
+    public static final String RECIPE_TYPE_NAME = "hellfire_forge";
+
+    public static final MapCodec<ForgeRecipe> CODEC = RecordCodecBuilder.mapCodec(instance -> instance.group(
+            Codec.DOUBLE.fieldOf("minDrain").forGetter(ForgeRecipe::getMinWill),
+            Codec.DOUBLE.fieldOf("drain").forGetter(ForgeRecipe::getDrain),
+            Codec.list(Ingredient.CODEC_NONEMPTY).fieldOf("inputs").forGetter(ForgeRecipe::getCraftingIngredients),
+            ItemStack.CODEC.fieldOf("output").forGetter(ForgeRecipe::getOutput),
+            SpiritusType.CODEC.optionalFieldOf("willType").forGetter(ForgeRecipe::getWillType)
+    ).apply(instance, ForgeRecipe::new));
+
+    public static final StreamCodec<RegistryFriendlyByteBuf, ForgeRecipe> STREAM_CODEC = StreamCodec.composite(
+            ByteBufCodecs.DOUBLE, ForgeRecipe::getMinWill,
+            ByteBufCodecs.DOUBLE, ForgeRecipe::getDrain,
+            Ingredient.CONTENTS_STREAM_CODEC.apply(ByteBufCodecs.list()), ForgeRecipe::getCraftingIngredients,
+            ItemStack.STREAM_CODEC, ForgeRecipe::getOutput,
+            SpiritusType.STREAM_CODEC.apply(ByteBufCodecs::optional), ForgeRecipe::getWillType,
+            ForgeRecipe::new
+    );
     public final double minWill;
     public final double usedWill;
     public final List<Ingredient> ingredients;
     public final ItemStack resultItem;
-    public final Optional<EnumWillType> willType;
-    public ForgeRecipe(double minWill, double usedWill, List<Ingredient> ingredients, ItemStack resultItem, Optional<EnumWillType> willType) {
+    public final Optional<SpiritusType> willType;
+    public ForgeRecipe(double minWill, double usedWill, List<Ingredient> ingredients, ItemStack resultItem, Optional<SpiritusType> willType) {
         this.minWill = minWill;
         this.usedWill = usedWill;
         this.ingredients = ingredients;
@@ -35,7 +58,7 @@ public class ForgeRecipe implements Recipe<ForgeInput> {
         if (input.size() != ingredients.size()) {
             return false;
         }
-        EnumWillType will = input.getGem().getOrDefault(BMDataComponents.DEMON_WILL_TYPE, EnumWillType.DEFAULT);
+        SpiritusType will = input.getGem().getOrDefault(NVDataComponents.SPIRITUS_TYPE, SpiritusType.DEFAULT);
         if (willType.isPresent() && willType.get() != will) {
             return false;
         }
@@ -65,14 +88,14 @@ public class ForgeRecipe implements Recipe<ForgeInput> {
     @Override
     public ItemStack assemble(ForgeInput input, HolderLookup.Provider registries) {
         ItemStack gemStack = input.getGem();
-        double will = gemStack.getOrDefault(BMDataComponents.DEMON_WILL_AMOUNT, 0D);
+        double will = gemStack.getOrDefault(NVDataComponents.SPIRITUS_AMOUNT, 0D);
         if (will < minWill) {
             return ItemStack.EMPTY;
         }
         ItemStack outStack = resultItem.copy();
-        if (outStack.is(BMTags.Items.SOUL_GEM) && input.getGemIndex() != HellfireForgeTile.GEM_SLOT) {
-            outStack.set(BMDataComponents.DEMON_WILL_AMOUNT, will - usedWill);
-            outStack.set(BMDataComponents.DEMON_WILL_TYPE, gemStack.get(BMDataComponents.DEMON_WILL_TYPE));
+        if (outStack.is(NVTags.Items.SPIRITUS_GEM) && input.getGemIndex() != HellfireForgeBlockEntity.GEM_SLOT) {
+            outStack.set(NVDataComponents.SPIRITUS_AMOUNT, will - usedWill);
+            outStack.set(NVDataComponents.SPIRITUS_TYPE, gemStack.get(NVDataComponents.SPIRITUS_TYPE));
         }
 
         return outStack;
@@ -90,12 +113,12 @@ public class ForgeRecipe implements Recipe<ForgeInput> {
 
     @Override
     public RecipeSerializer<?> getSerializer() {
-        return BMRecipes.SOUL_FORGE_SERIALIZER.get();
+        return NVRecipes.HELLFIRE_FORGE_SERIALIZER.get();
     }
 
     @Override
     public RecipeType<?> getType() {
-        return BMRecipes.SOUL_FORGE_TYPE.get();
+        return NVRecipes.HELLFIRE_FORGE_TYPE.get();
     }
 
     public Double getMinWill() {
@@ -114,7 +137,7 @@ public class ForgeRecipe implements Recipe<ForgeInput> {
         return resultItem;
     }
 
-    public Optional<EnumWillType> getWillType() {
+    public Optional<SpiritusType> getWillType() {
         return willType;
     }
 }

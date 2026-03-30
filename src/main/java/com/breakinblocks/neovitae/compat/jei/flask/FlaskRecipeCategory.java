@@ -10,12 +10,11 @@ import mezz.jei.api.recipe.IFocusGroup;
 import mezz.jei.api.recipe.RecipeIngredientRole;
 import mezz.jei.api.recipe.RecipeType;
 import mezz.jei.api.recipe.category.IRecipeCategory;
-import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.item.ItemStack;
 import com.breakinblocks.neovitae.NeoVitae;
-import com.breakinblocks.neovitae.common.item.BMItems;
+import com.breakinblocks.neovitae.common.item.NVItems;
 import com.breakinblocks.neovitae.common.recipe.flask.FlaskRecipe;
 
 import javax.annotation.Nonnull;
@@ -24,10 +23,6 @@ import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- * JEI recipe category for flask brewing recipes.
- * Displays recipes that modify alchemy flask effects in the alchemy table.
- */
 public class FlaskRecipeCategory implements IRecipeCategory<FlaskRecipe> {
     public static final RecipeType<FlaskRecipe> RECIPE_TYPE = RecipeType.create(NeoVitae.MODID, "flask", FlaskRecipe.class);
     private static final DecimalFormat DECIMAL_FORMAT = new DecimalFormat("#.#");
@@ -40,7 +35,7 @@ public class FlaskRecipeCategory implements IRecipeCategory<FlaskRecipe> {
     private final IDrawable icon;
 
     public FlaskRecipeCategory(IGuiHelper guiHelper) {
-        icon = guiHelper.createDrawableItemStack(new ItemStack(BMItems.ALCHEMY_FLASK.get()));
+        icon = guiHelper.createDrawableItemStack(new ItemStack(NVItems.ALCHEMY_FLASK.get()));
         background = guiHelper.createDrawable(NeoVitae.rl("gui/jei/alchemytable.png"), 0, 0, WIDTH, HEIGHT);
     }
 
@@ -55,17 +50,7 @@ public class FlaskRecipeCategory implements IRecipeCategory<FlaskRecipe> {
 
     @Override
     public void draw(FlaskRecipe recipe, IRecipeSlotsView recipeSlotsView, GuiGraphics guiGraphics, double mouseX, double mouseY) {
-        // Draw background
         background.draw(guiGraphics);
-
-        var poseStack = guiGraphics.pose();
-        poseStack.pushPose();
-        poseStack.translate(64, 23, 0);
-        poseStack.scale(0.5f, 0.5f, 1f);
-        guiGraphics.drawString(Minecraft.getInstance().font, Component.translatable("jei.neovitae.recipe.lp"), 0, 0, 0x8b8b8b, false);
-        poseStack.translate(-8, 15, 0);
-        guiGraphics.drawString(Minecraft.getInstance().font, Component.translatable("jei.neovitae.recipe.info"), 0, 0, 0x8b8b8b, false);
-        poseStack.popPose();
     }
 
     @Nonnull
@@ -92,15 +77,14 @@ public class FlaskRecipeCategory implements IRecipeCategory<FlaskRecipe> {
 
     @Override
     public void setRecipe(IRecipeLayoutBuilder builder, FlaskRecipe recipe, IFocusGroup focuses) {
-        // Output flask with modified effects
-        IRecipeSlotBuilder output = builder.addSlot(RecipeIngredientRole.OUTPUT, 92, 14);
-        output.addItemStack(recipe.getOutput(recipe.getExampleFlask(), recipe.getExampleEffects()));
+        ItemStack outputStack = recipe.getOutput(recipe.getExampleFlask(), recipe.getExampleEffects());
 
-        // Add orbs that meet the tier requirement
+        IRecipeSlotBuilder output = builder.addSlot(RecipeIngredientRole.OUTPUT, 92, 14);
+        output.addItemStack(outputStack);
+
         IRecipeSlotBuilder orb = builder.addSlot(RecipeIngredientRole.CATALYST, 61, 1);
         orb.addItemStacks(getOrbsForTier(recipe.getMinimumTier()));
 
-        // Add input ingredients
         for (int index = 0; index < recipe.getInput().size(); index++) {
             int x = index % 3;
             int y = index / 3;
@@ -108,9 +92,8 @@ public class FlaskRecipeCategory implements IRecipeCategory<FlaskRecipe> {
             input.addIngredients(recipe.getInput().get(index));
         }
 
-        // Add the input flask as an ingredient (first slot that's free after other inputs)
         int flaskSlot = recipe.getInput().size();
-        if (flaskSlot < 6) {  // Make sure we have room
+        if (flaskSlot < 6) {
             int x = flaskSlot % 3;
             int y = flaskSlot / 3;
             IRecipeSlotBuilder flaskInput = builder.addSlot(RecipeIngredientRole.INPUT, x * 18 + 1, y * 18 + 1);
@@ -120,13 +103,12 @@ public class FlaskRecipeCategory implements IRecipeCategory<FlaskRecipe> {
 
     private List<ItemStack> getOrbsForTier(int tier) {
         List<ItemStack> orbs = new ArrayList<>();
-        // Add all orbs at or above the required tier
-        if (tier <= 1) orbs.add(new ItemStack(BMItems.ORB_WEAK.get()));
-        if (tier <= 2) orbs.add(new ItemStack(BMItems.ORB_APPRENTICE.get()));
-        if (tier <= 3) orbs.add(new ItemStack(BMItems.ORB_MAGICIAN.get()));
-        if (tier <= 4) orbs.add(new ItemStack(BMItems.ORB_MASTER.get()));
-        if (tier <= 5) orbs.add(new ItemStack(BMItems.ORB_ARCHMAGE.get()));
-        if (tier <= 6) orbs.add(new ItemStack(BMItems.ORB_TRANSCENDENT.get()));
+        if (tier <= 1) orbs.add(new ItemStack(NVItems.ORB_WEAK.get()));
+        if (tier <= 2) orbs.add(new ItemStack(NVItems.ORB_APPRENTICE.get()));
+        if (tier <= 3) orbs.add(new ItemStack(NVItems.ORB_MAGICIAN.get()));
+        if (tier <= 4) orbs.add(new ItemStack(NVItems.ORB_MASTER.get()));
+        if (tier <= 5) orbs.add(new ItemStack(NVItems.ORB_ARCHMAGE.get()));
+        if (tier <= 6) orbs.add(new ItemStack(NVItems.ORB_TRANSCENDENT.get()));
         return orbs;
     }
 

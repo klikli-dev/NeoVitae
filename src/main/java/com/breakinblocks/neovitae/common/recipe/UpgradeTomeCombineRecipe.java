@@ -1,22 +1,35 @@
 package com.breakinblocks.neovitae.common.recipe;
 
+import com.mojang.serialization.MapCodec;
+import com.mojang.serialization.codecs.RecordCodecBuilder;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.core.NonNullList;
+import net.minecraft.network.RegistryFriendlyByteBuf;
+import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.crafting.CraftingBookCategory;
 import net.minecraft.world.item.crafting.CraftingInput;
 import net.minecraft.world.item.crafting.CustomRecipe;
 import net.minecraft.world.item.crafting.RecipeSerializer;
 import net.minecraft.world.level.Level;
-import com.breakinblocks.neovitae.common.datacomponent.BMDataComponents;
+import com.breakinblocks.neovitae.common.datacomponent.NVDataComponents;
 import com.breakinblocks.neovitae.common.datacomponent.UpgradeTome;
-import com.breakinblocks.neovitae.common.item.BMItems;
+import com.breakinblocks.neovitae.common.item.NVItems;
 
 /**
  * Custom recipe that combines two Upgrade Tomes with the same upgrade type.
  * The resulting tome has the combined exp of both input tomes.
  */
 public class UpgradeTomeCombineRecipe extends CustomRecipe {
+
+    public static final MapCodec<UpgradeTomeCombineRecipe> CODEC = RecordCodecBuilder.mapCodec(builder -> builder.group(
+            CraftingBookCategory.CODEC.fieldOf("category").orElse(CraftingBookCategory.MISC).forGetter(r -> CraftingBookCategory.MISC)
+    ).apply(builder, UpgradeTomeCombineRecipe::new));
+
+    public static final StreamCodec<RegistryFriendlyByteBuf, UpgradeTomeCombineRecipe> STREAM_CODEC = StreamCodec.composite(
+            CraftingBookCategory.STREAM_CODEC, r -> CraftingBookCategory.MISC,
+            UpgradeTomeCombineRecipe::new
+    );
 
     public UpgradeTomeCombineRecipe(CraftingBookCategory category) {
         super(category);
@@ -33,11 +46,11 @@ public class UpgradeTomeCombineRecipe extends CustomRecipe {
                 continue;
             }
 
-            if (!stack.is(BMItems.UPGRADE_TOME.get())) {
+            if (!stack.is(NVItems.UPGRADE_TOME.get())) {
                 return false; // Non-tome item in grid
             }
 
-            UpgradeTome tome = stack.get(BMDataComponents.UPGRADE_TOME_DATA);
+            UpgradeTome tome = stack.get(NVDataComponents.UPGRADE_TOME_DATA);
             if (tome == null) {
                 return false; // Tome without data
             }
@@ -65,7 +78,7 @@ public class UpgradeTomeCombineRecipe extends CustomRecipe {
                 continue;
             }
 
-            UpgradeTome tome = stack.get(BMDataComponents.UPGRADE_TOME_DATA);
+            UpgradeTome tome = stack.get(NVDataComponents.UPGRADE_TOME_DATA);
             if (tome != null) {
                 if (firstTome == null) {
                     firstTome = tome;
@@ -78,8 +91,8 @@ public class UpgradeTomeCombineRecipe extends CustomRecipe {
             return ItemStack.EMPTY;
         }
 
-        ItemStack result = new ItemStack(BMItems.UPGRADE_TOME.get());
-        result.set(BMDataComponents.UPGRADE_TOME_DATA, new UpgradeTome(firstTome.upgrade(), totalExp));
+        ItemStack result = new ItemStack(NVItems.UPGRADE_TOME.get());
+        result.set(NVDataComponents.UPGRADE_TOME_DATA, new UpgradeTome(firstTome.upgrade(), totalExp));
         return result;
     }
 
@@ -90,6 +103,6 @@ public class UpgradeTomeCombineRecipe extends CustomRecipe {
 
     @Override
     public RecipeSerializer<?> getSerializer() {
-        return BMRecipes.UPGRADE_TOME_COMBINE_SERIALIZER.get();
+        return NVRecipes.UPGRADE_TOME_COMBINE_SERIALIZER.get();
     }
 }

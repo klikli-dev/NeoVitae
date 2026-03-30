@@ -26,8 +26,8 @@ import net.neoforged.neoforge.fluids.FluidUtil;
 import net.neoforged.neoforge.fluids.SimpleFluidContent;
 import net.neoforged.neoforge.fluids.capability.IFluidHandler;
 import org.jetbrains.annotations.Nullable;
-import com.breakinblocks.neovitae.common.blockentity.BloodTankTile;
-import com.breakinblocks.neovitae.common.datacomponent.BMDataComponents;
+import com.breakinblocks.neovitae.common.blockentity.BloodTankBlockEntity;
+import com.breakinblocks.neovitae.common.datacomponent.NVDataComponents;
 import com.breakinblocks.neovitae.util.helper.BlockEntityHelper;
 
 import java.util.List;
@@ -52,7 +52,7 @@ public class BloodTankBlock extends Block implements EntityBlock {
     @Override
     public int getLightEmission(BlockState state, BlockGetter level, BlockPos pos) {
         BlockEntity entity = level.getBlockEntity(pos);
-        if (entity instanceof BloodTankTile tank) {
+        if (entity instanceof BloodTankBlockEntity tank) {
             return tank.getFluidContained().getFluidType().getLightLevel();
         }
 
@@ -63,14 +63,14 @@ public class BloodTankBlock extends Block implements EntityBlock {
     public void appendHoverText(ItemStack stack, Item.TooltipContext context, List<Component> components, TooltipFlag tooltipFlag) {
         super.appendHoverText(stack, context, components, tooltipFlag);
 
-        int tier = stack.getOrDefault(BMDataComponents.CONTAINER_TIER, 0);
+        int tier = stack.getOrDefault(NVDataComponents.CONTAINER_TIER, 0);
         if (tier == 0) {
             components.add(Component.translatable("tooltip.neovitae.container_tier_missing").withStyle(ChatFormatting.RED, ChatFormatting.BOLD));
         } else {
             components.add(BlockEntityHelper.translatableHover("tooltip.neovitae.container_tier", tier));
         }
 
-        FluidStack fluidStack = stack.getOrDefault(BMDataComponents.FLUID_CONTENT, SimpleFluidContent.EMPTY).copy();
+        FluidStack fluidStack = stack.getOrDefault(NVDataComponents.FLUID_CONTENT, SimpleFluidContent.EMPTY).copy();
         if (fluidStack.isEmpty()) {
             components.add(BlockEntityHelper.translatableHover("tooltip.neovitae.fluid_content_empty"));
         } else {
@@ -99,6 +99,6 @@ public class BloodTankBlock extends Block implements EntityBlock {
 
     @Override
     public @Nullable BlockEntity newBlockEntity(BlockPos blockPos, BlockState blockState) {
-        return new BloodTankTile(blockPos, blockState);
+        return new BloodTankBlockEntity(blockPos, blockState);
     }
 }

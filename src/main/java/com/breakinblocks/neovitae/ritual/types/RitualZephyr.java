@@ -1,20 +1,23 @@
 package com.breakinblocks.neovitae.ritual.types;
 
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
 import net.minecraft.world.entity.ExperienceOrb;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import net.neoforged.neoforge.capabilities.Capabilities;
 import net.neoforged.neoforge.items.IItemHandler;
 import com.breakinblocks.neovitae.NeoVitae;
-import com.breakinblocks.neovitae.common.item.BMItems;
+import com.breakinblocks.neovitae.common.item.NVItems;
 import com.breakinblocks.neovitae.common.item.ExperienceTomeItem;
 import com.breakinblocks.neovitae.api.ritual.AreaDescriptor;
 import com.breakinblocks.neovitae.ritual.*;
 import com.breakinblocks.neovitae.ritual.RitualHelper.RitualContext;
+import com.breakinblocks.neovitae.util.Utils;
 
 import java.util.List;
 import java.util.UUID;
@@ -22,15 +25,19 @@ import java.util.function.Consumer;
 
 /**
  * Ritual that collects items and XP orbs, pulling them toward the ritual owner.
+ * Items within 2 blocks of the master stone are collected into a chest if available.
  */
 public class RitualZephyr extends Ritual {
 
     public static final String ZEPHYR_RANGE = "zephyrRange";
+    public static final String CHEST_RANGE = "chestRange";
 
     public RitualZephyr() {
         super("zephyr", 0, 1000, "ritual." + NeoVitae.MODID + ".zephyr");
         addBlockRange(ZEPHYR_RANGE, new AreaDescriptor.Rectangle(new BlockPos(-20, -10, -20), 41, 21, 41));
+        addBlockRange(CHEST_RANGE, new AreaDescriptor.Rectangle(new BlockPos(0, 1, 0), 1, 1, 1));
         setMaximumVolumeAndDistanceOfRange(ZEPHYR_RANGE, 50000, 30, 30);
+        setMaximumVolumeAndDistanceOfRange(CHEST_RANGE, 1, 5, 5);
     }
 
     @Override
@@ -47,8 +54,12 @@ public class RitualZephyr extends Ritual {
         AreaDescriptor range = RitualHelper.getEffectiveRange(ctx.master(), this, ZEPHYR_RANGE);
         AABB aabb = range.getAABB(ctx.masterPos());
         Vec3 target = ownerPlayer.position();
+        Vec3 masterCenter = Vec3.atCenterOf(ctx.masterPos());
 
-        // Collect items
+        BlockPos chestPos = RitualHelper.getRangePositions(ctx.master(), this, CHEST_RANGE, ctx.masterPos()).getFirst();
+        BlockEntity chestTile = ctx.level().getBlockEntity(chestPos);
+        boolean hasChest = chestTile != null && Utils.getNumberOfFreeSlots(chestTile, Direction.DOWN) >= 1;
+
         List<ItemEntity> items = ctx.level().getEntitiesOfClass(ItemEntity.class, aabb);
         int entitiesMoved = 0;
 
@@ -56,26 +67,37 @@ public class RitualZephyr extends Ritual {
             if (item.isRemoved()) continue;
 
             Vec3 itemPos = item.position();
-            double distance = itemPos.distanceTo(target);
+            double distanceToMaster = itemPos.distanceTo(masterCenter);
+
+            if (distanceToMaster <= 2.0 && hasChest) {
+                ItemStack remainder = Utils.insertStackIntoTile(item.getItem().copy(), chestTile, Direction.DOWN);
+                if (remainder.isEmpty()) {
+                    item.discard();
+                } else {
+                    item.setItem(remainder);
+                }
+                entitiesMoved++;
+                continue;
+            }
+
+            // Pull toward master stone when chest exists so items converge on it
+            Vec3 pullTarget = hasChest ? masterCenter : target;
+            double distance = itemPos.distanceTo(pullTarget);
 
             if (distance > 2.0) {
-                Vec3 direction = target.subtract(itemPos).normalize().scale(0.4);
+                Vec3 direction = pullTarget.subtract(itemPos).normalize().scale(0.4);
                 item.setDeltaMovement(item.getDeltaMovement().add(direction));
                 entitiesMoved++;
             }
         }
 
-        // Check for Experience Tome in container above ritual
-        BlockPos chestPos = ctx.masterPos().above();
         IItemHandler inventory = ctx.level().getCapability(Capabilities.ItemHandler.BLOCK, chestPos, null);
         ItemStack experienceTome = findExperienceTome(inventory);
 
-        // Collect XP orbs
         List<ExperienceOrb> orbs = ctx.level().getEntitiesOfClass(ExperienceOrb.class, aabb);
         for (ExperienceOrb orb : orbs) {
             if (orb.isRemoved()) continue;
 
-            // If we have an Experience Tome, collect XP into it and remove the orb
             if (!experienceTome.isEmpty()) {
                 ExperienceTomeItem.addXpToTome(experienceTome, orb.getValue());
                 orb.discard();
@@ -83,7 +105,6 @@ public class RitualZephyr extends Ritual {
                 continue;
             }
 
-            // Otherwise, pull orbs toward the player
             Vec3 orbPos = orb.position();
             double distance = orbPos.distanceTo(target);
 
@@ -95,23 +116,18 @@ public class RitualZephyr extends Ritual {
         }
 
         if (entitiesMoved > 0) {
-            int cost = Math.min(getRefreshCost() + (entitiesMoved / 10), ctx.currentEssence());
+            int cost = Math.min(getRefreshCost() + (entitiesMoved / 10), ctx.currentEV());
             ctx.syphon(cost);
         }
     }
 
-    /**
-     * Finds an Experience Tome in the first slot of the given inventory.
-     * @param inventory The inventory to check
-     * @return The Experience Tome stack, or ItemStack.EMPTY if not found
-     */
     private ItemStack findExperienceTome(IItemHandler inventory) {
         if (inventory == null || inventory.getSlots() == 0) {
             return ItemStack.EMPTY;
         }
 
         ItemStack firstSlot = inventory.getStackInSlot(0);
-        if (firstSlot.is(BMItems.EXPERIENCE_TOME.get())) {
+        if (firstSlot.is(NVItems.EXPERIENCE_TOME.get())) {
             return firstSlot;
         }
 

@@ -13,10 +13,10 @@ import net.minecraft.world.item.TooltipFlag;
 import net.minecraft.world.item.context.UseOnContext;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
-import com.breakinblocks.neovitae.common.blockentity.MasterRitualStoneTile;
-import com.breakinblocks.neovitae.common.datacomponent.BMDataComponents;
+import com.breakinblocks.neovitae.common.blockentity.MasterRitualStoneBlockEntity;
+import com.breakinblocks.neovitae.common.datacomponent.NVDataComponents;
 import com.breakinblocks.neovitae.api.ritual.AreaDescriptor;
-import com.breakinblocks.neovitae.common.datacomponent.EnumWillType;
+import com.breakinblocks.neovitae.common.datacomponent.SpiritusType;
 import com.breakinblocks.neovitae.ritual.*;
 
 import java.util.List;
@@ -35,15 +35,14 @@ public class ItemRitualReader extends Item {
     public ItemRitualReader() {
         super(new Item.Properties()
                 .stacksTo(1)
-                .component(BMDataComponents.READER_STATE.get(), 0)
-                .component(BMDataComponents.READER_RANGE_KEY.get(), "")
-                .component(BMDataComponents.READER_CORNER1.get(), BlockPos.ZERO));
+                .component(NVDataComponents.READER_STATE.get(), 0)
+                .component(NVDataComponents.READER_RANGE_KEY.get(), "")
+                .component(NVDataComponents.READER_CORNER1.get(), BlockPos.ZERO));
     }
 
-    // ==================== State Management ====================
 
     public EnumRitualReaderState getState(ItemStack stack) {
-        Integer stateOrdinal = stack.get(BMDataComponents.READER_STATE.get());
+        Integer stateOrdinal = stack.get(NVDataComponents.READER_STATE.get());
         if (stateOrdinal == null || stateOrdinal < 0 || stateOrdinal >= EnumRitualReaderState.values().length) {
             return EnumRitualReaderState.INFORMATION;
         }
@@ -51,28 +50,27 @@ public class ItemRitualReader extends Item {
     }
 
     public void setState(ItemStack stack, EnumRitualReaderState state) {
-        stack.set(BMDataComponents.READER_STATE.get(), state.ordinal());
+        stack.set(NVDataComponents.READER_STATE.get(), state.ordinal());
     }
 
     public String getRangeKey(ItemStack stack) {
-        String key = stack.get(BMDataComponents.READER_RANGE_KEY.get());
+        String key = stack.get(NVDataComponents.READER_RANGE_KEY.get());
         return key != null ? key : "";
     }
 
     public void setRangeKey(ItemStack stack, String key) {
-        stack.set(BMDataComponents.READER_RANGE_KEY.get(), key);
+        stack.set(NVDataComponents.READER_RANGE_KEY.get(), key);
     }
 
     public BlockPos getCorner1(ItemStack stack) {
-        BlockPos pos = stack.get(BMDataComponents.READER_CORNER1.get());
+        BlockPos pos = stack.get(NVDataComponents.READER_CORNER1.get());
         return pos != null ? pos : BlockPos.ZERO;
     }
 
     public void setCorner1(ItemStack stack, BlockPos pos) {
-        stack.set(BMDataComponents.READER_CORNER1.get(), pos);
+        stack.set(NVDataComponents.READER_CORNER1.get(), pos);
     }
 
-    // ==================== Interaction ====================
 
     @Override
     public InteractionResult useOn(UseOnContext context) {
@@ -85,11 +83,10 @@ public class ItemRitualReader extends Item {
 
         BlockEntity blockEntity = level.getBlockEntity(clickedPos);
 
-        if (blockEntity instanceof MasterRitualStoneTile mrsT) {
+        if (blockEntity instanceof MasterRitualStoneBlockEntity mrsT) {
             return handleMasterRitualStoneClick(stack, level, mrsT, player);
         }
 
-        // Handle setting area corners when not clicking on MRS
         EnumRitualReaderState state = getState(stack);
         if (state == EnumRitualReaderState.SET_AREA_CORNER_1 ||
             state == EnumRitualReaderState.SET_AREA_CORNER_2) {
@@ -100,11 +97,10 @@ public class ItemRitualReader extends Item {
     }
 
     private InteractionResult handleMasterRitualStoneClick(ItemStack stack, Level level,
-                                                            MasterRitualStoneTile mrs, Player player) {
+                                                            MasterRitualStoneBlockEntity mrs, Player player) {
         if (level.isClientSide()) return InteractionResult.SUCCESS;
 
         if (player.isShiftKeyDown()) {
-            // Sneak + click on MRS cycles reader mode
             cycleReaderState(stack, player);
             return InteractionResult.SUCCESS;
         }
@@ -124,7 +120,6 @@ public class ItemRitualReader extends Item {
             case SET_AREA_CORNER_1, SET_AREA_CORNER_2 -> {
                 String rangeKey = getRangeKey(stack);
                 if (rangeKey.isEmpty()) {
-                    // No range selected - auto-select first range
                     List<String> ranges = ritual.getListOfRanges();
                     if (!ranges.isEmpty()) {
                         rangeKey = ranges.get(0);
@@ -134,14 +129,13 @@ public class ItemRitualReader extends Item {
                 mrs.provideInformationOfRangeToPlayer(player, rangeKey);
             }
             case SET_WILL_CONFIG -> {
-                // Cycle through will types
-                EnumWillType currentType = mrs.getActiveWillConfig();
-                EnumWillType nextType = switch (currentType) {
-                    case DEFAULT -> EnumWillType.CORROSIVE;
-                    case CORROSIVE -> EnumWillType.DESTRUCTIVE;
-                    case DESTRUCTIVE -> EnumWillType.VENGEFUL;
-                    case VENGEFUL -> EnumWillType.STEADFAST;
-                    case STEADFAST -> EnumWillType.DEFAULT;
+                SpiritusType currentType = mrs.getActiveWillConfig();
+                SpiritusType nextType = switch (currentType) {
+                    case DEFAULT -> SpiritusType.CORROSIVE;
+                    case CORROSIVE -> SpiritusType.DESTRUCTIVE;
+                    case DESTRUCTIVE -> SpiritusType.VENGEFUL;
+                    case VENGEFUL -> SpiritusType.STEADFAST;
+                    case STEADFAST -> SpiritusType.DEFAULT;
                 };
                 mrs.setActiveWillConfig(nextType);
                 player.displayClientMessage(
@@ -171,8 +165,7 @@ public class ItemRitualReader extends Item {
             BlockPos corner2 = clickedPos;
             String rangeKey = getRangeKey(stack);
 
-            // Find the master ritual stone - we need to look for it
-            MasterRitualStoneTile mrs = findNearbyMasterRitualStone(level, corner1, corner2, player);
+            MasterRitualStoneBlockEntity mrs = findNearbyMasterRitualStone(level, corner1, corner2, player);
             if (mrs == null) {
                 player.displayClientMessage(
                         Component.translatable("chat.neovitae.reader.noMRS").withStyle(ChatFormatting.RED), true);
@@ -188,12 +181,10 @@ public class ItemRitualReader extends Item {
                 return InteractionResult.SUCCESS;
             }
 
-            // Convert world positions to offsets relative to MRS
             BlockPos mrsPos = mrs.getBlockPos();
             BlockPos offset1 = corner1.subtract(mrsPos);
             BlockPos offset2 = corner2.subtract(mrsPos);
 
-            // Check if the new area is valid
             AreaDescriptor descriptor = ritual.getBlockRange(rangeKey);
             if (descriptor == null) {
                 player.displayClientMessage(
@@ -225,7 +216,6 @@ public class ItemRitualReader extends Item {
         ItemStack stack = player.getItemInHand(hand);
 
         if (!level.isClientSide() && player.isShiftKeyDown()) {
-            // Sneak + right-click in air cycles through range keys
             cycleRangeKey(stack, player);
             return new InteractionResultHolder<>(InteractionResult.SUCCESS, stack);
         }
@@ -233,7 +223,6 @@ public class ItemRitualReader extends Item {
         return new InteractionResultHolder<>(InteractionResult.PASS, stack);
     }
 
-    // ==================== Cycling Methods ====================
 
     private void cycleReaderState(ItemStack stack, Player player) {
         EnumRitualReaderState current = getState(stack);
@@ -244,8 +233,6 @@ public class ItemRitualReader extends Item {
     }
 
     private void cycleRangeKey(ItemStack stack, Player player) {
-        // We need context of the current ritual to know valid ranges
-        // For now, just display current key
         String currentKey = getRangeKey(stack);
         if (currentKey.isEmpty()) {
             player.displayClientMessage(
@@ -256,9 +243,6 @@ public class ItemRitualReader extends Item {
         }
     }
 
-    /**
-     * Cycles to the next range key for a specific ritual.
-     */
     public void cycleRangeKey(ItemStack stack, Player player, Ritual ritual) {
         if (ritual == null) return;
 
@@ -272,10 +256,8 @@ public class ItemRitualReader extends Item {
         }
     }
 
-    // ==================== Utilities ====================
 
-    private MasterRitualStoneTile findNearbyMasterRitualStone(Level level, BlockPos corner1, BlockPos corner2, Player player) {
-        // Search in a reasonable area around the player and corners
+    private MasterRitualStoneBlockEntity findNearbyMasterRitualStone(Level level, BlockPos corner1, BlockPos corner2, Player player) {
         int searchRadius = 32;
         BlockPos center = player.blockPosition();
 
@@ -283,7 +265,7 @@ public class ItemRitualReader extends Item {
                 center.offset(-searchRadius, -searchRadius, -searchRadius),
                 center.offset(searchRadius, searchRadius, searchRadius))) {
             BlockEntity be = level.getBlockEntity(pos);
-            if (be instanceof MasterRitualStoneTile mrs) {
+            if (be instanceof MasterRitualStoneBlockEntity mrs) {
                 if (mrs.isActive()) {
                     return mrs;
                 }
@@ -293,7 +275,6 @@ public class ItemRitualReader extends Item {
         return null;
     }
 
-    // ==================== Tooltip ====================
 
     @Override
     public void appendHoverText(ItemStack stack, TooltipContext context, List<Component> tooltip, TooltipFlag flag) {

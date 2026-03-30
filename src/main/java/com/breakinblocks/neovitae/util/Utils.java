@@ -1,9 +1,12 @@
 package com.breakinblocks.neovitae.util;
 
+import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.world.Container;
 import net.minecraft.world.WorldlyContainer;
+import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.neoforged.neoforge.capabilities.Capabilities;
 import net.neoforged.neoforge.items.IItemHandler;
@@ -12,14 +15,8 @@ import net.neoforged.neoforge.items.wrapper.SidedInvWrapper;
 
 import javax.annotation.Nullable;
 
-/**
- * General utility methods for Blood Magic.
- */
 public class Utils {
 
-    /**
-     * Inserts an item stack into a tile entity's inventory.
-     */
     public static ItemStack insertStackIntoTile(ItemStack stack, BlockEntity tile, Direction dir) {
         IItemHandler handler = tile.getLevel().getCapability(
                 net.neoforged.neoforge.capabilities.Capabilities.ItemHandler.BLOCK,
@@ -34,15 +31,11 @@ public class Utils {
         return stack;
     }
 
-    /**
-     * Inserts a stack into an item handler.
-     */
     public static ItemStack insertStackIntoTile(ItemStack stack, IItemHandler handler) {
         return insertStackIntoTile(stack, handler, false);
     }
 
     /**
-     * Inserts a stack into an item handler.
      * @param doCleanly If true, tries to stack with existing items first
      */
     public static ItemStack insertStackIntoTile(ItemStack stack, IItemHandler handler, boolean doCleanly) {
@@ -50,7 +43,6 @@ public class Utils {
         ItemStack copyStack = stack.copy();
 
         if (doCleanly) {
-            // First pass: try to stack with existing items
             for (int slot = 0; slot < numberOfSlots; slot++) {
                 ItemStack containedStack = handler.getStackInSlot(slot);
                 if (ItemStack.isSameItemSameComponents(stack, containedStack)) {
@@ -62,7 +54,6 @@ public class Utils {
             }
         }
 
-        // Second pass: insert into any available slot
         for (int slot = 0; slot < numberOfSlots; slot++) {
             copyStack = handler.insertItem(slot, copyStack, false);
             if (copyStack.isEmpty()) {
@@ -73,9 +64,6 @@ public class Utils {
         return copyStack;
     }
 
-    /**
-     * Inserts a stack into a container inventory.
-     */
     public static ItemStack insertStackIntoInventory(ItemStack stack, Container inventory, Direction dir) {
         if (stack.isEmpty()) {
             return ItemStack.EMPTY;
@@ -106,9 +94,6 @@ public class Utils {
         return copyStack;
     }
 
-    /**
-     * Counts the number of free slots in a tile's inventory.
-     */
     public static int getNumberOfFreeSlots(BlockEntity tile, Direction dir) {
         int slots = 0;
 
@@ -133,9 +118,18 @@ public class Utils {
         return slots;
     }
 
-    /**
-     * Gets an item handler for a block entity.
-     */
+    public static void spawnStackAtBlock(Level level, BlockPos pos, Direction dir, ItemStack stack) {
+        if (stack.isEmpty() || level.isClientSide) return;
+
+        double x = pos.getX() + 0.5 + dir.getStepX() * 0.6;
+        double y = pos.getY() + 0.5 + dir.getStepY() * 0.6;
+        double z = pos.getZ() + 0.5 + dir.getStepZ() * 0.6;
+
+        ItemEntity entity = new ItemEntity(level, x, y, z, stack.copy());
+        entity.setDeltaMovement(dir.getStepX() * 0.05, dir.getStepY() * 0.05 + 0.1, dir.getStepZ() * 0.05);
+        level.addFreshEntity(entity);
+    }
+
     @Nullable
     public static IItemHandler getInventory(BlockEntity tile, @Nullable Direction facing) {
         if (tile == null || tile.getLevel() == null) return null;

@@ -12,15 +12,13 @@ import net.minecraft.world.level.block.BucketPickup;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.HitResult;
+import net.neoforged.neoforge.capabilities.Capabilities;
+import net.neoforged.neoforge.fluids.capability.IFluidHandler;
 import com.breakinblocks.neovitae.api.sigil.SigilEffect;
 import com.breakinblocks.neovitae.registry.SigilEffectRegistry;
 
 import java.util.function.Supplier;
 
-/**
- * Sigil effect that removes (voids) fluids from the world.
- * Used by Void Sigil.
- */
 public record VoidSigilEffect() implements SigilEffect {
     public static final MapCodec<VoidSigilEffect> CODEC = MapCodec.unit(VoidSigilEffect::new);
 
@@ -55,9 +53,16 @@ public record VoidSigilEffect() implements SigilEffect {
         BlockState blockState = level.getBlockState(blockPos);
 
         if (blockState.getBlock() instanceof BucketPickup bucketPickup) {
-            // This removes the fluid from the world and returns the bucket item (which we discard)
             bucketPickup.pickupBlock(player, level, blockPos, blockState);
             return true;
+        }
+
+        IFluidHandler handler = level.getCapability(Capabilities.FluidHandler.BLOCK, blockPos, sideHit);
+        if (handler != null) {
+            var drained = handler.drain(1000, IFluidHandler.FluidAction.EXECUTE);
+            if (!drained.isEmpty()) {
+                return true;
+            }
         }
 
         return false;

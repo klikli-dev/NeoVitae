@@ -1,19 +1,20 @@
 # Neo Vitae API Documentation
 
-This document describes the Neo Vitae API for NeoForge 1.21.1. The API allows addon mods to interact with Neo Vitae's core systems including Soul Networks, Blood Altars, Rituals, and Living Armor.
+This document describes the Neo Vitae API for NeoForge 1.21.1. The API allows addon mods to interact with Neo Vitae's core systems including Soul Networks, Ara Vitaes, Rituals, and Living Armor.
 
 ## Table of Contents
 
 1. [Getting Started](#getting-started)
 2. [Core API](#core-api)
 3. [Soul Network System](#soul-network-system)
-4. [Blood Altar System](#blood-altar-system)
+4. [Ara Vitae System](#blood-altar-system)
 5. [Altar Rune System](#altar-rune-system)
 6. [Ritual System](#ritual-system)
 7. [Sigil System](#sigil-system)
 8. [Living Armor System](#living-armor-system)
-9. [Events](#events)
-10. [Registry Keys](#registry-keys)
+9. [Custom Player Attributes](#custom-player-attributes)
+10. [Events](#events)
+11. [Registry Keys](#registry-keys)
 
 ---
 
@@ -25,13 +26,25 @@ Add Neo Vitae as a dependency in your `build.gradle`:
 
 ```groovy
 repositories {
-    // Add Neo Vitae maven here when available
+    maven {
+        name = "BreakInBlocks"
+        url = "https://maven.breakinblocks.com/releases"
+    }
+    // Geckolib is a transitive dependency of NeoVitae
+    maven {
+        name = "Geckolib"
+        url = "https://dl.cloudsmith.io/public/geckolib3/geckolib/maven/"
+        content { includeGroup "software.bernie.geckolib" }
+    }
 }
 
 dependencies {
-    compileOnly("com.breakinblocks.neovitae:neovitae-api:VERSION")
+    compileOnly("com.breakinblocks.neovitae:neovitae:1.21.1-1.0.0")
+    runtimeOnly("com.breakinblocks.neovitae:neovitae:1.21.1-1.0.0")
 }
 ```
+
+> **Note:** The API classes are in the main mod JAR under `com.breakinblocks.neovitae.api`. There is no separate api artifact.
 
 ### Accessing the API
 
@@ -41,12 +54,12 @@ The Neo Vitae API is accessed through the static `NeoVitaeAPI` class:
 import com.breakinblocks.neovitae.api.NeoVitaeAPI;
 import com.breakinblocks.neovitae.api.INeoVitaeAPI;
 
-// Check if Neo Vitae is loaded
-if (NeoVitaeAPI.isAvailable()) {
-    INeoVitaeAPI api = NeoVitaeAPI.get();
-    // Use the API...
-}
+// Get the API instance (safe to call from FMLCommonSetupEvent or later)
+INeoVitaeAPI api = NeoVitaeAPI.getInstance();
+// Use the API...
 ```
+
+> **Note:** Calling `getInstance()` before Neo Vitae has initialized will throw `IllegalStateException`.
 
 ---
 
@@ -167,20 +180,20 @@ int added = network.add(addTicket, 10000); // 10000 max capacity
 
 ---
 
-## Blood Altar System
+## Ara Vitae System
 
-The Blood Altar is the core crafting mechanic in Neo Vitae.
+The Ara Vitae is the core crafting mechanic in Neo Vitae.
 
-### Accessing the Blood Altar
+### Accessing the Ara Vitae
 
 Neo Vitae provides a capability for accessing altar functionality:
 
 ```java
 import com.breakinblocks.neovitae.api.capability.BMCapabilities;
-import com.breakinblocks.neovitae.api.altar.IBloodAltar;
+import com.breakinblocks.neovitae.api.altar.IAraVitae;
 
 // Get altar capability from a block position
-IBloodAltar altar = level.getCapability(BMCapabilities.BLOOD_ALTAR, pos, null);
+IAraVitae altar = level.getCapability(BMCapabilities.ARA_VITAE, pos, null);
 if (altar != null) {
     int blood = altar.getCurrentBlood();
     int capacity = altar.getCapacity();
@@ -196,13 +209,13 @@ Block capabilities provided by Neo Vitae.
 
 | Capability | Type | Description |
 |------------|------|-------------|
-| `BLOOD_ALTAR` | `BlockCapability<IBloodAltar, Direction>` | Access altar state and stats |
+| `ARA_VITAE` | `BlockCapability<IAraVitae, Direction>` | Access altar state and stats |
 
-### IBloodAltar
+### IAraVitae
 
 **Package:** `com.breakinblocks.neovitae.api.altar`
 
-Interface for Blood Altar block entities.
+Interface for Ara Vitae block entities.
 
 #### State Methods
 
@@ -219,7 +232,7 @@ Interface for Blood Altar block entities.
 | Method | Return Type | Description |
 |--------|-------------|-------------|
 | `getProgressFloat()` | `float` | Progress as percentage (0.0-1.0) |
-| `getCurrentRecipe()` | `BloodAltarRecipe` | Current recipe or null |
+| `getCurrentRecipe()` | `AraVitaeRecipe` | Current recipe or null |
 | `getLiquidRequired()` | `int` | LP required for current recipe |
 | `getTotalCraftingTime()` | `int` | Total craft time in ticks |
 | `getCraftingProgress()` | `int` | Current progress in ticks |
@@ -263,21 +276,21 @@ Interface for Blood Altar block entities.
 | 4 | Tier 4 | Complex structure |
 | 5 | Tier 5 | Master structure |
 
-### BloodAltarRecipe
+### AraVitaeRecipe
 
 **Package:** `com.breakinblocks.neovitae.api.recipe`
 
-Abstract base class for Blood Altar recipes. Transform items using Life Essence (LP) at various altar tiers.
+Abstract base class for Ara Vitae recipes. Transform items using Life Essence (LP) at various altar tiers.
 
 #### Constructors
 
 ```java
 // Standard constructor (no component transfer)
-BloodAltarRecipe(Ingredient input, ItemStack result, int minTier,
+AraVitaeRecipe(Ingredient input, ItemStack result, int minTier,
                  int totalBlood, int craftSpeed, int drainSpeed)
 
 // Constructor with component transfer option
-BloodAltarRecipe(Ingredient input, ItemStack result, int minTier,
+AraVitaeRecipe(Ingredient input, ItemStack result, int minTier,
                  int totalBlood, int craftSpeed, int drainSpeed,
                  boolean copyInputComponents)
 ```
@@ -293,7 +306,7 @@ BloodAltarRecipe(Ingredient input, ItemStack result, int minTier,
 | `getCraftSpeed()` | `int` | LP consumed per tick while crafting |
 | `getDrainSpeed()` | `int` | Progress lost per tick when out of LP |
 | `shouldCopyInputComponents()` | `boolean` | Whether input components transfer to output |
-| `assemble(BloodAltarInput, Provider)` | `ItemStack` | Assembles output with component transfer |
+| `assemble(AraVitaeInput, Provider)` | `ItemStack` | Assembles output with component transfer |
 
 #### Component Transfer
 
@@ -309,7 +322,7 @@ When `copyInputComponents` is true, the `assemble()` method applies the input's 
 
 ```json
 {
-  "type": "neovitae:blood_altar_recipe",
+  "type": "neovitae:ara_vitae_recipe",
   "input": {"item": "minecraft:diamond_sword"},
   "output": {"id": "neovitae:bound_sword"},
   "minTier": 2,
@@ -334,7 +347,7 @@ When `copyInputComponents` is true, the `assemble()` method applies the input's 
 
 ```java
 // Recipe that preserves enchantments from input sword
-BloodAltarRecipe recipe = new BloodAltarRecipe(
+AraVitaeRecipe recipe = new AraVitaeRecipe(
     Ingredient.of(Items.DIAMOND_SWORD),
     new ItemStack(BMItems.BOUND_SWORD),
     2,      // minTier
@@ -358,15 +371,15 @@ AltarRecipeBuilder.build(BMItems.BOUND_SWORD)
     .save(output, "bound_sword");
 ```
 
-### BloodAltarInput
+### AraVitaeInput
 
 **Package:** `com.breakinblocks.neovitae.api.recipe`
 
-Recipe input for Blood Altar matching.
+Recipe input for Ara Vitae matching.
 
 ```java
-public class BloodAltarInput implements RecipeInput {
-    public BloodAltarInput(ItemStack inputStack, int altarTier);
+public class AraVitaeInput implements RecipeInput {
+    public AraVitaeInput(ItemStack inputStack, int altarTier);
     public int getAltarTier();
 }
 ```
@@ -375,7 +388,7 @@ public class BloodAltarInput implements RecipeInput {
 
 ## Altar Rune System
 
-The Altar Rune System allows addon mods to create custom rune types that affect Blood Altar behavior.
+The Altar Rune System allows addon mods to create custom rune types that affect Ara Vitae behavior.
 
 ### Overview
 
@@ -419,7 +432,7 @@ public class ManaRuneType implements IAltarRuneType {
 
 **Package:** `com.breakinblocks.neovitae.api.altar.rune`
 
-Built-in Blood Altar rune types.
+Built-in Ara Vitae rune types.
 
 | Value | Description |
 |-------|-------------|
@@ -569,7 +582,7 @@ public void onCalculateStats(AltarRuneEvent.CalculateStats event) {
 
 **Package:** `com.breakinblocks.neovitae.api.event`
 
-Events fired when the Blood Altar calculates or applies rune effects. These events use a unified rune map that includes both built-in and custom rune types.
+Events fired when the Ara Vitae calculates or applies rune effects. These events use a unified rune map that includes both built-in and custom rune types.
 
 **Event Order:**
 1. **GatherRunes** - Fired after scanning, allows adding virtual runes
@@ -582,7 +595,7 @@ All three event types inherit these methods:
 
 | Method | Return Type | Description |
 |--------|-------------|-------------|
-| `getAltar()` | `IBloodAltar` | The Blood Altar instance |
+| `getAltar()` | `IAraVitae` | The Ara Vitae instance |
 | `getLevel()` | `Level` | The world level |
 | `getPos()` | `BlockPos` | The altar's position |
 | `getTier()` | `int` | The altar's current tier |
@@ -1381,6 +1394,66 @@ if (manager.hasFullSet(player)) {
 
 ---
 
+## Custom Player Attributes
+
+Neo Vitae registers custom player attributes that addon mods can apply modifiers to via equipment, effects, or data packs.
+
+**Package:** `com.breakinblocks.neovitae.common.attribute.NVAttributes`
+
+### Attribute Reference
+
+| Holder Field | Registry ID | Default | Max | Description |
+|-------------|------------|---------|-----|-------------|
+| `SELF_SACRIFICE_MULTIPLIER` | `neovitae:player.self_sacrifice_multiplier` | 1.0 | 100.0 | Multiplier for LP from self-sacrifice (PercentageAttribute) |
+| `BONUS_SACRIFICE` | `neovitae:bonus_sacrifice` | 0.0 | 1000.0 | % bonus LP from Lamina Exhauriens mob kills |
+| `BONUS_SELF_SACRIFICE` | `neovitae:bonus_self_sacrifice` | 0.0 | 1000.0 | % bonus LP from Lamina Maleficus self-sacrifice |
+| `BONUS_DEMON_WILL` | `neovitae:bonus_demon_will` | 0.0 | 1000.0 | % bonus Demon Will drops |
+| `SIGIL_COST_REDUCTION` | `neovitae:sigil_cost_reduction` | 0.0 | 100.0 | % reduction to sigil LP costs |
+| `BLOOD_SIPHON` | `neovitae:blood_siphon` | 0.0 | 1024.0 | Converts damage dealt into LP |
+| `BLOOD_SHIELD` | `neovitae:blood_shield` | 0.0 | 10.0 | Reduces incoming damage, drains LP |
+
+All attributes are registered to the Player entity type and are syncable to clients.
+
+### Using Attributes from Addon Mods
+
+```java
+import com.breakinblocks.neovitae.common.attribute.NVAttributes;
+import net.minecraft.world.entity.ai.attributes.AttributeModifier;
+
+// Read a player's attribute value
+double siphon = player.getAttributeValue(NVAttributes.BLOOD_SIPHON);
+
+// Add a modifier (e.g., on equipment)
+player.getAttribute(NVAttributes.BONUS_SACRIFICE).addTransientModifier(
+    new AttributeModifier(
+        ResourceLocation.fromNamespaceAndPath("mymod", "sacrifice_bonus"),
+        25.0, // +25% sacrifice bonus
+        AttributeModifier.Operation.ADD_VALUE
+    )
+);
+```
+
+### Blood Siphon Details
+
+LP gained = min(attribute_value, damage_dealt) × multiplier
+- vs Players: multiplier = configurable (default 100), drains from target's soul network
+- vs Mobs: multiplier = configurable (default 10), LP generated from nothing
+
+### Blood Shield Details
+
+Damage reduction = 10% per attribute point (hard cap 99%)
+LP cost = damage_prevented × configurable multiplier (default 100)
+If insufficient LP: partial shield, remaining damage passes through
+
+### Server Configuration
+
+Multipliers are configurable in `config/neovitae-server.toml` under `[blood_attributes]`:
+- `siphon_player_multiplier` (default: 100)
+- `siphon_mob_multiplier` (default: 10)
+- `shield_lp_cost_multiplier` (default: 100)
+
+---
+
 ## Events
 
 Neo Vitae fires NeoForge events that addon mods can listen to.
@@ -1434,19 +1507,19 @@ public void onPreAdd(SoulNetworkEvent.PreAdd event) {
 
 Fired after LP is added (not cancellable).
 
-### BloodAltarCraftEvent
+### AraVitaeCraftEvent
 
 **Package:** `com.breakinblocks.neovitae.api.event`
 
-Events for Blood Altar crafting.
+Events for Ara Vitae crafting.
 
-#### BloodAltarCraftEvent.Crafting (Cancellable)
+#### AraVitaeCraftEvent.Crafting (Cancellable)
 
 Fired when craft is about to complete.
 
 ```java
 @SubscribeEvent
-public void onCrafting(BloodAltarCraftEvent.Crafting event) {
+public void onCrafting(AraVitaeCraftEvent.Crafting event) {
     // Modify output
     ItemStack output = event.getOutput();
     output.setCount(output.getCount() * 2);
@@ -1457,16 +1530,16 @@ public void onCrafting(BloodAltarCraftEvent.Crafting event) {
 }
 ```
 
-#### BloodAltarCraftEvent.Crafted
+#### AraVitaeCraftEvent.Crafted
 
 Fired after craft completes (not cancellable).
 
 ```java
 @SubscribeEvent
-public void onCrafted(BloodAltarCraftEvent.Crafted event) {
+public void onCrafted(AraVitaeCraftEvent.Crafted event) {
     // Achievement tracking, statistics, etc.
-    IBloodAltar altar = event.getAltar();
-    BloodAltarRecipe recipe = event.getRecipe();
+    IAraVitae altar = event.getAltar();
+    AraVitaeRecipe recipe = event.getRecipe();
 }
 ```
 
@@ -1551,12 +1624,14 @@ public static final DeferredHolder<ImperfectRitual, MyImperfectRitual> MY_RITUAL
 
 ## API Package Structure
 
+All API classes are in the main source set at `src/main/java/com/breakinblocks/neovitae/api/`. There is no separate API artifact or source set.
+
 ```
 com.breakinblocks.neovitae.api/
-├── NeoVitaeAPI.java          # Static accessor
+├── NeoVitaeAPI.java          # Static accessor (getInstance())
 ├── INeoVitaeAPI.java         # Main API interface
 ├── altar/
-│   ├── IBloodAltar.java        # Blood Altar interface
+│   ├── IAraVitae.java        # Ara Vitae interface
 │   └── rune/
 │       ├── AltarRuneModifiers.java   # Mutable modifier container
 │       ├── EnumAltarRuneType.java    # Built-in rune types
@@ -1564,20 +1639,22 @@ com.breakinblocks.neovitae.api/
 │       ├── IAltarRuneType.java       # Custom rune type interface
 │       └── RuneInstance.java         # Rune position/block entity data
 ├── capability/
-│   └── BMCapabilities.java     # Block capabilities (BLOOD_ALTAR)
+│   └── NVCapabilities.java    # Block capabilities (ARA_VITAE)
 ├── event/
 │   ├── AltarRuneEvent.java     # Rune calculation events (with RuneInstance access)
-│   ├── BloodAltarCraftEvent.java
 │   ├── LivingArmorEvent.java
 │   └── SoulNetworkEvent.java
+├── incense/
+│   ├── ITranquilityHandler.java
+│   └── TranquilityHandler.java
 ├── item/
 │   └── IUpgradeHolder.java     # Living Armor item interface
 ├── living/
 │   ├── ILivingArmorManager.java  # (includes UpgradeInfo record)
 │   └── ILivingArmorUpgrade.java
 ├── recipe/
-│   ├── BloodAltarInput.java
-│   └── BloodAltarRecipe.java
+│   ├── AraVitaeInput.java
+│   └── AraVitaeRecipe.java
 ├── registry/
 │   └── NeoVitaeRegistries.java
 ├── ritual/
@@ -1585,16 +1662,52 @@ com.breakinblocks.neovitae.api/
 │   ├── EnumRuneType.java
 │   ├── IImperfectRitual.java
 │   ├── IImperfectRitualStone.java
-│   ├── IMasterRitualStone.java
 │   ├── IRitual.java
 │   └── RitualComponent.java
+├── routing/                    # Item/Fluid routing node interfaces
+│   ├── IRoutingNode.java
+│   ├── IFluidRoutingNode.java
+│   ├── IItemRoutingNode.java
+│   ├── IMasterRoutingNode.java
+│   └── ...                     # Filter interfaces, channel registry
 ├── sigil/
-│   └── ISigilEffect.java       # Custom sigil effect interface
-└── soul/
-    ├── ISoulNetwork.java
-    ├── SoulTicket.java
-    └── SyphonResult.java       # Syphon operation result
+│   ├── ISigilEffect.java       # Custom sigil effect interface
+│   ├── SigilEffect.java
+│   ├── SigilType.java
+│   └── effects/                # Built-in sigil effect implementations
+├── soul/
+│   ├── ISoulNetwork.java
+│   ├── SoulTicket.java
+│   └── SyphonResult.java
+└── will/
+    ├── DemonWillHandler.java
+    ├── IDemonWillHandler.java
+    ├── IPlayerDemonWillHandler.java
+    └── WillState.java
 ```
+
+### Key Non-API Classes for Addon Use
+
+These are in `com.breakinblocks.neovitae.common` (not the API package) but commonly used by addons:
+
+| Class | Package | Purpose |
+|-------|---------|---------|
+| `NVAttributes` | `common.attribute` | Custom player attributes (Blood Siphon, Blood Shield, etc.) |
+| `NVItems` | `common.item` | Item registry |
+| `NVBlocks` | `common.block` | Block registry |
+| `NVMobEffects` | `common.effect` | Custom mob effects (Flight, Bounce, Gravity, etc.) |
+| `EnumWillType` | `common.datacomponent` | Demon Will type enum |
+| `NVDataComponents` | `common.datacomponent` | Data component registry |
+| `ForgeRecipe` | `common.recipe.forge` | Hellfire Forge recipe class |
+| `FlaskRecipe` | `common.recipe.flask` | Flask recipe base class |
+
+---
+
+## Important Notes
+
+- **Hellfire Forge** — Recipe type is `neovitae:hellfire_forge`, recipe directory is `hellfire_forge/`
+- **API classes in main JAR** — there is no separate API artifact or source set
+- **Modonomicon transitive dependency** — addons that compile against NeoVitae may need Modonomicon on the classpath (for `NVGuideBookItem`)
 
 ---
 

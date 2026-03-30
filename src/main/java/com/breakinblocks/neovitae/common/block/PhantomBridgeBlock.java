@@ -14,17 +14,12 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.phys.shapes.VoxelShape;
-import com.breakinblocks.neovitae.common.blockentity.BMTiles;
-import com.breakinblocks.neovitae.common.blockentity.PhantomBridgeTile;
+import com.breakinblocks.neovitae.common.blockentity.NVTiles;
+import com.breakinblocks.neovitae.common.blockentity.PhantomBridgeBlockEntity;
 import com.breakinblocks.neovitae.util.helper.BlockEntityHelper;
 
 import javax.annotation.Nullable;
 
-/**
- * Phantom Bridge Block - A semi-transparent, solid block that players can walk on.
- * Created by the Sigil of the Phantom Bridge and the Ritual of the Phantom Bridge.
- * The block disappears after a set duration, reverting to air or the original block.
- */
 public class PhantomBridgeBlock extends BaseEntityBlock {
 
     public static final MapCodec<PhantomBridgeBlock> CODEC = simpleCodec(p -> new PhantomBridgeBlock());
@@ -48,7 +43,7 @@ public class PhantomBridgeBlock extends BaseEntityBlock {
     @Nullable
     @Override
     public BlockEntity newBlockEntity(BlockPos pos, BlockState state) {
-        return new PhantomBridgeTile(pos, state);
+        return new PhantomBridgeBlockEntity(pos, state);
     }
 
     @Nullable
@@ -57,7 +52,7 @@ public class PhantomBridgeBlock extends BaseEntityBlock {
         if (level.isClientSide()) {
             return null;
         }
-        return BlockEntityHelper.getTicker(blockEntityType, BMTiles.PHANTOM_BRIDGE_TYPE.get(), PhantomBridgeTile::tick);
+        return BlockEntityHelper.getTicker(blockEntityType, NVTiles.PHANTOM_BRIDGE_TYPE.get(), PhantomBridgeBlockEntity::tick);
     }
 
     @Override
@@ -88,7 +83,6 @@ public class PhantomBridgeBlock extends BaseEntityBlock {
     @Override
     protected void onRemove(BlockState state, Level level, BlockPos pos, BlockState newState, boolean movedByPiston) {
         if (!state.is(newState.getBlock())) {
-            // Block is being replaced - tile entity will handle cleanup
         }
         super.onRemove(state, level, pos, newState, movedByPiston);
     }

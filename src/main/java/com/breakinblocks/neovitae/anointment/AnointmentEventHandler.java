@@ -7,24 +7,32 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
+import net.minecraft.world.InteractionHand;
+import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.entity.projectile.AbstractArrow;
+import net.minecraft.world.item.BowItem;
+import net.minecraft.world.item.CrossbowItem;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.core.Holder;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.world.item.enchantment.Enchantment;
 import net.minecraft.world.item.enchantment.Enchantments;
+import net.minecraft.world.phys.Vec3;
 import net.neoforged.bus.api.EventPriority;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.event.enchanting.GetEnchantmentLevelEvent;
+import net.neoforged.neoforge.event.entity.EntityJoinLevelEvent;
 import net.neoforged.neoforge.event.entity.living.LivingDamageEvent;
+import net.neoforged.neoforge.event.entity.living.LivingEntityUseItemEvent;
 import net.neoforged.neoforge.event.entity.living.LivingIncomingDamageEvent;
 import net.neoforged.neoforge.event.entity.player.ItemTooltipEvent;
 import net.neoforged.neoforge.event.level.BlockEvent;
 import com.breakinblocks.neovitae.NeoVitae;
 import com.breakinblocks.neovitae.common.datacomponent.AnointmentHolder;
-import com.breakinblocks.neovitae.common.datacomponent.BMDataComponents;
+import com.breakinblocks.neovitae.common.datacomponent.NVDataComponents;
 
 /**
  * Handles anointment effects during gameplay events.
@@ -42,7 +50,7 @@ public class AnointmentEventHandler {
         }
 
         ItemStack heldStack = player.getMainHandItem();
-        AnointmentHolder holder = heldStack.get(BMDataComponents.ANOINTMENT_HOLDER.get());
+        AnointmentHolder holder = heldStack.get(NVDataComponents.ANOINTMENT_HOLDER.get());
 
         if (holder == null || holder.isEmpty()) {
             return;
@@ -75,7 +83,7 @@ public class AnointmentEventHandler {
         }
 
         ItemStack heldStack = player.getMainHandItem();
-        AnointmentHolder holder = heldStack.get(BMDataComponents.ANOINTMENT_HOLDER.get());
+        AnointmentHolder holder = heldStack.get(NVDataComponents.ANOINTMENT_HOLDER.get());
 
         if (holder == null || holder.isEmpty()) {
             return;
@@ -102,9 +110,9 @@ public class AnointmentEventHandler {
         // Update the item if anointments changed
         if (newHolder.anointments().size() != oldSize || !newHolder.equals(holder)) {
             if (newHolder.isEmpty()) {
-                heldStack.remove(BMDataComponents.ANOINTMENT_HOLDER.get());
+                heldStack.remove(NVDataComponents.ANOINTMENT_HOLDER.get());
             } else {
-                heldStack.set(BMDataComponents.ANOINTMENT_HOLDER.get(), newHolder);
+                heldStack.set(NVDataComponents.ANOINTMENT_HOLDER.get(), newHolder);
             }
 
             // Play effect when anointment expires
@@ -125,7 +133,7 @@ public class AnointmentEventHandler {
         }
 
         ItemStack heldStack = player.getMainHandItem();
-        AnointmentHolder holder = heldStack.get(BMDataComponents.ANOINTMENT_HOLDER.get());
+        AnointmentHolder holder = heldStack.get(NVDataComponents.ANOINTMENT_HOLDER.get());
 
         if (holder == null || holder.isEmpty()) {
             return;
@@ -170,9 +178,9 @@ public class AnointmentEventHandler {
         // Update the item if anointments changed
         if (hasChanges) {
             if (newHolder.isEmpty()) {
-                heldStack.remove(BMDataComponents.ANOINTMENT_HOLDER.get());
+                heldStack.remove(NVDataComponents.ANOINTMENT_HOLDER.get());
             } else {
-                heldStack.set(BMDataComponents.ANOINTMENT_HOLDER.get(), newHolder);
+                heldStack.set(NVDataComponents.ANOINTMENT_HOLDER.get(), newHolder);
             }
 
             // Play effect when anointment expires
@@ -189,7 +197,7 @@ public class AnointmentEventHandler {
     @SubscribeEvent
     public static void onGetEnchantmentLevel(GetEnchantmentLevelEvent event) {
         ItemStack stack = event.getStack();
-        AnointmentHolder holder = stack.get(BMDataComponents.ANOINTMENT_HOLDER.get());
+        AnointmentHolder holder = stack.get(NVDataComponents.ANOINTMENT_HOLDER.get());
 
         if (holder == null || holder.isEmpty()) {
             return;
@@ -226,6 +234,105 @@ public class AnointmentEventHandler {
     }
 
     /**
+     * Quick-draw anointment: reduce bow/crossbow draw time during use.
+     */
+    @SubscribeEvent
+    public static void onItemUseTick(LivingEntityUseItemEvent.Tick event) {
+        ItemStack stack = event.getItem();
+        if (!(stack.getItem() instanceof BowItem) && !(stack.getItem() instanceof CrossbowItem)) {
+            return;
+        }
+
+        AnointmentHolder holder = stack.get(NVDataComponents.ANOINTMENT_HOLDER.get());
+        if (holder == null || holder.isEmpty()) {
+            return;
+        }
+
+        int quickDrawLevel = holder.getAnointmentLevel(AnointmentRegistrar.QUICK_DRAW);
+        if (quickDrawLevel > 0) {
+            double speedBonus = AnointmentRegistrar.QUICK_DRAW.getBonusValue("speed", quickDrawLevel).doubleValue();
+            // Accumulate fractional tick reductions
+            if (speedBonus >= 1) {
+                event.setDuration(event.getDuration() - (int) speedBonus);
+            } else if (event.getEntity().level().getRandom().nextDouble() < speedBonus) {
+                event.setDuration(event.getDuration() - 1);
+            }
+        }
+    }
+
+    /**
+     * Consume anointments when item use finishes (bow shot, crossbow loaded, etc.)
+     */
+    @SubscribeEvent
+    public static void onItemUseStop(LivingEntityUseItemEvent.Stop event) {
+        ItemStack stack = event.getItem();
+        AnointmentHolder holder = stack.get(NVDataComponents.ANOINTMENT_HOLDER.get());
+
+        if (holder == null || holder.isEmpty()) {
+            return;
+        }
+
+        int oldSize = holder.anointments().size();
+        AnointmentHolder newHolder = holder.consumeOnUseFinish();
+
+        if (!newHolder.equals(holder)) {
+            if (newHolder.isEmpty()) {
+                stack.remove(NVDataComponents.ANOINTMENT_HOLDER.get());
+            } else {
+                stack.set(NVDataComponents.ANOINTMENT_HOLDER.get(), newHolder);
+            }
+
+            if (newHolder.anointments().size() < oldSize && event.getEntity() instanceof Player player) {
+                playAnointmentExpiredEffect(player);
+            }
+        }
+    }
+
+    /**
+     * Bow power and bow velocity anointments: modify arrows when they spawn.
+     */
+    @SubscribeEvent
+    public static void onArrowSpawn(EntityJoinLevelEvent event) {
+        Entity entity = event.getEntity();
+        if (!(entity instanceof AbstractArrow arrow)) {
+            return;
+        }
+        if (entity.tickCount > 0) {
+            return;
+        }
+
+        Entity shooter = arrow.getOwner();
+        if (!(shooter instanceof Player player)) {
+            return;
+        }
+
+        for (InteractionHand hand : InteractionHand.values()) {
+            ItemStack heldStack = player.getItemInHand(hand);
+            AnointmentHolder holder = heldStack.get(NVDataComponents.ANOINTMENT_HOLDER.get());
+            if (holder == null || holder.isEmpty()) {
+                continue;
+            }
+
+            int powerLevel = holder.getAnointmentLevel(AnointmentRegistrar.BOW_POWER);
+            if (powerLevel > 0) {
+                double damageMultiplier = AnointmentRegistrar.BOW_POWER.getBonusValue("damage", powerLevel).doubleValue();
+                arrow.setBaseDamage(arrow.getBaseDamage() + damageMultiplier);
+            }
+
+            int velocityLevel = holder.getAnointmentLevel(AnointmentRegistrar.BOW_VELOCITY);
+            if (velocityLevel > 0) {
+                double multiplier = AnointmentRegistrar.BOW_VELOCITY.getBonusValue("velocity", velocityLevel).doubleValue();
+                Vec3 motion = arrow.getDeltaMovement();
+                arrow.setDeltaMovement(motion.scale(1 + multiplier));
+                // Scale down base damage to compensate for velocity increase (arrows do more damage at higher velocity)
+                arrow.setBaseDamage(arrow.getBaseDamage() / (1 + multiplier));
+            }
+
+            break; // Only process the first matching hand
+        }
+    }
+
+    /**
      * Play visual and audio effect when an anointment expires
      */
     private static void playAnointmentExpiredEffect(Player player) {
@@ -242,7 +349,7 @@ public class AnointmentEventHandler {
     @SubscribeEvent
     public static void onItemTooltip(ItemTooltipEvent event) {
         ItemStack stack = event.getItemStack();
-        AnointmentHolder holder = stack.get(BMDataComponents.ANOINTMENT_HOLDER.get());
+        AnointmentHolder holder = stack.get(NVDataComponents.ANOINTMENT_HOLDER.get());
 
         if (holder == null || holder.isEmpty()) {
             return;

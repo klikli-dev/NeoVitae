@@ -33,10 +33,10 @@ import net.neoforged.api.distmarker.OnlyIn;
 import org.apache.commons.lang3.StringUtils;
 import com.breakinblocks.neovitae.NeoVitae;
 import com.breakinblocks.neovitae.client.ClientHandler;
-import com.breakinblocks.neovitae.common.block.BMBlocks;
+import com.breakinblocks.neovitae.common.block.NVBlocks;
 import com.breakinblocks.neovitae.common.block.BlockRitualStone;
-import com.breakinblocks.neovitae.common.blockentity.MasterRitualStoneTile;
-import com.breakinblocks.neovitae.common.datacomponent.BMDataComponents;
+import com.breakinblocks.neovitae.common.blockentity.MasterRitualStoneBlockEntity;
+import com.breakinblocks.neovitae.common.datacomponent.NVDataComponents;
 import com.breakinblocks.neovitae.ritual.*;
 
 import java.util.*;
@@ -58,49 +58,48 @@ public class ItemRitualDiviner extends Item {
     public ItemRitualDiviner(int type) {
         super(new Item.Properties()
                 .stacksTo(1)
-                .component(BMDataComponents.CURRENT_RITUAL.get(), "")
-                .component(BMDataComponents.DIVINER_DIRECTION.get(), Direction.NORTH.get3DDataValue())
-                .component(BMDataComponents.DIVINER_ACTIVATED.get(), false)
-                .component(BMDataComponents.DIVINER_STORED_POS.get(), BlockPos.ZERO));
+                .component(NVDataComponents.CURRENT_RITUAL.get(), "")
+                .component(NVDataComponents.DIVINER_DIRECTION.get(), Direction.NORTH.get3DDataValue())
+                .component(NVDataComponents.DIVINER_ACTIVATED.get(), false)
+                .component(NVDataComponents.DIVINER_STORED_POS.get(), BlockPos.ZERO));
         this.type = type;
     }
 
-    // ==================== State Management ====================
 
     public boolean isActivated(ItemStack stack) {
-        return Boolean.TRUE.equals(stack.get(BMDataComponents.DIVINER_ACTIVATED.get()));
+        return Boolean.TRUE.equals(stack.get(NVDataComponents.DIVINER_ACTIVATED.get()));
     }
 
     public void setActivated(ItemStack stack, boolean activated) {
-        stack.set(BMDataComponents.DIVINER_ACTIVATED.get(), activated);
+        stack.set(NVDataComponents.DIVINER_ACTIVATED.get(), activated);
     }
 
     public BlockPos getStoredPos(ItemStack stack) {
-        BlockPos pos = stack.get(BMDataComponents.DIVINER_STORED_POS.get());
+        BlockPos pos = stack.get(NVDataComponents.DIVINER_STORED_POS.get());
         return pos != null ? pos : BlockPos.ZERO;
     }
 
     public void setStoredPos(ItemStack stack, BlockPos pos) {
-        stack.set(BMDataComponents.DIVINER_STORED_POS.get(), pos);
+        stack.set(NVDataComponents.DIVINER_STORED_POS.get(), pos);
     }
 
     public Direction getDirection(ItemStack stack) {
-        Integer dir = stack.get(BMDataComponents.DIVINER_DIRECTION.get());
+        Integer dir = stack.get(NVDataComponents.DIVINER_DIRECTION.get());
         if (dir == null || dir == 0) return Direction.NORTH;
         return Direction.from3DDataValue(dir);
     }
 
     public void setDirection(ItemStack stack, Direction direction) {
-        stack.set(BMDataComponents.DIVINER_DIRECTION.get(), direction.get3DDataValue());
+        stack.set(NVDataComponents.DIVINER_DIRECTION.get(), direction.get3DDataValue());
     }
 
     public String getCurrentRitualId(ItemStack stack) {
-        String id = stack.get(BMDataComponents.CURRENT_RITUAL.get());
+        String id = stack.get(NVDataComponents.CURRENT_RITUAL.get());
         return id != null ? id : "";
     }
 
     public void setCurrentRitual(ItemStack stack, String ritualId) {
-        stack.set(BMDataComponents.CURRENT_RITUAL.get(), ritualId);
+        stack.set(NVDataComponents.CURRENT_RITUAL.get(), ritualId);
     }
 
     public Ritual getCurrentRitual(ItemStack stack) {
@@ -109,7 +108,6 @@ public class ItemRitualDiviner extends Item {
         return RitualRegistry.getRitual(ResourceLocation.parse(id));
     }
 
-    // ==================== Interaction ====================
 
     @Override
     public InteractionResult useOn(UseOnContext context) {
@@ -118,13 +116,11 @@ public class ItemRitualDiviner extends Item {
         BlockPos pos = context.getClickedPos();
         Player player = context.getPlayer();
 
-        // Check if we're clicking on a Master Ritual Stone
         BlockEntity blockEntity = level.getBlockEntity(pos);
-        if (!(blockEntity instanceof MasterRitualStoneTile)) {
+        if (!(blockEntity instanceof MasterRitualStoneBlockEntity)) {
             return InteractionResult.PASS;
         }
 
-        // Shift+click on MRS shows the ritual hologram (client-side only)
         if (player.isShiftKeyDown()) {
             if (level.isClientSide()) {
                 trySetDisplayedRitual(stack, level, pos);
@@ -132,7 +128,6 @@ public class ItemRitualDiviner extends Item {
             return InteractionResult.SUCCESS;
         }
 
-        // Normal click - start building ritual
         if (addRuneToRitual(stack, level, pos, player)) {
             setStoredPos(stack, pos);
             setActivated(stack, true);
@@ -146,20 +141,11 @@ public class ItemRitualDiviner extends Item {
         return InteractionResult.PASS;
     }
 
-    /**
-     * Right-click handling.
-     *
-     * Control scheme:
-     * - Shift+Right-click (anywhere): cycle rituals forward
-     * - Right-click in air: cycle direction (N/E/S/W)
-     * - Left-click in air: cycle rituals backwards (handled via LeftClickEmpty event)
-     */
     @Override
     public InteractionResultHolder<ItemStack> use(Level level, Player player, InteractionHand hand) {
         ItemStack stack = player.getItemInHand(hand);
         setActivated(stack, false);
 
-        // Shift+Right-click: cycle ritual forward (works regardless of what you're looking at)
         if (player.isShiftKeyDown()) {
             if (!level.isClientSide()) {
                 cycleRitual(stack, player, false);
@@ -167,13 +153,11 @@ public class ItemRitualDiviner extends Item {
             return new InteractionResultHolder<>(InteractionResult.SUCCESS, stack);
         }
 
-        // Non-shift right-click: only cycle direction when not looking at a block
         HitResult ray = getPlayerPOVHitResult(level, player, ClipContext.Fluid.NONE);
         if (ray != null && ray.getType() == HitResult.Type.BLOCK) {
             return new InteractionResultHolder<>(InteractionResult.PASS, stack);
         }
 
-        // Right-click in air: cycle direction
         if (!level.isClientSide()) {
             cycleDirection(stack, player);
         }
@@ -184,7 +168,7 @@ public class ItemRitualDiviner extends Item {
     public void trySetDisplayedRitual(ItemStack itemStack, Level level, BlockPos pos) {
         BlockEntity blockEntity = level.getBlockEntity(pos);
 
-        if (blockEntity instanceof MasterRitualStoneTile masterRitualStone) {
+        if (blockEntity instanceof MasterRitualStoneBlockEntity masterRitualStone) {
             Ritual ritual = getCurrentRitual(itemStack);
 
             if (ritual != null) {
@@ -204,18 +188,16 @@ public class ItemRitualDiviner extends Item {
         if (!(entity instanceof Player player)) return;
         if (!isActivated(stack)) return;
 
-        // Auto-build mode - place one rune every 4 ticks
         if (entity.tickCount % 4 == 0) {
             BlockPos pos = getStoredPos(stack);
-            if (!addRuneToRitual(stack, level, pos, player)) {
-                setActivated(stack, false);
-            } else if (level.isClientSide()) {
+            if (level.isClientSide()) {
                 spawnParticles(level, pos, 30);
+            } else if (!addRuneToRitual(stack, level, pos, player)) {
+                setActivated(stack, false);
             }
         }
     }
 
-    // ==================== Ritual Building ====================
 
     /**
      * Attempts to add a single rune to the ritual.
@@ -224,7 +206,7 @@ public class ItemRitualDiviner extends Item {
      */
     public boolean addRuneToRitual(ItemStack stack, Level level, BlockPos masterPos, Player player) {
         BlockEntity blockEntity = level.getBlockEntity(masterPos);
-        if (!(blockEntity instanceof MasterRitualStoneTile)) return false;
+        if (!(blockEntity instanceof MasterRitualStoneBlockEntity)) return false;
 
         Ritual ritual = getCurrentRitual(stack);
         if (ritual == null) return false;
@@ -242,16 +224,13 @@ public class ItemRitualDiviner extends Item {
             BlockPos runePos = masterPos.offset(offset);
             BlockState state = level.getBlockState(runePos);
 
-            // Check if this position already has the correct rune
             if (state.getBlock() instanceof BlockRitualStone ritualStone) {
                 if (ritualStone.isRuneType(level, runePos, component.runeType())) {
-                    // Already has correct rune, clear hologram on client and continue
                     if (level.isClientSide()) {
                         undisplayHologram();
                     }
                     continue;
                 } else {
-                    // Wrong rune type - replace it (with protection check)
                     if (!ritualStone.setRuneType(level, runePos, component.runeType(), player)) {
                         notifyBlockedBuild(player, runePos);
                         return false;
@@ -260,7 +239,6 @@ public class ItemRitualDiviner extends Item {
                 }
             }
 
-            // Check if we can place a block here
             BlockPlaceContext ctx = new BlockPlaceContext(level, player, InteractionHand.MAIN_HAND,
                     ItemStack.EMPTY, BlockHitResult.miss(Vec3.ZERO, Direction.UP, runePos));
 
@@ -269,8 +247,7 @@ public class ItemRitualDiviner extends Item {
                     return false;
                 }
 
-                // Place the ritual stone (with protection check)
-                Block blankStone = BMBlocks.BLANK_RITUAL_STONE.block().get();
+                Block blankStone = NVBlocks.BLANK_RITUAL_STONE.block().get();
                 if (blankStone instanceof BlockRitualStone ritualStone) {
                     if (!ritualStone.setRuneType(level, runePos, component.runeType(), player)) {
                         notifyBlockedBuild(player, runePos);
@@ -284,7 +261,6 @@ public class ItemRitualDiviner extends Item {
             }
         }
 
-        // All runes placed
         return false;
     }
 
@@ -298,9 +274,6 @@ public class ItemRitualDiviner extends Item {
         };
     }
 
-    /**
-     * Consumes a ritual stone from the player's inventory.
-     */
     private boolean consumeRitualStone(ItemStack diviner, Level level, Player player) {
         if (player.isCreative()) return true;
 
@@ -316,7 +289,6 @@ public class ItemRitualDiviner extends Item {
         return false;
     }
 
-    // ==================== Cycling ====================
 
     public void cycleDirection(ItemStack stack, Player player) {
         Direction current = getDirection(stack);
@@ -339,7 +311,6 @@ public class ItemRitualDiviner extends Item {
     public void cycleRitual(ItemStack stack, Player player, boolean reverse) {
         String currentId = getCurrentRitualId(stack);
 
-        // Get all rituals this diviner can build, sorted by registry ID for consistency
         List<Ritual> rituals = RitualRegistry.getAllRituals().stream()
                 .filter(r -> canDivinerBuildRitual(stack, r))
                 .sorted(Comparator.comparing(r -> {
@@ -354,7 +325,6 @@ public class ItemRitualDiviner extends Item {
             return;
         }
 
-        // Find current index
         int currentIndex = -1;
         for (int i = 0; i < rituals.size(); i++) {
             ResourceLocation id = RitualRegistry.getId(rituals.get(i));
@@ -364,16 +334,12 @@ public class ItemRitualDiviner extends Item {
             }
         }
 
-        // Calculate next index
         int nextIndex;
         if (currentIndex == -1) {
-            // No current ritual selected, start at first
             nextIndex = 0;
         } else if (reverse) {
-            // Go backwards (previous)
             nextIndex = (currentIndex - 1 + rituals.size()) % rituals.size();
         } else {
-            // Go forwards (next)
             nextIndex = (currentIndex + 1) % rituals.size();
         }
 
@@ -411,7 +377,6 @@ public class ItemRitualDiviner extends Item {
                 Component.translatable("chat.neovitae.diviner.blockedBuild", pos.getX(), pos.getY(), pos.getZ()), true);
     }
 
-    // ==================== Rune Capability ====================
 
     public boolean canPlaceRitualStone(EnumRuneType rune, ItemStack stack) {
         return switch (rune) {
@@ -425,7 +390,6 @@ public class ItemRitualDiviner extends Item {
         return type;
     }
 
-    // ==================== Tooltip ====================
 
     @Override
     public void appendHoverText(ItemStack stack, TooltipContext context, List<Component> tooltip, TooltipFlag flag) {
@@ -438,11 +402,8 @@ public class ItemRitualDiviner extends Item {
             boolean extraInfo = sneaking && Screen.hasAltDown();
 
             if (extraInfo) {
-                // Shift+Alt: Show demon will type info if available
                 tooltip.add(Component.empty());
-                // DemonWillType info would go here if translatable
             } else if (sneaking) {
-                // Shift: Show direction and detailed rune counts
                 tooltip.add(Component.translatable(TOOLTIP_BASE + "currentDirection",
                         capitalize(getDirection(stack).getName())).withStyle(ChatFormatting.GRAY));
                 tooltip.add(Component.empty());
@@ -461,9 +422,7 @@ public class ItemRitualDiviner extends Item {
                 tooltip.add(Component.empty());
                 tooltip.add(Component.translatable(TOOLTIP_BASE + "totalRune", total).withStyle(ChatFormatting.GRAY));
             } else {
-                // Default: Show basic info and hint for extra info
                 tooltip.add(Component.empty());
-                // Show ritual description if available
                 String infoKey = ritual.getTranslationKey() + ".info";
                 tooltip.add(Component.translatable(infoKey).withStyle(ChatFormatting.GRAY));
                 tooltip.add(Component.empty());
@@ -488,7 +447,6 @@ public class ItemRitualDiviner extends Item {
         return counts;
     }
 
-    // ==================== Utilities ====================
 
     private static String capitalize(String str) {
         return StringUtils.capitalize(str.toLowerCase(Locale.ROOT));

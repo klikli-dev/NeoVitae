@@ -11,27 +11,21 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.phys.Vec3;
 import org.joml.Matrix4f;
-import com.breakinblocks.neovitae.common.blockentity.routing.InputRoutingNodeTile;
-import com.breakinblocks.neovitae.common.blockentity.routing.MasterRoutingNodeTile;
-import com.breakinblocks.neovitae.common.blockentity.routing.OutputRoutingNodeTile;
-import com.breakinblocks.neovitae.common.blockentity.routing.RoutingNodeTile;
-import com.breakinblocks.neovitae.common.routing.IRoutingNode;
+import com.breakinblocks.neovitae.common.blockentity.routing.InputRoutingNodeBlockEntity;
+import com.breakinblocks.neovitae.common.blockentity.routing.MasterRoutingNodeBlockEntity;
+import com.breakinblocks.neovitae.common.blockentity.routing.OutputRoutingNodeBlockEntity;
+import com.breakinblocks.neovitae.common.blockentity.routing.RoutingNodeBlockEntity;
+import com.breakinblocks.neovitae.api.routing.*;
 
 import java.util.List;
 
-/**
- * Renderer for routing nodes that draws beams between connected nodes.
- * Provides visual feedback for the routing network structure.
- */
 public class RoutingNodeRenderer<T extends BlockEntity & IRoutingNode> implements BlockEntityRenderer<T> {
 
-    // Beam colors for different node types (ARGB format)
-    private static final int COLOR_INPUT = 0xFF4488FF;     // Blue for input nodes
-    private static final int COLOR_OUTPUT = 0xFFFF8844;    // Orange for output nodes
-    private static final int COLOR_MASTER = 0xFFFFD700;    // Gold for master node
-    private static final int COLOR_GENERAL = 0xFFAAAAAA;   // Gray for general nodes
+    private static final int COLOR_INPUT = 0xFF4488FF;
+    private static final int COLOR_OUTPUT = 0xFFFF8844;
+    private static final int COLOR_MASTER = 0xFFFFD700;
+    private static final int COLOR_GENERAL = 0xFFAAAAAA;
 
-    // Beam width (half-width in blocks)
     private static final float BEAM_WIDTH = 0.03f;
 
     public RoutingNodeRenderer(BlockEntityRendererProvider.Context context) {
@@ -59,36 +53,28 @@ public class RoutingNodeRenderer<T extends BlockEntity & IRoutingNode> implement
         }
     }
 
-    /**
-     * Renders a beam from the source node to the target position.
-     */
     private void renderBeam(PoseStack poseStack, VertexConsumer buffer, BlockPos source, BlockPos target, int color, int packedLight) {
         poseStack.pushPose();
 
-        // Calculate relative position from source to target
         float dx = target.getX() - source.getX();
         float dy = target.getY() - source.getY();
         float dz = target.getZ() - source.getZ();
 
-        // Start at center of source block
         float startX = 0.5f;
         float startY = 0.5f;
         float startZ = 0.5f;
 
-        // End at center of target block (relative to source)
         float endX = dx + 0.5f;
         float endY = dy + 0.5f;
         float endZ = dz + 0.5f;
 
         Matrix4f matrix = poseStack.last().pose();
 
-        // Extract color components
         float r = ((color >> 16) & 0xFF) / 255f;
         float g = ((color >> 8) & 0xFF) / 255f;
         float b = (color & 0xFF) / 255f;
         float a = ((color >> 24) & 0xFF) / 255f;
 
-        // Calculate direction and normalize
         float length = (float) Math.sqrt(dx * dx + dy * dy + dz * dz);
         if (length < 0.001f) {
             poseStack.popPose();
@@ -99,7 +85,6 @@ public class RoutingNodeRenderer<T extends BlockEntity & IRoutingNode> implement
         float ny = dy / length;
         float nz = dz / length;
 
-        // Draw the line
         buffer.addVertex(matrix, startX, startY, startZ)
                 .setColor(r, g, b, a)
                 .setNormal(poseStack.last(), nx, ny, nz);
@@ -110,15 +95,12 @@ public class RoutingNodeRenderer<T extends BlockEntity & IRoutingNode> implement
         poseStack.popPose();
     }
 
-    /**
-     * Gets the appropriate color for a routing node based on its type.
-     */
     private int getColorForNode(T node) {
-        if (node instanceof MasterRoutingNodeTile) {
+        if (node instanceof MasterRoutingNodeBlockEntity) {
             return COLOR_MASTER;
-        } else if (node instanceof InputRoutingNodeTile) {
+        } else if (node instanceof InputRoutingNodeBlockEntity) {
             return COLOR_INPUT;
-        } else if (node instanceof OutputRoutingNodeTile) {
+        } else if (node instanceof OutputRoutingNodeBlockEntity) {
             return COLOR_OUTPUT;
         }
         return COLOR_GENERAL;
@@ -126,13 +108,11 @@ public class RoutingNodeRenderer<T extends BlockEntity & IRoutingNode> implement
 
     @Override
     public boolean shouldRenderOffScreen(T blockEntity) {
-        // Beams can extend beyond the block's bounding box
         return true;
     }
 
     @Override
     public int getViewDistance() {
-        // Allow beams to render from a reasonable distance
         return 64;
     }
 }

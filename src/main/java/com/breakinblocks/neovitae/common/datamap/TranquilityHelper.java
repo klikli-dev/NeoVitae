@@ -34,9 +34,8 @@ import javax.annotation.Nullable;
  */
 public final class TranquilityHelper {
 
-    private TranquilityHelper() {
-        // Utility class
-    }
+    private TranquilityHelper() {}
+
 
     /**
      * Gets the tranquility value for a block from the datamap.
@@ -48,7 +47,7 @@ public final class TranquilityHelper {
     public static TranquilityValue getTranquilityValue(Block block) {
         return BuiltInRegistries.BLOCK
                 .wrapAsHolder(block)
-                .getData(BMDataMaps.TRANQUILITY);
+                .getData(NVDataMaps.TRANQUILITY);
     }
 
     /**

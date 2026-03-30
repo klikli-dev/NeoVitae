@@ -15,17 +15,13 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.phys.Vec3;
 import com.breakinblocks.neovitae.api.sigil.SigilEffect;
-import com.breakinblocks.neovitae.common.blockentity.TeleposerTile;
-import com.breakinblocks.neovitae.common.datacomponent.BMDataComponents;
+import com.breakinblocks.neovitae.common.blockentity.TeleposerBlockEntity;
+import com.breakinblocks.neovitae.common.datacomponent.NVDataComponents;
 import com.breakinblocks.neovitae.registry.SigilEffectRegistry;
 
 import java.util.Set;
 import java.util.function.Supplier;
 
-/**
- * Sigil effect that teleports the player to a bound teleposer location.
- * The teleposer location must be set by right-clicking on a teleposer block.
- */
 public record TelepositionSigilEffect() implements SigilEffect {
 
     public static final MapCodec<TelepositionSigilEffect> CODEC = MapCodec.unit(TelepositionSigilEffect::new);
@@ -44,8 +40,8 @@ public record TelepositionSigilEffect() implements SigilEffect {
             return false;
         }
 
-        BlockPos boundPos = stack.get(BMDataComponents.TELEPOSER_POS.get());
-        String dimensionId = stack.get(BMDataComponents.TELEPOSER_DIMENSION.get());
+        BlockPos boundPos = stack.get(NVDataComponents.TELEPOSER_POS.get());
+        String dimensionId = stack.get(NVDataComponents.TELEPOSER_DIMENSION.get());
 
         if (boundPos == null || dimensionId == null) {
             player.sendSystemMessage(Component.translatable("tooltip.neovitae.sigil.teleposition.unbound"));
@@ -66,12 +62,11 @@ public record TelepositionSigilEffect() implements SigilEffect {
 
         BlockEntity tile = targetLevel.getBlockEntity(boundPos);
 
-        if (!(tile instanceof TeleposerTile)) {
+        if (!(tile instanceof TeleposerBlockEntity)) {
             player.sendSystemMessage(Component.translatable("tooltip.neovitae.sigil.teleposition.no_teleposer"));
             return false;
         }
 
-        // Teleport the player to the teleposer location
         BlockPos teleportPos = boundPos.above();
         double x = teleportPos.getX() + 0.5;
         double y = teleportPos.getY();
@@ -93,10 +88,9 @@ public record TelepositionSigilEffect() implements SigilEffect {
         }
 
         BlockEntity tile = level.getBlockEntity(blockPos);
-        if (tile instanceof TeleposerTile) {
-            // Bind to this teleposer
-            stack.set(BMDataComponents.TELEPOSER_POS.get(), blockPos);
-            stack.set(BMDataComponents.TELEPOSER_DIMENSION.get(), level.dimension().location().toString());
+        if (tile instanceof TeleposerBlockEntity) {
+            stack.set(NVDataComponents.TELEPOSER_POS.get(), blockPos);
+            stack.set(NVDataComponents.TELEPOSER_DIMENSION.get(), level.dimension().location().toString());
             player.sendSystemMessage(Component.translatable("tooltip.neovitae.sigil.teleposition.bound",
                     blockPos.getX(), blockPos.getY(), blockPos.getZ()));
             return true;

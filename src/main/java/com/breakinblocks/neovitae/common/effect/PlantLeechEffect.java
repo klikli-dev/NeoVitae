@@ -4,9 +4,6 @@ import net.minecraft.world.effect.MobEffect;
 import net.minecraft.world.effect.MobEffectCategory;
 import net.minecraft.world.entity.LivingEntity;
 
-/**
- * Plant Leech effect - damages the entity to grow nearby plants.
- */
 public class PlantLeechEffect extends MobEffect {
 
     public PlantLeechEffect(MobEffectCategory category, int color) {
@@ -15,7 +12,18 @@ public class PlantLeechEffect extends MobEffect {
 
     @Override
     public boolean applyEffectTick(LivingEntity entity, int amplifier) {
-        BMPotionUtils.damageMobAndGrowSurroundingPlants(entity, 2 + amplifier, 1,
+        if (entity.level().isClientSide) {
+            for (int i = 0; i < 2; i++) {
+                double x = entity.getX() + (entity.getRandom().nextDouble() - 0.5) * 0.8;
+                double y = entity.getY() + entity.getRandom().nextDouble() * entity.getBbHeight();
+                double z = entity.getZ() + (entity.getRandom().nextDouble() - 0.5) * 0.8;
+                entity.level().addParticle(
+                        new com.breakinblocks.neovitae.client.particle.ColoredParticleOptions(
+                                com.breakinblocks.neovitae.common.particle.NVParticles.BLOOD_FLAME.get(), 0x22AA22),
+                        x, y, z, 0, -0.03, 0);
+            }
+        }
+        NVPotionUtils.damageMobAndGrowSurroundingPlants(entity, 2 + amplifier, 1,
                 0.5 * 3 / (amplifier + 3), 25 * (1 + amplifier));
         return true;
     }

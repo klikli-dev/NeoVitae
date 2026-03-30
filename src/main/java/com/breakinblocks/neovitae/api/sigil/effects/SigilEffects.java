@@ -6,12 +6,22 @@ import com.breakinblocks.neovitae.api.sigil.SigilEffect;
 import java.util.function.Supplier;
 
 /**
- * Initializes all built-in sigil effect registrations.
- * This class must be loaded to trigger static initialization of effect registrations.
+ * Registry of all built-in sigil effect types provided by NeoVitae.
+ *
+ * <p>Each constant holds a {@link Supplier} for the {@link MapCodec} of a built-in
+ * {@link SigilEffect} implementation. These are registered into NeoVitae's sigil effect
+ * type registry during mod initialization.</p>
+ *
+ * <p>Addon developers do not need to interact with this class. To register custom
+ * sigil effects, create your own {@link net.neoforged.neoforge.registries.DeferredRegister}
+ * against {@link com.breakinblocks.neovitae.api.registry.NeoVitaeRegistries#SIGIL_EFFECT_TYPE_KEY}
+ * and register your effect's {@link MapCodec} there.</p>
+ *
+ * @see SigilEffect
+ * @see com.breakinblocks.neovitae.api.sigil.ISigilEffect
  */
 public class SigilEffects {
 
-    // Force load all effect classes to trigger their static registration
     public static final Supplier<MapCodec<AirSigilEffect>> AIR = AirSigilEffect.REGISTRATION;
     public static final Supplier<MapCodec<PlaceFluidSigilEffect>> PLACE_FLUID = PlaceFluidSigilEffect.REGISTRATION;
     public static final Supplier<MapCodec<VoidSigilEffect>> VOID = VoidSigilEffect.REGISTRATION;
@@ -26,12 +36,10 @@ public class SigilEffects {
     public static final Supplier<MapCodec<TelepositionSigilEffect>> TELEPOSITION = TelepositionSigilEffect.REGISTRATION;
 
     /**
-     * Call this method to ensure all effect types are registered.
-     * This should be called during mod initialization.
+     * Forces class loading to trigger static initialization of all built-in effect registrations.
+     * Called internally during mod setup; addon developers should not call this.
      */
     public static void init() {
-        // Accessing these fields forces their static initializers to run,
-        // which triggers registration of the effect codecs.
         var air = AIR;
         var placeFluid = PLACE_FLUID;
         var void_ = VOID;

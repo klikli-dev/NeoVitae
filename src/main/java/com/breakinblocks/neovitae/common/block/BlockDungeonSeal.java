@@ -17,13 +17,9 @@ import net.minecraft.world.level.block.state.BlockBehaviour;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.BlockHitResult;
 import org.jetbrains.annotations.Nullable;
-import com.breakinblocks.neovitae.common.blockentity.TileDungeonSeal;
+import com.breakinblocks.neovitae.common.blockentity.DungeonSealBlockEntity;
 import com.breakinblocks.neovitae.common.item.dungeon.ItemDungeonKey;
 
-/**
- * Dungeon Seal block - represents a sealed door in a procedural dungeon.
- * When activated, requests a new room to be generated from the dungeon controller.
- */
 public class BlockDungeonSeal extends Block implements EntityBlock {
 
     public BlockDungeonSeal() {
@@ -37,7 +33,7 @@ public class BlockDungeonSeal extends Block implements EntityBlock {
     @Nullable
     @Override
     public BlockEntity newBlockEntity(BlockPos pos, BlockState state) {
-        return new TileDungeonSeal(pos, state);
+        return new DungeonSealBlockEntity(pos, state);
     }
 
     @Override
@@ -48,11 +44,10 @@ public class BlockDungeonSeal extends Block implements EntityBlock {
         }
 
         BlockEntity blockEntity = level.getBlockEntity(pos);
-        if (!(blockEntity instanceof TileDungeonSeal seal)) {
+        if (!(blockEntity instanceof DungeonSealBlockEntity seal)) {
             return InteractionResult.PASS;
         }
 
-        // Request room generation
         boolean success = seal.requestRoomFromController(player);
 
         if (success) {
@@ -72,18 +67,16 @@ public class BlockDungeonSeal extends Block implements EntityBlock {
     protected ItemInteractionResult useItemOn(ItemStack stack, BlockState state, Level level,
                                                BlockPos pos, Player player, InteractionHand hand,
                                                BlockHitResult hitResult) {
-        // Handle dungeon key items
         if (stack.getItem() instanceof ItemDungeonKey dungeonKey) {
             if (level.isClientSide()) {
                 return ItemInteractionResult.SUCCESS;
             }
 
             BlockEntity blockEntity = level.getBlockEntity(pos);
-            if (!(blockEntity instanceof TileDungeonSeal seal)) {
+            if (!(blockEntity instanceof DungeonSealBlockEntity seal)) {
                 return ItemInteractionResult.PASS_TO_DEFAULT_BLOCK_INTERACTION;
             }
 
-            // Check if this key can open this door
             if (!dungeonKey.canOpenDoor(seal.getPotentialRoomTypes())) {
                 player.displayClientMessage(
                         Component.translatable("chat.neovitae.dungeon.seal.wrongKey")
@@ -91,11 +84,9 @@ public class BlockDungeonSeal extends Block implements EntityBlock {
                 return ItemInteractionResult.FAIL;
             }
 
-            // Request room generation with key
             boolean success = seal.requestRoomFromControllerWithKey(player, dungeonKey);
 
             if (success) {
-                // Consume one key
                 if (!player.getAbilities().instabuild) {
                     stack.shrink(1);
                 }

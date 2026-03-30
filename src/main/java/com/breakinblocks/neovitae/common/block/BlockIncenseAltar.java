@@ -2,6 +2,7 @@ package com.breakinblocks.neovitae.common.block;
 
 import com.mojang.serialization.MapCodec;
 import net.minecraft.core.BlockPos;
+import net.minecraft.util.RandomSource;
 import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.BaseEntityBlock;
@@ -16,8 +17,8 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.VoxelShape;
 import org.jetbrains.annotations.Nullable;
-import com.breakinblocks.neovitae.common.blockentity.BMTiles;
-import com.breakinblocks.neovitae.common.blockentity.IncenseAltarTile;
+import com.breakinblocks.neovitae.common.blockentity.NVTiles;
+import com.breakinblocks.neovitae.common.blockentity.IncenseAltarBlockEntity;
 
 /**
  * The Incense Altar boosts self-sacrifice when a player stands near it.
@@ -55,7 +56,18 @@ public class BlockIncenseAltar extends BaseEntityBlock {
     @Nullable
     @Override
     public BlockEntity newBlockEntity(BlockPos pos, BlockState state) {
-        return new IncenseAltarTile(pos, state);
+        return new IncenseAltarBlockEntity(pos, state);
+    }
+
+    @Override
+    public void animateTick(BlockState state, Level level, BlockPos pos, RandomSource random) {
+        if (level.getBlockEntity(pos) instanceof IncenseAltarBlockEntity altar && altar.getIncenseAddition() > 0) {
+            com.breakinblocks.neovitae.client.sound.LoopSoundManager.tryStartLoop(
+                    com.breakinblocks.neovitae.common.NVSounds.INCENSE_AMBIENT.get(),
+                    0.15f, level, pos,
+                    be -> be instanceof IncenseAltarBlockEntity ia && ia.getIncenseAddition() > 0
+            );
+        }
     }
 
     @Nullable
@@ -64,6 +76,6 @@ public class BlockIncenseAltar extends BaseEntityBlock {
         if (level.isClientSide()) {
             return null;
         }
-        return createTickerHelper(blockEntityType, BMTiles.INCENSE_ALTAR_TYPE.get(), IncenseAltarTile::serverTick);
+        return createTickerHelper(blockEntityType, NVTiles.INCENSE_ALTAR_TYPE.get(), IncenseAltarBlockEntity::serverTick);
     }
 }
