@@ -16,6 +16,7 @@ import net.neoforged.neoforge.registries.DeferredHolder;
 import net.neoforged.neoforge.registries.DeferredRegister;
 import com.breakinblocks.neovitae.NeoVitae;
 import com.breakinblocks.neovitae.common.datacomponent.NVDataComponents;
+import com.breakinblocks.neovitae.common.datacomponent.SpiritusType;
 import com.breakinblocks.neovitae.common.item.block.ItemBlockTabulaVitae;
 import com.breakinblocks.neovitae.common.item.block.RuneBlockItem;
 import com.breakinblocks.neovitae.ritual.EnumRuneType;
@@ -37,9 +38,11 @@ public class NVBlocks {
 
     public static final BlockWithItemHolder<AraVitaeBlock, BlockItem> ARA_VITAE = BLOCK_REG.register("ara_vitae", AraVitaeBlock::new);
     public static final BlockWithItemHolder<BloodTankBlock, BlockItem> BLOOD_TANK = BLOCK_REG.register("blood_tank", BloodTankBlock::new, block -> new BlockItem(block, new Item.Properties().component(NVDataComponents.CONTAINER_TIER, 1)));
+    public static final BlockWithItemHolder<BloodBatteryBlock, BlockItem> BLOOD_BATTERY = BLOCK_REG.register("blood_battery", BloodBatteryBlock::new);
     public static final BlockWithItemHolder<HellfireForgeBlock, BlockItem> HELLFIRE_FORGE = BLOCK_REG.register("hellfire_forge", HellfireForgeBlock::new);
     public static final BlockWithItemHolder<AthanorBlock, BlockItem> ATHANOR_BLOCK = BLOCK_REG.register("athanor", AthanorBlock::new);
     public static final BlockWithItemHolder<TeleposerBlock, BlockItem> TELEPOSER = BLOCK_REG.register("teleposer", TeleposerBlock::new);
+    public static final BlockWithItemHolder<SpiritCacheBlock, BlockItem> SPIRIT_CACHE = BLOCK_REG.register("spirit_cache", SpiritCacheBlock::new);
 
     private static final BlockBehaviour.Properties rune_properties = BlockBehaviour.Properties.of().strength(2.0F, 5.0F).sound(SoundType.STONE).requiresCorrectToolForDrops();
     private static final Item.Properties rune_item_properties = new Item.Properties();
@@ -122,14 +125,14 @@ public class NVBlocks {
     public static final BlockWithItemHolder<SpiraInfernalisBlock, BlockItem> SPIRA_INFERNALIS = BLOCK_REG.register("spira_infernalis", SpiraInfernalisBlock::new);
 
     private static final BlockBehaviour.Properties crystal_block_properties = BlockBehaviour.Properties.of().strength(3.0F, 3.0F).sound(SoundType.AMETHYST).requiresCorrectToolForDrops().lightLevel(state -> 7).noOcclusion();
-    public static final BlockWithItemHolder<BlockSpiritusCrystal, BlockItem> RAW_SPIRITUS_CRYSTAL = BLOCK_REG.register("raw_spiritus_crystal", () -> new BlockSpiritusCrystal(com.breakinblocks.neovitae.common.datacomponent.SpiritusType.DEFAULT, crystal_block_properties));
-    public static final BlockWithItemHolder<BlockSpiritusCrystal, BlockItem> CORROSIVE_SPIRITUS_CRYSTAL = BLOCK_REG.register("corrosive_spiritus_crystal", () -> new BlockSpiritusCrystal(com.breakinblocks.neovitae.common.datacomponent.SpiritusType.CORROSIVE, crystal_block_properties));
-    public static final BlockWithItemHolder<BlockSpiritusCrystal, BlockItem> DESTRUCTIVE_SPIRITUS_CRYSTAL = BLOCK_REG.register("destructive_spiritus_crystal", () -> new BlockSpiritusCrystal(com.breakinblocks.neovitae.common.datacomponent.SpiritusType.DESTRUCTIVE, crystal_block_properties));
-    public static final BlockWithItemHolder<BlockSpiritusCrystal, BlockItem> VENGEFUL_SPIRITUS_CRYSTAL = BLOCK_REG.register("vengeful_spiritus_crystal", () -> new BlockSpiritusCrystal(com.breakinblocks.neovitae.common.datacomponent.SpiritusType.VENGEFUL, crystal_block_properties));
-    public static final BlockWithItemHolder<BlockSpiritusCrystal, BlockItem> STEADFAST_SPIRITUS_CRYSTAL = BLOCK_REG.register("steadfast_spiritus_crystal", () -> new BlockSpiritusCrystal(com.breakinblocks.neovitae.common.datacomponent.SpiritusType.STEADFAST, crystal_block_properties));
+    public static final BlockWithItemHolder<BlockSpiritusCrystal, BlockItem> RAW_SPIRITUS_CRYSTAL = BLOCK_REG.register("raw_spiritus_crystal", () -> new BlockSpiritusCrystal(SpiritusType.RAW, crystal_block_properties));
+    public static final BlockWithItemHolder<BlockSpiritusCrystal, BlockItem> SPIRITUS_RUINA_CRYSTAL = BLOCK_REG.register("spiritus_ruina_crystal", () -> new BlockSpiritusCrystal(SpiritusType.RUINA, crystal_block_properties));
+    public static final BlockWithItemHolder<BlockSpiritusCrystal, BlockItem> SPIRITUS_NIHILUM_CRYSTAL = BLOCK_REG.register("spiritus_nihilum_crystal", () -> new BlockSpiritusCrystal(SpiritusType.NIHILUM, crystal_block_properties));
+    public static final BlockWithItemHolder<BlockSpiritusCrystal, BlockItem> SPIRITUS_VINDICTA_CRYSTAL = BLOCK_REG.register("spiritus_vindicta_crystal", () -> new BlockSpiritusCrystal(SpiritusType.VINDICTA, crystal_block_properties));
+    public static final BlockWithItemHolder<BlockSpiritusCrystal, BlockItem> SPIRITUS_INVICTUS_CRYSTAL = BLOCK_REG.register("spiritus_invictus_crystal", () -> new BlockSpiritusCrystal(SpiritusType.INVICTUS, crystal_block_properties));
 
     private static final BlockBehaviour.Properties routing_node_properties = BlockBehaviour.Properties.of().strength(2.0F, 5.0F).sound(SoundType.METAL).requiresCorrectToolForDrops().noOcclusion();
-    public static final BlockWithItemHolder<BlockRoutingNode, BlockItem> ROUTING_NODE = BLOCK_REG.register("item_routing_node", () -> new BlockRoutingNode(routing_node_properties));
+    public static final BlockWithItemHolder<BlockRoutingConduit, BlockItem> ROUTING_CONDUIT = BLOCK_REG.register("routing_conduit", () -> new BlockRoutingConduit(routing_node_properties));
     public static final BlockWithItemHolder<BlockInputRoutingNode, BlockItem> INPUT_ROUTING_NODE = BLOCK_REG.register("input_routing_node", () -> new BlockInputRoutingNode(routing_node_properties));
     public static final BlockWithItemHolder<BlockOutputRoutingNode, BlockItem> OUTPUT_ROUTING_NODE = BLOCK_REG.register("output_routing_node", () -> new BlockOutputRoutingNode(routing_node_properties));
     public static final BlockWithItemHolder<BlockMasterRoutingNode, BlockItem> MASTER_ROUTING_NODE = BLOCK_REG.register("master_routing_node", () -> new BlockMasterRoutingNode(routing_node_properties));
@@ -157,6 +160,7 @@ public class NVBlocks {
     private static final BlockBehaviour.Properties inversion_pillar_properties = BlockBehaviour.Properties.of().strength(2.0F, 5.0F).sound(SoundType.STONE).requiresCorrectToolForDrops().noOcclusion();
     public static final BlockWithItemHolder<BlockInversionPillar, BlockItem> INVERSION_PILLAR = BLOCK_REG.register("inversion_pillar", () -> new BlockInversionPillar(inversion_pillar_properties));
     public static final BlockWithItemHolder<BlockInversionPillarEnd, BlockItem> INVERSION_PILLAR_CAP = BLOCK_REG.register("inversion_pillar_cap", () -> new BlockInversionPillarEnd(inversion_pillar_properties));
+    public static final BlockWithItemHolder<BlockSpatialRift, BlockItem> SPATIAL_RIFT = BLOCK_REG.register("spatial_rift", BlockSpatialRift::new);
 
     public static final BlockWithItemHolder<BlockDungeonController, BlockItem> DUNGEON_CONTROLLER = BLOCK_REG.register("dungeon_controller", BlockDungeonController::new);
     public static final BlockWithItemHolder<BlockDungeonSeal, BlockItem> DUNGEON_SEAL = BLOCK_REG.register("dungeon_seal", BlockDungeonSeal::new);

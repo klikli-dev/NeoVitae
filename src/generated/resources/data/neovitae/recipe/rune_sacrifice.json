@@ -3,10 +3,10 @@
   "category": "building",
   "key": {
     "a": {
-      "tag": "c:stones"
+      "tag": "neovitae:vitae_stone"
     },
     "b": {
-      "item": "neovitae:reinforced_slate"
+      "item": "neovitae:tabula_robur"
     },
     "c": {
       "tag": "c:ingots/gold"

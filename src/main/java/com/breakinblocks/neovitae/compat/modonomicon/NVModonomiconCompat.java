@@ -37,9 +37,9 @@ public class NVModonomiconCompat {
                 BookFlaskRecipePage::fromNetwork
         );
         LoaderRegistry.registerPageLoader(
-                NVPageTypes.LIVING_DOWNGRADE,
-                BookLivingDowngradeRecipePage::fromJson,
-                BookLivingDowngradeRecipePage::fromNetwork
+                NVPageTypes.SENTIENT_DOWNGRADE,
+                BookSentientDowngradeRecipePage::fromJson,
+                BookSentientDowngradeRecipePage::fromNetwork
         );
         LoaderRegistry.registerPageLoader(
                 NVPageTypes.RITUAL_INFO,
@@ -47,9 +47,19 @@ public class NVModonomiconCompat {
                 BookRitualInfoPage::fromNetwork
         );
         LoaderRegistry.registerPageLoader(
-                NVPageTypes.LIVING_UPGRADE_TABLE,
-                BookLivingUpgradeTablePage::fromJson,
-                BookLivingUpgradeTablePage::fromNetwork
+                NVPageTypes.SENTIENT_UPGRADE_TABLE,
+                BookSentientUpgradeTablePage::fromJson,
+                BookSentientUpgradeTablePage::fromNetwork
+        );
+        LoaderRegistry.registerPageLoader(
+                NVPageTypes.BLOOD_ORB_STATS,
+                BookBloodOrbStatsPage::fromJson,
+                BookBloodOrbStatsPage::fromNetwork
+        );
+        LoaderRegistry.registerPageLoader(
+                NVPageTypes.SPIRITUS_GEM_STATS,
+                BookSpiritusGemStatsPage::fromJson,
+                BookSpiritusGemStatsPage::fromNetwork
         );
     }
 }

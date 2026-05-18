@@ -3,7 +3,7 @@
   "category": "building",
   "key": {
     "a": {
-      "tag": "c:stones"
+      "tag": "neovitae:vitae_stone"
     },
     "b": {
       "item": "minecraft:bucket"
@@ -12,7 +12,7 @@
       "item": "neovitae:rune_blank"
     },
     "d": {
-      "item": "neovitae:imbued_slate"
+      "item": "neovitae:tabula_animata"
     }
   },
   "pattern": [

@@ -30,8 +30,8 @@ public class RitualsCategory extends CategoryProvider {
                 "__0_1_2_3_y________",
                 "__w_x_z____________",
                 "___________________",
-                "__5_6_7____________",
-                "__8_9_A____________"
+                "__7________________",
+                "__8_9_A_B__________"
         };
     }
 
@@ -178,24 +178,16 @@ public class RitualsCategory extends CategoryProvider {
         yawningVoid.withParent(this.parent(basics));
         yawningVoid.withCondition(BookEntryReadConditionModel.create().withEntry("neovitae:rituals/ritual_basics"));
         yawningVoid.hideWhileLocked(false);
-        var geode = this.add(new RitualGeodeEntry(this).generate('4'));
-        geode.withParent(this.parent(basics));
-        geode.withCondition(BookEntryReadConditionModel.create().withEntry("neovitae:rituals/ritual_basics"));
-        geode.hideWhileLocked(false);
-        var crystalHarvest = this.add(new RitualCrystalHarvestEntry(this).generate('5'));
-        crystalHarvest.withParent(this.parent(basics));
-        crystalHarvest.withCondition(BookEntryReadConditionModel.create().withEntry("neovitae:rituals/ritual_basics"));
-        crystalHarvest.hideWhileLocked(false);
-        var crystalSplit = this.add(new RitualCrystalSplitEntry(this).generate('6'));
-        crystalSplit.withParent(this.parent(basics));
-        crystalSplit.withCondition(BookEntryReadConditionModel.create().withEntry("neovitae:rituals/ritual_basics"));
-        crystalSplit.hideWhileLocked(false);
+        var crystallumFractura = this.add(new RitualCrystallumFracturaEntry(this).generate('4'));
+        crystallumFractura.withParent(this.parent(basics));
+        crystallumFractura.withCondition(BookEntryReadConditionModel.create().withEntry("neovitae:rituals/ritual_basics"));
+        crystallumFractura.hideWhileLocked(false);
 
         var crystalCatalyst = this.add(new RitualCrystalCatalystEntry(this).generate('7'));
         crystalCatalyst.withParent(this.parent(basics));
         crystalCatalyst.withCondition(BookEntryReadConditionModel.create().withEntry("neovitae:rituals/ritual_basics"));
         crystalCatalyst.hideWhileLocked(false);
-        var armourEvolve = this.add(new RitualArmourEvolveEntry(this).generate('8'));
+        var armourEvolve = this.add(new RitualSentientArmourEvolveEntry(this).generate('8'));
         armourEvolve.withParent(this.parent(basics));
         armourEvolve.withCondition(BookEntryReadConditionModel.create().withEntry("neovitae:rituals/ritual_basics"));
         armourEvolve.hideWhileLocked(false);
@@ -203,10 +195,14 @@ public class RitualsCategory extends CategoryProvider {
         upgradeRemove.withParent(this.parent(basics));
         upgradeRemove.withCondition(BookEntryReadConditionModel.create().withEntry("neovitae:rituals/ritual_basics"));
         upgradeRemove.hideWhileLocked(false);
-        var livingDowngrade = this.add(new RitualLivingDowngradeEntry(this).generate('A'));
+        var livingDowngrade = this.add(new RitualSentientDowngradeEntry(this).generate('A'));
         livingDowngrade.withParent(this.parent(basics));
         livingDowngrade.withCondition(BookEntryReadConditionModel.create().withEntry("neovitae:rituals/ritual_basics"));
         livingDowngrade.hideWhileLocked(false);
+        var tormentNexus = this.add(new RitualTormentNexusEntry(this).generate('B'));
+        tormentNexus.withParent(this.parent(basics));
+        tormentNexus.withCondition(BookEntryReadConditionModel.create().withEntry("neovitae:rituals/ritual_basics"));
+        tormentNexus.hideWhileLocked(false);
     }
 
     @Override

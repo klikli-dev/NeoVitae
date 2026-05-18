@@ -15,6 +15,7 @@ import com.breakinblocks.neovitae.NeoVitae;
 import com.breakinblocks.neovitae.common.item.NVItems;
 import com.breakinblocks.neovitae.common.item.ExperienceTomeItem;
 import com.breakinblocks.neovitae.api.ritual.AreaDescriptor;
+import com.breakinblocks.neovitae.api.stream.StreamPresets;
 import com.breakinblocks.neovitae.ritual.*;
 import com.breakinblocks.neovitae.ritual.RitualHelper.RitualContext;
 import com.breakinblocks.neovitae.util.Utils;
@@ -56,8 +57,8 @@ public class RitualZephyr extends Ritual {
         Vec3 target = ownerPlayer.position();
         Vec3 masterCenter = Vec3.atCenterOf(ctx.masterPos());
 
-        BlockPos chestPos = RitualHelper.getRangePositions(ctx.master(), this, CHEST_RANGE, ctx.masterPos()).getFirst();
-        BlockEntity chestTile = ctx.level().getBlockEntity(chestPos);
+        BlockPos chestPos = RitualHelper.firstPositionInRange(ctx.master(), this, CHEST_RANGE, ctx.masterPos()).orElse(null);
+        BlockEntity chestTile = chestPos != null ? ctx.level().getBlockEntity(chestPos) : null;
         boolean hasChest = chestTile != null && Utils.getNumberOfFreeSlots(chestTile, Direction.DOWN) >= 1;
 
         List<ItemEntity> items = ctx.level().getEntitiesOfClass(ItemEntity.class, aabb);
@@ -77,6 +78,10 @@ public class RitualZephyr extends Ritual {
                     item.setItem(remainder);
                 }
                 entitiesMoved++;
+                final BlockPos insertAnchor = chestPos;
+                RitualHelper.chanceStream(ctx.level(), 10, () ->
+                        StreamPresets.arcaneBolt(item, insertAnchor).build()
+                                .sendToNearby(ctx.serverLevel(), ctx.masterPos(), 32));
                 continue;
             }
 

@@ -4,6 +4,7 @@ import net.minecraft.core.HolderLookup;
 import net.minecraft.data.PackOutput;
 import net.minecraft.data.tags.ItemTagsProvider;
 import net.minecraft.tags.ItemTags;
+import net.minecraft.world.item.Items;
 import net.minecraft.world.level.block.Block;
 import net.neoforged.neoforge.common.data.ExistingFileHelper;
 import com.breakinblocks.neovitae.NeoVitae;
@@ -21,43 +22,54 @@ public class NVItemTagProvider extends ItemTagsProvider {
     protected void addTags(HolderLookup.Provider provider) {
         copy(NVTags.Blocks.STORAGE_BLOCKS_HELLFORGED, NVTags.Items.STORAGE_BLOCKS_HELLFORGED);
 
-        tag(NVTags.Items.LIVING_SET)
-                .add(NVItems.LIVING_HELMET.get(), NVItems.LIVING_PLATE.get(), NVItems.LIVING_LEGGINGS.get(), NVItems.LIVING_BOOTS.get());
+        tag(NVTags.Items.VITAE_STONE)
+                .add(Items.DEEPSLATE);
 
-        tag(NVTags.Items.LIVING_UPGRADE_SET)
-                .addTag(NVTags.Items.LIVING_SET);
+        tag(NVTags.Items.SPIRITUS_GEM)
+                .add(NVItems.SPIRITUS_GEM_PETTY.get())
+                .add(NVItems.SPIRITUS_GEM_LESSER.get())
+                .add(NVItems.SPIRITUS_GEM_COMMON.get())
+                .add(NVItems.SPIRITUS_GEM_GREATER.get())
+                .add(NVItems.SPIRITUS_GEM_GRAND.get());
 
-        // Add living armor to vanilla armor tags for mod compatibility
-        tag(ItemTags.HEAD_ARMOR).add(NVItems.LIVING_HELMET.get());
-        tag(ItemTags.CHEST_ARMOR).add(NVItems.LIVING_PLATE.get());
-        tag(ItemTags.LEG_ARMOR).add(NVItems.LIVING_LEGGINGS.get());
-        tag(ItemTags.FOOT_ARMOR).add(NVItems.LIVING_BOOTS.get());
+        tag(NVTags.Items.SENTIENT_SET)
+                .add(NVItems.SENTIENT_HELMET.get(), NVItems.SENTIENT_PLATE.get(), NVItems.SENTIENT_LEGGINGS.get(), NVItems.SENTIENT_BOOTS.get());
 
-        tag(ItemTags.SWORDS).add(NVItems.SENTIENT_SWORD.get());
-        tag(ItemTags.AXES).add(NVItems.SENTIENT_AXE.get());
-        tag(ItemTags.PICKAXES).add(NVItems.SENTIENT_PICKAXE.get());
-        tag(ItemTags.SHOVELS).add(NVItems.SENTIENT_SHOVEL.get());
-        tag(ItemTags.MINING_ENCHANTABLE).add(NVItems.SENTIENT_PICKAXE.get(), NVItems.SENTIENT_SHOVEL.get(), NVItems.SENTIENT_AXE.get());
-        tag(ItemTags.MINING_LOOT_ENCHANTABLE).add(NVItems.SENTIENT_PICKAXE.get(), NVItems.SENTIENT_SHOVEL.get(), NVItems.SENTIENT_AXE.get());
-        tag(ItemTags.SWORD_ENCHANTABLE).add(NVItems.SENTIENT_SWORD.get());
-        tag(ItemTags.SHARP_WEAPON_ENCHANTABLE).add(NVItems.SENTIENT_SWORD.get(), NVItems.SENTIENT_AXE.get());
-        tag(ItemTags.WEAPON_ENCHANTABLE).add(NVItems.SENTIENT_SWORD.get(), NVItems.SENTIENT_AXE.get());
-        tag(ItemTags.FIRE_ASPECT_ENCHANTABLE).add(NVItems.SENTIENT_SWORD.get());
+        tag(NVTags.Items.SENTIENT_UPGRADE_SET)
+                .addTag(NVTags.Items.SENTIENT_SET);
+
+        // Add sentient armor to vanilla armor tags for mod compatibility
+        tag(ItemTags.HEAD_ARMOR).add(NVItems.SENTIENT_HELMET.get());
+        tag(ItemTags.CHEST_ARMOR).add(NVItems.SENTIENT_PLATE.get());
+        tag(ItemTags.LEG_ARMOR).add(NVItems.SENTIENT_LEGGINGS.get());
+        tag(ItemTags.FOOT_ARMOR).add(NVItems.SENTIENT_BOOTS.get());
+
+        tag(ItemTags.SWORDS).add(NVItems.SENTIENT_SWORD.get(), NVItems.LEX_VITAE.get());
+        tag(ItemTags.AXES).add(NVItems.SENTIENT_AXE.get(), NVItems.LEX_VITAE.get());
+        tag(ItemTags.PICKAXES).add(NVItems.SENTIENT_PICKAXE.get(), NVItems.LEX_VITAE.get());
+        tag(ItemTags.SHOVELS).add(NVItems.SENTIENT_SHOVEL.get(), NVItems.LEX_VITAE.get());
+        tag(ItemTags.HOES).add(NVItems.LEX_VITAE.get());
+        tag(ItemTags.MINING_ENCHANTABLE).add(NVItems.SENTIENT_PICKAXE.get(), NVItems.SENTIENT_SHOVEL.get(), NVItems.SENTIENT_AXE.get(), NVItems.LEX_VITAE.get());
+        tag(ItemTags.MINING_LOOT_ENCHANTABLE).add(NVItems.SENTIENT_PICKAXE.get(), NVItems.SENTIENT_SHOVEL.get(), NVItems.SENTIENT_AXE.get(), NVItems.LEX_VITAE.get());
+        tag(ItemTags.SWORD_ENCHANTABLE).add(NVItems.SENTIENT_SWORD.get(), NVItems.LEX_VITAE.get());
+        tag(ItemTags.SHARP_WEAPON_ENCHANTABLE).add(NVItems.SENTIENT_SWORD.get(), NVItems.SENTIENT_AXE.get(), NVItems.LEX_VITAE.get());
+        tag(ItemTags.WEAPON_ENCHANTABLE).add(NVItems.SENTIENT_SWORD.get(), NVItems.SENTIENT_AXE.get(), NVItems.LEX_VITAE.get());
+        tag(ItemTags.FIRE_ASPECT_ENCHANTABLE).add(NVItems.SENTIENT_SWORD.get(), NVItems.LEX_VITAE.get());
         tag(ItemTags.DURABILITY_ENCHANTABLE)
                 .add(NVItems.SENTIENT_SWORD.get(), NVItems.SENTIENT_AXE.get(),
                         NVItems.SENTIENT_PICKAXE.get(), NVItems.SENTIENT_SHOVEL.get(),
-                        NVItems.SENTIENT_SCYTHE.get(), NVItems.DAGGER_OF_SACRIFICE.get());
+                        NVItems.SENTIENT_SCYTHE.get(), NVItems.LEX_VITAE.get());
         tag(ItemTags.VANISHING_ENCHANTABLE)
                 .add(NVItems.SENTIENT_SWORD.get(), NVItems.SENTIENT_AXE.get(),
                         NVItems.SENTIENT_PICKAXE.get(), NVItems.SENTIENT_SHOVEL.get(),
-                        NVItems.SENTIENT_SCYTHE.get(), NVItems.DAGGER_OF_SACRIFICE.get());
+                        NVItems.SENTIENT_SCYTHE.get(), NVItems.LEX_VITAE.get());
 
         tag(NVTags.Items.SPIRITUS_CRYSTALS)
-                .add(NVItems.RAW_CRYSTAL.get())
-                .add(NVItems.CORROSIVE_CRYSTAL.get())
-                .add(NVItems.DESTRUCTIVE_CRYSTAL.get())
-                .add(NVItems.STEADFAST_CRYSTAL.get())
-                .add(NVItems.VENGEFUL_CRYSTAL.get());
+                .add(NVItems.RAW_SPIRITUS_CRYSTAL_ITEM.get())
+                .add(NVItems.SPIRITUS_RUINA_CRYSTAL_ITEM.get())
+                .add(NVItems.SPIRITUS_NIHILUM_CRYSTAL_ITEM.get())
+                .add(NVItems.SPIRITUS_INVICTUS_CRYSTAL_ITEM.get())
+                .add(NVItems.SPIRITUS_VINDICTA_CRYSTAL_ITEM.get());
 
         tag(NVTags.Items.REVERTER)
                 .add(NVItems.SANGUINE_REVERTER.get());
@@ -131,5 +143,25 @@ public class NVItemTagProvider extends ItemTagsProvider {
 
         // Raw material tags
         tag(NVTags.Items.RAW_MATERIALS_HELLFORGED).add(NVItems.DEMONITE_RAW.get());
+
+        // Armor trim material
+        tag(ItemTags.TRIM_MATERIALS).add(NVItems.DEMONITE_TRIM_INGOT.get());
+
+        tag(NVTags.Items.ANOINTABLE_MELEE)
+                .addTag(ItemTags.SWORDS)
+                .addTag(ItemTags.AXES);
+
+        tag(NVTags.Items.ANOINTABLE_MINING)
+                .addTag(ItemTags.PICKAXES)
+                .addTag(ItemTags.SHOVELS)
+                .addTag(ItemTags.AXES);
+
+        tag(NVTags.Items.ANOINTABLE_BOWS)
+                .add(Items.BOW)
+                .add(Items.CROSSBOW);
+
+        tag(NVTags.Items.ANOINTABLE_WEAPONS)
+                .addTag(NVTags.Items.ANOINTABLE_MELEE)
+                .addTag(NVTags.Items.ANOINTABLE_BOWS);
     }
 }

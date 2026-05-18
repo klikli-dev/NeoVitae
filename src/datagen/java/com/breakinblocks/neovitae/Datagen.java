@@ -13,7 +13,8 @@ import net.neoforged.neoforge.data.event.GatherDataEvent;
 import com.breakinblocks.neovitae.common.registry.NVRegistries;
 import com.breakinblocks.neovitae.datagen.content.AltarTiers;
 import com.breakinblocks.neovitae.datagen.content.NVDamageSourcesContent;
-import com.breakinblocks.neovitae.datagen.content.LivingUpgrades;
+import com.breakinblocks.neovitae.datagen.content.RitualLayoutsContent;
+import com.breakinblocks.neovitae.datagen.content.SentientUpgrades;
 import com.breakinblocks.neovitae.datagen.content.SigilTypes;
 import com.breakinblocks.neovitae.datagen.provider.*;
 import com.breakinblocks.neovitae.registry.SigilTypeRegistry;
@@ -32,55 +33,44 @@ public class Datagen {
         DataGenerator generator = event.getGenerator();
         PackOutput output = generator.getPackOutput();
         ExistingFileHelper fileHelper = event.getExistingFileHelper();
-
-        generator.addProvider(event.includeClient(), new NVItemModelProvider(output, fileHelper));
-        generator.addProvider(event.includeClient(), new NVBlockStateProvider(output, fileHelper));
+        CompletableFuture<HolderLookup.Provider> provider = event.getLookupProvider();
 
         var langProvider = new NVLanguageProvider(output);
 
         event.createDatapackRegistryObjects(new RegistrySetBuilder()
             .add(Registries.DAMAGE_TYPE, NVDamageSourcesContent::bootstrap)
             .add(NVRegistries.Keys.ALTAR_TIER_KEY, AltarTiers::bootstrap)
-            .add(NVRegistries.Keys.LIVING_UPGRADES, LivingUpgrades::bootstrap)
+            .add(NVRegistries.Keys.RITUAL_LAYOUT_KEY, RitualLayoutsContent::bootstrap)
+            .add(NVRegistries.Keys.SENTIENT_UPGRADES, SentientUpgrades::bootstrap)
             .add(SigilTypeRegistry.SIGIL_TYPE_KEY, SigilTypes::bootstrap)
         );
 
         ProviderHelper helper = new ProviderHelper(fileHelper);
 
         event.createProvider(helper.tagsFor(NVRegistries.Keys.ALTAR_TIER_KEY, AltarTiers::tags));
-        event.createProvider(helper.tagsFor(NVRegistries.Keys.LIVING_UPGRADES, LivingUpgrades::tags));
+        event.createProvider(helper.tagsFor(NVRegistries.Keys.SENTIENT_UPGRADES, SentientUpgrades::tags));
         event.createProvider(helper.tagsFor(Registries.DAMAGE_TYPE, NVDamageSourcesContent::tags));
         event.createBlockAndItemTags(NVBlockTagProvider::new, NVItemTagProvider::new);
 
-        // Fluid and entity tags
-        CompletableFuture<HolderLookup.Provider> provider = event.getLookupProvider();
-        generator.addProvider(event.includeServer(), new NVFluidTagProvider(output, provider, fileHelper));
-        generator.addProvider(event.includeServer(), new NVEntityTagProvider(output, provider, fileHelper));
-
-        // Sprite sources for custom model textures
-        generator.addProvider(event.includeClient(), new NVSpriteSourceProvider(output, provider, fileHelper));
-
-        // Dungeon room definitions
-        generator.addProvider(event.includeServer(), new DungeonRoomProvider(output));
+        generator.addProvider(true, new NVItemModelProvider(output, fileHelper));
+        generator.addProvider(true, new NVBlockStateProvider(output, fileHelper));
+        generator.addProvider(true, new NVFluidTagProvider(output, provider, fileHelper));
+        generator.addProvider(true, new NVEntityTagProvider(output, provider, fileHelper));
+        generator.addProvider(true, new NVSpriteSourceProvider(output, provider, fileHelper));
+        generator.addProvider(true, new DungeonRoomProvider(output));
 
         event.createProvider(NVDataMapProvider::new);
         event.createProvider(SigilStatsProvider::new);
         event.createProvider(RitualStatsProvider::new);
         event.createProvider(ImperfectRitualStatsProvider::new);
-
         event.createProvider(NVLootTableProvider::new);
-
         event.createProvider(NVRecipeProvider::new);
 
-        generator.addProvider(event.includeServer(), new NVAdvancementProvider(output, event.getLookupProvider(), fileHelper));
-
-        // Modonomicon multiblock definitions (altar tiers + ritual layouts)
-        generator.addProvider(event.includeServer(), new NVModonomiconMultiblockProvider(output));
-
-        generator.addProvider(event.includeServer(), new BookProvider(
-                output, event.getLookupProvider(), NeoVitae.MODID,
+        generator.addProvider(true, new NVAdvancementProvider(output, provider, fileHelper));
+        generator.addProvider(true, new BookProvider(
+                output, provider, NeoVitae.MODID,
                 List.of(new NVBookProvider(langProvider))
         ));
-        generator.addProvider(event.includeClient(), langProvider);
+        generator.addProvider(true, langProvider);
     }
 }

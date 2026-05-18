@@ -61,6 +61,29 @@ public class AthanorEntry extends EntryProvider {
                 + "its form and returns to base materials. This is invaluable when restructuring your altar, "
                 + "apprentice - no investment need be permanent.");
 
+        this.page("spiritus_costs", () -> BookTextPageModel.create()
+                .withTitle(this.context().pageTitle())
+                .withText(this.context().pageText()));
+        this.pageTitle("Spiritus and the Athanor");
+        this.pageText("The Athanor is sensitive to the [#](4A0080)Raw Spiritus[#]() saturating the surrounding "
+                + "chunk. With no spiritus present, the crucible operates at [#](8B0000)half speed[#](). As raw "
+                + "spiritus builds toward 100, the Athanor accelerates, reaching [#](8B0000)double speed[#]() at "
+                + "full saturation.\\\n\\\n"
+                + "The crucible also has a small appetite: while actively crafting, there is a [#](8B0000)5%% chance "
+                + "each second[#]() that the Athanor consumes 1 raw spiritus from the chunk. Sustained operation "
+                + "will slowly deplete the local reserves.\\\n\\\n"
+                + "[#](2E8B57)Keep Demon Crystals growing nearby to replenish what the Athanor consumes.[#]()");
+
+        this.page("spiritus_recipes", () -> BookTextPageModel.create()
+                .withTitle(this.context().pageTitle())
+                .withText(this.context().pageText()));
+        this.pageTitle("Spiritus-Infused Recipes");
+        this.pageText("Certain advanced recipes also require a specific amount of spiritus in the chunk to craft. "
+                + "The Athanor's interface shows a gauge with the current spiritus levels; a red overlay marks "
+                + "how much is needed. If the chunk lacks sufficient spiritus, the Athanor stalls and emits dark "
+                + "particles until the deficit is replenished.\\\n\\\n"
+                + "[#](2E8B57)Spiritus costs are consumed on craft completion, not during progress.[#]()");
+
         this.page("automation", () -> BookTextPageModel.create()
                 .withTitle(this.context().pageTitle())
                 .withText(this.context().pageText()));

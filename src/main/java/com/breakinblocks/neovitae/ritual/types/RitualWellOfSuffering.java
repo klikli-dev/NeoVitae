@@ -6,6 +6,7 @@ import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
 import com.breakinblocks.neovitae.NeoVitae;
 import com.breakinblocks.neovitae.api.ritual.AreaDescriptor;
+import com.breakinblocks.neovitae.api.stream.StreamPresets;
 import com.breakinblocks.neovitae.common.blockentity.AraVitaeTile;
 import com.breakinblocks.neovitae.common.damagesource.NVDamageSources;
 import com.breakinblocks.neovitae.common.datamap.EntitySacrificeHelper;
@@ -52,6 +53,7 @@ public class RitualWellOfSuffering extends Ritual {
         AraVitaeTile altar = findAltar(ctx);
 
         int totalEV = 0;
+        BlockPos masterPos = ctx.masterPos();
 
         for (LivingEntity entity : entities) {
             float damage = 1.0F;
@@ -61,14 +63,17 @@ public class RitualWellOfSuffering extends Ritual {
                 entity.hurt(ctx.level().damageSources().source(NVDamageSources.RITUAL), damage);
 
                 if (entity.getHealth() < health) {
-                    int lp = EntitySacrificeHelper.calculateLP(entity, damage);
+                    int ev = EntitySacrificeHelper.calculateEV(entity, damage);
 
-                    // Baby entity modifier: 0.5x LP
                     if (entity.isBaby()) {
-                        lp = (int) (lp * 0.5);
+                        ev = (int) (ev * 0.5);
                     }
 
-                    totalEV += lp;
+                    totalEV += ev;
+
+                    RitualHelper.chanceStream(ctx.level(), 4, () ->
+                            StreamPresets.bloodTendril(entity, masterPos).build()
+                                    .sendToNearby(ctx.serverLevel(), masterPos, 64));
                 }
             }
         }

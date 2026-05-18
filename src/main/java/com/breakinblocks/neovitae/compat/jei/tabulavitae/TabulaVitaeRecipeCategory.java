@@ -38,13 +38,13 @@ public class TabulaVitaeRecipeCategory implements IRecipeCategory<TabulaVitaeRec
 
     public TabulaVitaeRecipeCategory(IGuiHelper guiHelper) {
         icon = guiHelper.createDrawableItemStack(new ItemStack(NVBlocks.TABULA_VITAE.block().get()));
-        background = guiHelper.createDrawable(NeoVitae.rl("gui/jei/alchemytable.png"), 0, 0, WIDTH, HEIGHT);
+        background = guiHelper.createDrawable(NeoVitae.rl("textures/gui/jei/alchemytable.png"), 0, 0, WIDTH, HEIGHT);
     }
 
     @Override
     public void getTooltip(ITooltipBuilder tooltip, TabulaVitaeRecipe recipe, IRecipeSlotsView recipeSlotsView, double mouseX, double mouseY) {
         if (mouseX >= 58 && mouseX <= 78 && mouseY >= 21 && mouseY <= 34) {
-            tooltip.add(Component.translatable("jei.neovitae.recipe.requiredtier", DECIMAL_FORMAT.format(recipe.getMinimumTier() + 1)));
+            tooltip.add(Component.translatable("jei.neovitae.recipe.requiredtier", DECIMAL_FORMAT.format(recipe.getMinimumTier())));
             tooltip.add(Component.translatable("jei.neovitae.recipe.lpDrained", DECIMAL_FORMAT.format(recipe.getSyphon())));
             tooltip.add(Component.translatable("jei.neovitae.recipe.ticksRequired", DECIMAL_FORMAT.format(recipe.getTicks())));
         }
@@ -57,10 +57,10 @@ public class TabulaVitaeRecipeCategory implements IRecipeCategory<TabulaVitaeRec
 
         var poseStack = guiGraphics.pose();
         poseStack.pushPose();
-        poseStack.translate(64, 23, 0);
+        poseStack.translate(57, 35, 0);
         poseStack.scale(0.5f, 0.5f, 1f);
         guiGraphics.drawString(Minecraft.getInstance().font, Component.translatable("jei.neovitae.recipe.lp"), 0, 0, 0x8b8b8b, false);
-        poseStack.translate(-8, 15, 0);
+        poseStack.translate(-8, 12, 0);
         guiGraphics.drawString(Minecraft.getInstance().font, Component.translatable("jei.neovitae.recipe.info"), 0, 0, 0x8b8b8b, false);
         poseStack.popPose();
     }

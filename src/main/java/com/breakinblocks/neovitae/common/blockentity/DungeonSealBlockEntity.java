@@ -14,6 +14,7 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.block.state.BlockState;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import com.breakinblocks.neovitae.common.block.dungeon.DungeonBlocks;
 import com.breakinblocks.neovitae.common.item.dungeon.ItemDungeonKey;
 
 import java.util.ArrayList;
@@ -56,6 +57,8 @@ public class DungeonSealBlockEntity extends BaseBlockEntity {
     public DungeonSealBlockEntity(BlockPos pos, BlockState state) {
         super(NVTiles.DUNGEON_SEAL_TYPE.get(), pos, state);
     }
+
+    public SealData getData() { return data; }
 
     public void initialize(BlockPos controllerPos, BlockPos doorPos, Direction doorDirection,
                            String doorType, List<ResourceLocation> potentialRoomTypes) {
@@ -117,10 +120,13 @@ public class DungeonSealBlockEntity extends BaseBlockEntity {
                 worldPosition, data.doorPos(), data.doorDirection(), data.doorType(), roomTypes, rand);
 
         if (success) {
+            controller.getDungeonSynthesizer().decrementSealCount();
+            clearDoorwayFill(serverLevel);
             serverLevel.removeBlock(worldPosition, false);
             return true;
         }
 
+        controller.queueSealForValidation(worldPosition);
         return false;
     }
 
@@ -157,11 +163,32 @@ public class DungeonSealBlockEntity extends BaseBlockEntity {
                 worldPosition, data.doorPos(), data.doorDirection(), data.doorType(), roomTypes, rand);
 
         if (success) {
+            controller.getDungeonSynthesizer().decrementSealCount();
+            clearDoorwayFill(serverLevel);
             serverLevel.removeBlock(worldPosition, false);
             return true;
         }
 
         return false;
+    }
+
+    /**
+     * Clears the doorway fill blocks that were placed when this seal was created.
+     */
+    private void clearDoorwayFill(ServerLevel serverLevel) {
+        BlockPos sealPos = worldPosition;
+        Direction doorDir = data.doorDirection();
+        Direction rightDir = doorDir.getClockWise();
+
+        for (int i = -1; i <= 1; i++) {
+            for (int j = -1; j <= 1; j++) {
+                BlockPos fillPos = sealPos.relative(rightDir, i).relative(Direction.UP, j);
+                if (serverLevel.getBlockState(fillPos).is(
+                        DungeonBlocks.DUNGEON_BRICK_ASSORTED.block().get())) {
+                    serverLevel.removeBlock(fillPos, false);
+                }
+            }
+        }
     }
 
     @Override

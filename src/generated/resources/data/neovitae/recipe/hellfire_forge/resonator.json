@@ -3,13 +3,13 @@
   "drain": 100.0,
   "inputs": [
     {
-      "tag": "c:stones"
+      "tag": "neovitae:vitae_stone"
     },
     {
       "tag": "c:ingots/copper"
     },
     {
-      "item": "neovitae:default_crystal"
+      "item": "neovitae:raw_crystal_shard"
     }
   ],
   "minDrain": 1200.0,

@@ -7,24 +7,31 @@ import java.util.EnumMap;
 
 public class ServerConfig {
 
+    public final ModConfigSpec.BooleanValue ALTERNATE_SACRIFICE_TOOL;
     public final ModConfigSpec.ConfigValue<Integer> SELF_SACRIFICE_CONVERSION;
     public final ModConfigSpec.ConfigValue<Integer> DEFAULT_UPGRADE_POINTS;
     public final ModConfigSpec.ConfigValue<Integer> EVOLUTION_UPGRADE_POINTS;
 
-    public final ModConfigSpec.DoubleValue WILL_MAX_DEFAULT;
-    public final ModConfigSpec.DoubleValue WILL_MAX_CORROSIVE;
-    public final ModConfigSpec.DoubleValue WILL_MAX_DESTRUCTIVE;
-    public final ModConfigSpec.DoubleValue WILL_MAX_VENGEFUL;
-    public final ModConfigSpec.DoubleValue WILL_MAX_STEADFAST;
+    public final ModConfigSpec.DoubleValue SPIRITUS_MAX_RAW;
+    public final ModConfigSpec.DoubleValue SPIRITUS_MAX_RUINA;
+    public final ModConfigSpec.DoubleValue SPIRITUS_MAX_NIHILUM;
+    public final ModConfigSpec.DoubleValue SPIRITUS_MAX_VINDICTA;
+    public final ModConfigSpec.DoubleValue SPIRITUS_MAX_INVICTUS;
 
-    public final ModConfigSpec.DoubleValue CRYSTAL_WILL_TO_FORM;
+    public final ModConfigSpec.DoubleValue CRYSTAL_SPIRITUS_TO_FORM;
     public final ModConfigSpec.DoubleValue CRYSTAL_FORMATION_TIME;
-    public final ModConfigSpec.DoubleValue CRYSTAL_SAME_WILL_RATE;
-    public final ModConfigSpec.DoubleValue CRYSTAL_DIFFERENT_WILL_RATE;
-    public final ModConfigSpec.DoubleValue CRYSTAL_WRONG_WILL_DELAY;
+    public final ModConfigSpec.DoubleValue CRYSTAL_SAME_SPIRITUS_RATE;
+    public final ModConfigSpec.DoubleValue CRYSTAL_DIFFERENT_SPIRITUS_RATE;
+    public final ModConfigSpec.DoubleValue CRYSTAL_WRONG_SPIRITUS_DELAY;
     public final ModConfigSpec.DoubleValue CRYSTAL_GROWTH_SPEED;
     public final ModConfigSpec.DoubleValue CRYSTAL_GROWTH_THRESHOLD;
     public final ModConfigSpec.IntValue CRYSTAL_MAX_COUNT;
+
+    // Alchemy Array config
+    public final ModConfigSpec.IntValue LOYAL_FRIENDS_LP_COST;
+
+    // Blood Mending config
+    public final ModConfigSpec.IntValue BLOOD_MENDING_REPAIR_COST;
 
     // Blood Siphon / Blood Shield config
     public final ModConfigSpec.IntValue BLOOD_SIPHON_PLAYER_MULTIPLIER;
@@ -33,60 +40,68 @@ public class ServerConfig {
     public final ModConfigSpec.IntValue SANGUINE_WARD_DRAIN_PER_SECOND;
     public final ModConfigSpec.IntValue SANGUINE_WARD_MIN_EV;
 
+    public final ModConfigSpec.IntValue TORMENT_NEXUS_EV_PER_KILL;
+    public final ModConfigSpec.IntValue TORMENT_NEXUS_EV_MODIFIER_PERCENT;
+    public final ModConfigSpec.IntValue TORMENT_NEXUS_HORIZONTAL_RANGE;
+    public final ModConfigSpec.IntValue TORMENT_NEXUS_VERTICAL_RANGE;
+
     protected ServerConfig(ModConfigSpec.Builder builder) {
+        ALTERNATE_SACRIFICE_TOOL = builder
+                .comment("Replaces the Sacrificial Dagger with the Orb of Sacrifice (cosmetic rename and retexture)")
+                .define("alternate_sacrifice_tool", false);
         SELF_SACRIFICE_CONVERSION = builder.define("self_sacrifice_conversion", 100);
         DEFAULT_UPGRADE_POINTS = builder.define("default_upgrade_points", 100);
         EVOLUTION_UPGRADE_POINTS = builder.define("evolution_upgrade_points", 300);
 
         builder.comment("Spiritus System Configuration",
                 "These values define the base maximum spiritus that can be stored per chunk.",
-                "Different will types can have different maximum capacities.",
+                "Different aspects can have different maximum capacities.",
                 "Rituals and other effects can add bonuses on top of these base values.");
         builder.push("spiritus");
 
-        WILL_MAX_DEFAULT = builder
-                .comment("Base maximum Raw (Default) spiritus per chunk")
-                .defineInRange("max_default_will", 100.0, 1.0, 10000.0);
-        WILL_MAX_CORROSIVE = builder
-                .comment("Base maximum Corrosive spiritus per chunk")
-                .defineInRange("max_corrosive_will", 100.0, 1.0, 10000.0);
-        WILL_MAX_DESTRUCTIVE = builder
-                .comment("Base maximum Destructive spiritus per chunk")
-                .defineInRange("max_destructive_will", 100.0, 1.0, 10000.0);
-        WILL_MAX_VENGEFUL = builder
-                .comment("Base maximum Vengeful spiritus per chunk")
-                .defineInRange("max_vengeful_will", 100.0, 1.0, 10000.0);
-        WILL_MAX_STEADFAST = builder
-                .comment("Base maximum Steadfast spiritus per chunk")
-                .defineInRange("max_steadfast_will", 100.0, 1.0, 10000.0);
+        SPIRITUS_MAX_RAW = builder
+                .comment("Base maximum Raw Spiritus per chunk")
+                .defineInRange("max_raw", 100.0, 1.0, 10000.0);
+        SPIRITUS_MAX_RUINA = builder
+                .comment("Base maximum Spiritus Ruina per chunk")
+                .defineInRange("max_ruina", 100.0, 1.0, 10000.0);
+        SPIRITUS_MAX_NIHILUM = builder
+                .comment("Base maximum Spiritus Nihilum per chunk")
+                .defineInRange("max_nihilum", 100.0, 1.0, 10000.0);
+        SPIRITUS_MAX_VINDICTA = builder
+                .comment("Base maximum Spiritus Vindicta per chunk")
+                .defineInRange("max_vindicta", 100.0, 1.0, 10000.0);
+        SPIRITUS_MAX_INVICTUS = builder
+                .comment("Base maximum Spiritus Invictus per chunk")
+                .defineInRange("max_invictus", 100.0, 1.0, 10000.0);
 
         builder.pop();
 
-        builder.comment("Demon Crystal Growth Configuration",
-                "These values control how demon crystals form and grow.",
-                "Crystals are created by Crystallarium Maleficums and grow based on chunk will.");
+        builder.comment("Spiritus Crystal Growth Configuration",
+                "These values control how spiritus crystals form and grow.",
+                "Crystals are created by Crystallarium Maleficums and grow based on chunk spiritus.");
         builder.push("spiritus_crystal");
 
-        CRYSTAL_WILL_TO_FORM = builder
+        CRYSTAL_SPIRITUS_TO_FORM = builder
                 .comment("Amount of spiritus required to form a new crystal")
-                .defineInRange("will_to_form", 99.0, 1.0, 1000.0);
+                .defineInRange("spiritus_to_form", 99.0, 1.0, 1000.0);
         CRYSTAL_FORMATION_TIME = builder
                 .comment("Total time (in ticks) for crystal formation in the Crystallizer")
                 .defineInRange("formation_time", 1000.0, 100.0, 10000.0);
-        CRYSTAL_SAME_WILL_RATE = builder
-                .comment("Will consumption rate when crystal type matches chunk dominant will")
-                .defineInRange("same_will_rate", 45.0, 1.0, 500.0);
-        CRYSTAL_DIFFERENT_WILL_RATE = builder
-                .comment("Will consumption rate when crystal type differs from chunk dominant will")
-                .defineInRange("different_will_rate", 90.0, 1.0, 500.0);
-        CRYSTAL_WRONG_WILL_DELAY = builder
-                .comment("Growth speed multiplier when consuming non-matching will type (0.0-1.0, lower = slower)")
-                .defineInRange("wrong_will_delay", 0.6, 0.0, 1.0);
+        CRYSTAL_SAME_SPIRITUS_RATE = builder
+                .comment("Spiritus consumption rate when crystal type matches chunk dominant aspect")
+                .defineInRange("same_spiritus_rate", 45.0, 1.0, 500.0);
+        CRYSTAL_DIFFERENT_SPIRITUS_RATE = builder
+                .comment("Spiritus consumption rate when crystal type differs from chunk dominant aspect")
+                .defineInRange("different_spiritus_rate", 90.0, 1.0, 500.0);
+        CRYSTAL_WRONG_SPIRITUS_DELAY = builder
+                .comment("Growth speed multiplier when consuming non-matching aspect (0.0-1.0, lower = slower)")
+                .defineInRange("wrong_spiritus_delay", 0.6, 0.0, 1.0);
         CRYSTAL_GROWTH_SPEED = builder
                 .comment("Base growth speed multiplier (higher = faster crystal growth)")
                 .defineInRange("growth_speed", 1.0, 0.1, 10.0);
         CRYSTAL_GROWTH_THRESHOLD = builder
-                .comment("Minimum will in chunk before crystals start growing (200 = vanilla)")
+                .comment("Minimum spiritus in chunk before crystals start growing (200 = vanilla)")
                 .defineInRange("growth_threshold", 200.0, 1.0, 1000.0);
         CRYSTAL_MAX_COUNT = builder
                 .comment("Maximum number of crystal segments per cluster")
@@ -94,18 +109,37 @@ public class ServerConfig {
 
         builder.pop();
 
+        builder.comment("Alchemy Array Configuration");
+        builder.push("alchemy_arrays");
+
+        LOYAL_FRIENDS_LP_COST = builder
+                .comment("EV cost for the Array of Loyal Friends to summon and revive pets")
+                .defineInRange("loyal_friends_lp_cost", 2500, 0, 100000);
+
+        builder.pop();
+
+        builder.comment("Blood Mending Configuration",
+                "Controls costs for repairing items through Blood Mending.");
+        builder.push("blood_mending");
+
+        BLOOD_MENDING_REPAIR_COST = builder
+                .comment("EV cost per point of durability restored")
+                .defineInRange("repair_cost_per_durability", 100, 1, 100000);
+
+        builder.pop();
+
         builder.comment("Blood Attribute Configuration",
-                "Configure LP multipliers for Blood Siphon and Blood Shield attributes.");
+                "Configure EV multipliers for Blood Siphon and Blood Shield attributes.");
         builder.push("blood_attributes");
 
         BLOOD_SIPHON_PLAYER_MULTIPLIER = builder
-                .comment("LP multiplier when Blood Siphon drains from a player target")
+                .comment("EV multiplier when Blood Siphon drains from a player target")
                 .defineInRange("siphon_player_multiplier", 100, 1, 10000);
         BLOOD_SIPHON_MOB_MULTIPLIER = builder
-                .comment("LP multiplier when Blood Siphon drains from a non-player target")
+                .comment("EV multiplier when Blood Siphon drains from a non-player target")
                 .defineInRange("siphon_mob_multiplier", 10, 1, 10000);
         BLOOD_SHIELD_LP_COST_MULTIPLIER = builder
-                .comment("LP cost per point of damage prevented by Blood Shield")
+                .comment("EV cost per point of damage prevented by Blood Shield")
                 .defineInRange("shield_lp_cost_multiplier", 100, 1, 10000);
         SANGUINE_WARD_DRAIN_PER_SECOND = builder
                 .comment("EV drained per second while the Sanguine Ward is active")
@@ -115,22 +149,45 @@ public class ServerConfig {
                 .defineInRange("sanguine_ward_min_ev", 200, 0, 100000);
 
         builder.pop();
+
+        builder.comment("Torment Nexus Configuration",
+                "Controls the EV upkeep and EV-yield modifier for the Torment Nexus ritual,",
+                "which simulates kills from caged spawners and trial spawners in its area.");
+        builder.push("torment_nexus");
+
+        TORMENT_NEXUS_EV_PER_KILL = builder
+                .comment("EV cost charged per simulated mob kill (paid out of the network each kill).")
+                .defineInRange("ev_per_kill", 75, 0, 1000000);
+        TORMENT_NEXUS_EV_MODIFIER_PERCENT = builder
+                .comment("Percent modifier on the EV produced per simulated kill.",
+                        "1 = 1% of the mob's natural sacrifice value, 100 = unchanged, 1000 = 10x.")
+                .defineInRange("ev_modifier_percent", 100, 1, 1000);
+        TORMENT_NEXUS_HORIZONTAL_RANGE = builder
+                .comment("Default horizontal radius (in blocks) of the spawner-scan area centered on the Master Ritual Stone.",
+                        "5 produces an 11x11 area on the XZ plane.")
+                .defineInRange("horizontal_range", 5, 1, 64);
+        TORMENT_NEXUS_VERTICAL_RANGE = builder
+                .comment("Default vertical radius (in blocks) of the spawner-scan area centered on the Master Ritual Stone.",
+                        "5 produces an 11-block-tall area.")
+                .defineInRange("vertical_range", 5, 1, 64);
+
+        builder.pop();
     }
 
-    public double getBaseMaxWill(SpiritusType type) {
+    public double getBaseMaxSpiritus(SpiritusType type) {
         return switch (type) {
-            case DEFAULT -> WILL_MAX_DEFAULT.get();
-            case CORROSIVE -> WILL_MAX_CORROSIVE.get();
-            case DESTRUCTIVE -> WILL_MAX_DESTRUCTIVE.get();
-            case VENGEFUL -> WILL_MAX_VENGEFUL.get();
-            case STEADFAST -> WILL_MAX_STEADFAST.get();
+            case RAW -> SPIRITUS_MAX_RAW.get();
+            case RUINA -> SPIRITUS_MAX_RUINA.get();
+            case NIHILUM -> SPIRITUS_MAX_NIHILUM.get();
+            case VINDICTA -> SPIRITUS_MAX_VINDICTA.get();
+            case INVICTUS -> SPIRITUS_MAX_INVICTUS.get();
         };
     }
 
-    public EnumMap<SpiritusType, Double> getAllBaseMaxWill() {
+    public EnumMap<SpiritusType, Double> getAllBaseMaxSpiritus() {
         EnumMap<SpiritusType, Double> result = new EnumMap<>(SpiritusType.class);
         for (SpiritusType type : SpiritusType.values()) {
-            result.put(type, getBaseMaxWill(type));
+            result.put(type, getBaseMaxSpiritus(type));
         }
         return result;
     }

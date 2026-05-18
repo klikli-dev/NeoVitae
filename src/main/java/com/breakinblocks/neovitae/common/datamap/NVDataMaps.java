@@ -40,7 +40,7 @@ public class NVDataMaps {
     ).synced(AltarRuneStats.CODEC, true).build();
 
     /**
-     * Sigil statistics - allows customization of LP costs, ranges, and effect parameters.
+     * Sigil statistics - allows customization of EV costs, ranges, and effect parameters.
      * Maps Item -> SigilStats.
      */
     public static final DataMapType<Item, SigilStats> SIGIL_STATS = DataMapType.builder(
@@ -169,6 +169,12 @@ public class NVDataMaps {
      * }
      * }</pre>
      */
+    public static final DataMapType<Block, Integer> DUNGEON_ORE_WEIGHTS = DataMapType.builder(
+            NeoVitae.rl("dungeon_ore_weights"),
+            Registries.BLOCK,
+            Codec.INT
+    ).synced(Codec.INT, true).build();
+
     public static final DataMapType<Block, RoutingNodeStats> ROUTING_NODE_STATS = DataMapType.builder(
             NeoVitae.rl("routing_node_stats"),
             Registries.BLOCK,
@@ -185,5 +191,6 @@ public class NVDataMaps {
         event.register(ENTITY_SACRIFICE_VALUE);
         event.register(TRANQUILITY);
         event.register(ROUTING_NODE_STATS);
+        event.register(DUNGEON_ORE_WEIGHTS);
     }
 }

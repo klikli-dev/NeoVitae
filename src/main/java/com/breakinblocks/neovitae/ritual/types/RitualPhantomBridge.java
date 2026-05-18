@@ -11,6 +11,7 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import com.breakinblocks.neovitae.NeoVitae;
+import com.breakinblocks.neovitae.api.stream.StreamPresets;
 import com.breakinblocks.neovitae.common.block.NVBlocks;
 import com.breakinblocks.neovitae.common.blockentity.PhantomBridgeBlockEntity;
 import com.breakinblocks.neovitae.api.ritual.AreaDescriptor;
@@ -19,6 +20,7 @@ import com.breakinblocks.neovitae.ritual.RitualHelper.RitualContext;
 import com.breakinblocks.neovitae.util.helper.BlockProtectionHelper;
 
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -56,14 +58,20 @@ public class RitualPhantomBridge extends Ritual {
         int maxBlocks = ctx.maxOperations(getRefreshCost());
         UUID owner = ctx.master().getOwner();
 
-        // First, refresh duration on existing phantom blocks
-        for (BlockPos pos : phantomBlocks.keySet()) {
+        // Refresh duration on existing phantom blocks, dropping stale entries
+        // whose bridge has already been broken/expired so the map stays bounded.
+        Iterator<Map.Entry<BlockPos, BlockState>> it = phantomBlocks.entrySet().iterator();
+        while (it.hasNext()) {
+            Map.Entry<BlockPos, BlockState> entry = it.next();
+            BlockPos pos = entry.getKey();
             BlockState state = ctx.level().getBlockState(pos);
-            if (state.is(NVBlocks.PHANTOM_BRIDGE_BLOCK.get())) {
-                BlockEntity be = ctx.level().getBlockEntity(pos);
-                if (be instanceof PhantomBridgeBlockEntity phantomTile) {
-                    phantomTile.resetDuration();
-                }
+            if (!state.is(NVBlocks.PHANTOM_BRIDGE_BLOCK.get())) {
+                it.remove();
+                continue;
+            }
+            BlockEntity be = ctx.level().getBlockEntity(pos);
+            if (be instanceof PhantomBridgeBlockEntity phantomTile) {
+                phantomTile.resetDuration();
             }
         }
 
@@ -116,6 +124,10 @@ public class RitualPhantomBridge extends Ritual {
                             phantomTile.resetDuration();
                         }
                         blocksCreated++;
+                        final BlockPos bridgePos = targetPos.immutable();
+                        RitualHelper.chanceStream(ctx.level(), 6, () ->
+                                StreamPresets.arcaneBolt(ctx.masterPos(), bridgePos).build()
+                                        .sendToNearby(ctx.serverLevel(), ctx.masterPos(), 64));
                     }
                 }
             }

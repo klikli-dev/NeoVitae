@@ -3,6 +3,8 @@ package com.breakinblocks.neovitae.common.block;
 import com.mojang.serialization.MapCodec;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
+import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.context.BlockPlaceContext;
 import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.Level;
@@ -19,14 +21,19 @@ import net.minecraft.world.level.block.state.StateDefinition;
 import net.minecraft.world.level.block.state.properties.BooleanProperty;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.VoxelShape;
+import net.neoforged.neoforge.capabilities.Capabilities;
 import com.breakinblocks.neovitae.common.blockentity.routing.RoutingNodeBlockEntity;
+import com.breakinblocks.neovitae.common.routing.RoutingLinkHelper;
 import com.breakinblocks.neovitae.api.routing.*;
 
 import javax.annotation.Nullable;
 
-public class BlockRoutingNode extends BaseEntityBlock {
-
-    public static final MapCodec<BlockRoutingNode> CODEC = simpleCodec(BlockRoutingNode::new);
+/**
+ * Shared base for all routing-node blocks (conduit, input, output, master).
+ * Holds the multipart connection state and the graph-teardown hook; concrete
+ * subclasses supply their own {@link #codec()} and {@link #newBlockEntity}.
+ */
+public abstract class BlockRoutingNode extends BaseEntityBlock {
 
     public static final BooleanProperty UP = BooleanProperty.create("up");
     public static final BooleanProperty DOWN = BooleanProperty.create("down");
@@ -37,7 +44,7 @@ public class BlockRoutingNode extends BaseEntityBlock {
 
     protected static final VoxelShape SHAPE = Block.box(6.0D, 6.0D, 6.0D, 10.0D, 10.0D, 10.0D);
 
-    public BlockRoutingNode(BlockBehaviour.Properties properties) {
+    protected BlockRoutingNode(BlockBehaviour.Properties properties) {
         super(properties);
         this.registerDefaultState(this.stateDefinition.any()
                 .setValue(DOWN, false)
@@ -46,11 +53,6 @@ public class BlockRoutingNode extends BaseEntityBlock {
                 .setValue(EAST, false)
                 .setValue(SOUTH, false)
                 .setValue(WEST, false));
-    }
-
-    @Override
-    protected MapCodec<? extends BaseEntityBlock> codec() {
-        return CODEC;
     }
 
     @Override
@@ -88,7 +90,16 @@ public class BlockRoutingNode extends BaseEntityBlock {
 
     protected boolean canConnect(BlockState state, BlockGetter level, BlockPos neighborPos, Direction direction) {
         if (state.getBlock() instanceof BlockRoutingNode) return true;
+        if (hasRoutingCapability(level, neighborPos, direction)) return true;
         return state.isFaceSturdy(level, neighborPos, direction.getOpposite());
+    }
+
+    private static boolean hasRoutingCapability(BlockGetter getter, BlockPos neighborPos, Direction dirFromNode) {
+        if (!(getter instanceof Level level)) return false;
+        Direction side = dirFromNode.getOpposite();
+        if (level.getCapability(Capabilities.ItemHandler.BLOCK, neighborPos, side) != null) return true;
+        if (level.getCapability(Capabilities.FluidHandler.BLOCK, neighborPos, side) != null) return true;
+        return level.getCapability(Capabilities.EnergyStorage.BLOCK, neighborPos, side) != null;
     }
 
     private BooleanProperty getPropertyForDirection(Direction dir) {
@@ -108,6 +119,16 @@ public class BlockRoutingNode extends BaseEntityBlock {
     }
 
     @Override
+    public void setPlacedBy(Level level, BlockPos pos, BlockState state, @Nullable LivingEntity placer, ItemStack stack) {
+        super.setPlacedBy(level, pos, state, placer, stack);
+        if (level.isClientSide) return;
+        BlockEntity tile = level.getBlockEntity(pos);
+        if (tile instanceof IRoutingNode node && !(tile instanceof IMasterRoutingNode)) {
+            RoutingLinkHelper.tryAutoBind(level, pos, node);
+        }
+    }
+
+    @Override
     public void onRemove(BlockState state, Level level, BlockPos pos, BlockState newState, boolean isMoving) {
         if (!state.is(newState.getBlock())) {
             BlockEntity tile = level.getBlockEntity(pos);
@@ -116,12 +137,6 @@ public class BlockRoutingNode extends BaseEntityBlock {
             }
         }
         super.onRemove(state, level, pos, newState, isMoving);
-    }
-
-    @Nullable
-    @Override
-    public BlockEntity newBlockEntity(BlockPos pos, BlockState state) {
-        return new RoutingNodeBlockEntity(pos, state);
     }
 
     @Nullable

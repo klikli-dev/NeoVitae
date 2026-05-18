@@ -6,10 +6,10 @@
       "item": "minecraft:shears"
     },
     {
-      "tag": "c:stones"
+      "tag": "neovitae:vitae_stone"
     },
     {
-      "item": "neovitae:imbued_slate"
+      "item": "neovitae:tabula_animata"
     },
     {
       "tag": "c:ingots/iron"

@@ -21,14 +21,15 @@ import com.breakinblocks.neovitae.common.effect.NVMobEffects;
 import com.breakinblocks.neovitae.common.fluid.NVFluids;
 import com.breakinblocks.neovitae.common.item.NVItems;
 import com.breakinblocks.neovitae.common.item.potion.ItemAlchemyFlask;
-import com.breakinblocks.neovitae.common.living.LivingHelper;
-import com.breakinblocks.neovitae.common.living.LivingUpgrade;
+import com.breakinblocks.neovitae.common.sentient.SentientHelper;
+import com.breakinblocks.neovitae.common.sentient.SentientUpgrade;
 import com.breakinblocks.neovitae.common.registry.NVRegistries;
 import com.breakinblocks.neovitae.common.tag.NVTags;
-import net.minecraft.core.Holder;
+import com.breakinblocks.neovitae.common.material.MaterialRegistry;
 import net.minecraft.world.effect.MobEffect;
 import net.minecraft.world.effect.MobEffects;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Consumer;
 
@@ -43,17 +44,17 @@ public class NVTabs {
                     .displayItems((parameters, output) -> {
                         addAll(NVBlocks.BLOCK_ITEMS, output::accept);
 
-                        ItemStack living_plate = new ItemStack(NVItems.LIVING_PLATE);
-                        LivingHelper.setDefaultLiving(living_plate, parameters.holders());
-                        output.accept(living_plate);
+                        ItemStack sentient_plate = new ItemStack(NVItems.SENTIENT_PLATE);
+                        SentientHelper.setDefaultSentient(sentient_plate, parameters.holders());
+                        output.accept(sentient_plate);
 
                         addAll(NVItems.BASIC_ITEMS, output::accept);
-                        com.breakinblocks.neovitae.common.material.MaterialRegistry.getAllItems()
+                        MaterialRegistry.getAllItems()
                                 .forEach(holder -> output.accept(new ItemStack(holder.get())));
                         addFlaskVariants(output::accept);
                         addAll(NVItems.ITEMS, output::accept);
                         addAll(NVFluids.BUCKETS, output::accept);
-                        NVItems.WILL_ITEMS.getEntries().forEach(holder -> {
+                        NVItems.SPIRITUS_ITEMS.getEntries().forEach(holder -> {
                             String path = holder.getId().getPath();
                             // Monster souls are already typed (basemonstersoul_*), don't create variants
                             if (path.startsWith("base_spiritus_soul")) {
@@ -63,11 +64,11 @@ public class NVTabs {
                                 output.accept(stack);
                             } else {
                                 // Soul gems and raw Spiritus get variants for each will type, filled with max will
-                                double maxWill = getMaxWillForItem(path);
+                                double maxSpiritus = getMaxWillForItem(path);
                                 for (SpiritusType type : SpiritusType.values()) {
                                     ItemStack stack = new ItemStack(holder.get());
                                     stack.set(NVDataComponents.SPIRITUS_TYPE, type);
-                                    stack.set(NVDataComponents.SPIRITUS_AMOUNT, maxWill);
+                                    stack.set(NVDataComponents.SPIRITUS_AMOUNT, maxSpiritus);
                                     output.accept(stack);
                                 }
                             }
@@ -83,6 +84,7 @@ public class NVTabs {
                         addBloodTankVariants(output::accept);
                         addAll(NVBlocks.BASIC_BLOCK_ITEMS, output::accept);
                         addAll(DungeonBlocks.ITEMS, output::accept);
+                        addAll(NVItems.ARRAY_ITEMS, output::accept);
                     })
                     .build()
     );
@@ -93,7 +95,7 @@ public class NVTabs {
                     .icon(() -> new ItemStack(NVItems.UPGRADE_TOME))
                     .title(Component.translatable("item_group.neovitae.tomes"))
                     .displayItems((params, output) -> {
-                        addAll(params.holders().lookupOrThrow(NVRegistries.Keys.LIVING_UPGRADES).get(NVTags.Living.TOOLTIP_ORDER).orElseThrow(), output::accept);
+                        addAll(params.holders().lookupOrThrow(NVRegistries.Keys.SENTIENT_UPGRADES).get(NVTags.Sentient.TOOLTIP_ORDER).orElseThrow(), output::accept);
                     })
                     .build()
     );
@@ -104,12 +106,12 @@ public class NVTabs {
                     .icon(() -> new ItemStack(NVItems.UPGRADE_TOME))
                     .title(Component.translatable("item_group.neovitae.trainers"))
                     .displayItems((params, output) -> {
-                        addAll(params.holders().lookupOrThrow(NVRegistries.Keys.LIVING_UPGRADES).get(NVTags.Living.TRAINERS).orElseThrow(), output::accept);
+                        addAll(params.holders().lookupOrThrow(NVRegistries.Keys.SENTIENT_UPGRADES).get(NVTags.Sentient.TRAINERS).orElseThrow(), output::accept);
                     })
                     .build()
     );
 
-    private static void addAll(HolderSet<LivingUpgrade> set, Consumer<ItemStack> tab) {
+    private static void addAll(HolderSet<SentientUpgrade> set, Consumer<ItemStack> tab) {
         ItemStack tome = new ItemStack(NVItems.UPGRADE_TOME);
         set.forEach(upgrade -> {
             upgrade.value().levels().expToLevel().forEach((exp, cost) -> {
@@ -164,7 +166,7 @@ public class NVTabs {
     @SafeVarargs
     private static void addCombinationFlask(Consumer<ItemStack> tab, Holder<MobEffect>... effects) {
         ItemStack flask = new ItemStack(NVItems.ALCHEMY_FLASK.get());
-        List<EffectHolder> holders = new java.util.ArrayList<>();
+        List<EffectHolder> holders = new ArrayList<>();
         for (Holder<MobEffect> effect : effects) {
             holders.add(EffectHolder.create(effect, 3600, 0));
         }
@@ -189,7 +191,7 @@ public class NVTabs {
     private static void addEmptyGem(Consumer<ItemStack> tab, Item gem) {
         ItemStack stack = new ItemStack(gem);
         stack.set(NVDataComponents.SPIRITUS_AMOUNT, 0.0);
-        stack.set(NVDataComponents.SPIRITUS_TYPE, SpiritusType.DEFAULT);
+        stack.set(NVDataComponents.SPIRITUS_TYPE, SpiritusType.RAW);
         tab.accept(stack);
     }
 

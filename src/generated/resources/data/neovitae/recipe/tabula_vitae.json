@@ -9,10 +9,10 @@
       "tag": "c:ingots/gold"
     },
     "o": {
-      "item": "neovitae:blank_slate"
+      "item": "neovitae:tabula_rasa"
     },
     "s": {
-      "tag": "c:stones"
+      "tag": "neovitae:vitae_stone"
     },
     "w": {
       "tag": "minecraft:planks"

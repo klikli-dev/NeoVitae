@@ -9,6 +9,7 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
 import com.breakinblocks.neovitae.NeoVitae;
+import com.breakinblocks.neovitae.common.event.CommonEventHandler;
 
 import javax.annotation.Nullable;
 
@@ -56,6 +57,7 @@ public class DungeonDimensionHelper {
             return false;
         }
 
+        CommonEventHandler.setDungeonGracePeriod(player, 100);
         serverPlayer.teleportTo(dungeonLevel,
                 destination.getX() + 0.5,
                 destination.getY(),

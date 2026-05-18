@@ -1,14 +1,16 @@
 package com.breakinblocks.neovitae.client.render.stream;
 
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Random;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.util.Mth;
 import com.breakinblocks.neovitae.api.stream.BlockyMode;
 import net.minecraft.world.entity.Entity;
 import com.breakinblocks.neovitae.api.stream.StreamEffect;
+import com.breakinblocks.neovitae.client.particle.ColoredParticleOptions;
+import com.breakinblocks.neovitae.common.particle.NVParticles;
 import com.breakinblocks.neovitae.util.helper.ColorHelper;
 
 /**
@@ -28,8 +30,6 @@ public class ActiveStream {
     private static final float DAMPING = 0.985f;
     private static final float BASE_ACCEL = 0.01f;
     private static final float BASE_MAX_VEL = 0.05f;
-    private static final float DRAIN_BASE_SPEED = 0.06f;
-    private static final float DRAIN_ACCEL = 0.008f;
 
     private final String key;
     private final StreamEffect effect;
@@ -156,7 +156,32 @@ public class ActiveStream {
             tickApproach();
         }
 
+        if (effect.trailDensity > 0 && !effect.stationary && !draining) {
+            emitTrailParticles();
+        }
+
         rebuildRenderData();
+    }
+
+    /**
+     * Spawns {@code effect.trailDensity} colored glow particles at the current
+     * head position with a tiny jitter, so a fast thin stream leaves a fuzzy
+     * wake behind it. Particles inherit the stream's color and rely on the
+     * {@link ColoredParticleOptions} fallback to honour the simple-effects
+     * client config.
+     */
+    private void emitTrailParticles() {
+        ClientLevel level = Minecraft.getInstance().level;
+        if (level == null) return;
+        for (int i = 0; i < effect.trailDensity; i++) {
+            double jx = (RANDOM.nextDouble() - 0.5) * 0.12;
+            double jy = (RANDOM.nextDouble() - 0.5) * 0.12;
+            double jz = (RANDOM.nextDouble() - 0.5) * 0.12;
+            level.addParticle(
+                    new ColoredParticleOptions(NVParticles.BLOOD_GLOW.get(), effect.color, effect.rawTrailColor),
+                    headX + jx, headY + jy, headZ + jz,
+                    0.0, 0.0, 0.0);
+        }
     }
 
     private void updateTrackedTarget() {
@@ -339,23 +364,21 @@ public class ActiveStream {
 
     private void tickDrain() {
         drainAge++;
-        float speed = (DRAIN_BASE_SPEED + drainAge * DRAIN_ACCEL) * effect.drainSpeed;
+        int fadeFront = Math.max(1, (int) Math.ceil(effect.drainSpeed * (1.0f + drainAge * 0.08f)));
+        float shrinkFactor = 0.55f;
 
-        Iterator<float[]> it = pathPoints.iterator();
-        while (it.hasNext()) {
-            float[] pt = it.next();
-            float dx = altarRelX - pt[0];
-            float dy = altarRelY - pt[1];
-            float dz = altarRelZ - pt[2];
-            float dist = (float) Math.sqrt(dx * dx + dy * dy + dz * dz);
+        int n = pathPoints.size();
+        for (int k = 0; k < fadeFront && k < n; k++) {
+            float[] pt = pathPoints.get(k);
+            pt[3] *= shrinkFactor;
+        }
 
-            if (dist < 0.15f) {
-                it.remove();
+        while (!pathPoints.isEmpty()) {
+            float[] head = pathPoints.get(0);
+            if (head[3] < 0.01f) {
+                pathPoints.remove(0);
             } else {
-                float move = Math.min(speed, dist);
-                pt[0] += (dx / dist) * move;
-                pt[1] += (dy / dist) * move;
-                pt[2] += (dz / dist) * move;
+                break;
             }
         }
 
@@ -428,15 +451,31 @@ public class ActiveStream {
             radii[i] = Math.max(0, radii[i]);
 
             float colorVar = 1.0f - Mth.sin((i + age) / 2.0f) * 0.1f;
-            colors[i][0] = red * colorVar;
-            colors[i][1] = green * colorVar;
-            colors[i][2] = blue * colorVar;
+            float cr = red * colorVar;
+            float cg = green * colorVar;
+            float cb = blue * colorVar;
+            // If the brightness bump pushes any channel above 1, scale all three down
+            // uniformly so the hue is preserved instead of the bright channel clipping.
+            float maxChan = Math.max(cr, Math.max(cg, cb));
+            if (maxChan > 1.0f) {
+                cr /= maxChan;
+                cg /= maxChan;
+                cb /= maxChan;
+            }
+            colors[i][0] = cr;
+            colors[i][1] = cg;
+            colors[i][2] = cb;
 
             if (effect.stationary) {
                 colors[i][3] = effect.alphaEnd;
             } else {
                 float progress = (float) i / (size - 1);
                 colors[i][3] = effect.alphaStart + (effect.alphaEnd - effect.alphaStart) * progress * progress;
+            }
+
+            if (draining && currentScale > 0.0001f) {
+                float fade = Mth.clamp(pt[3] / currentScale, 0.0f, 1.0f);
+                colors[i][3] *= fade;
             }
         }
     }

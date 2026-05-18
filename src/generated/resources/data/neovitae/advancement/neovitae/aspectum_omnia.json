@@ -1,0 +1,58 @@
+{
+  "parent": "neovitae:neovitae/transmute_ruina",
+  "criteria": {
+    "invictus": {
+      "conditions": {
+        "aspect": "invictus"
+      },
+      "trigger": "neovitae:catalyst_transmute"
+    },
+    "nihilum": {
+      "conditions": {
+        "aspect": "nihilum"
+      },
+      "trigger": "neovitae:catalyst_transmute"
+    },
+    "ruina": {
+      "conditions": {
+        "aspect": "ruina"
+      },
+      "trigger": "neovitae:catalyst_transmute"
+    },
+    "vindicta": {
+      "conditions": {
+        "aspect": "vindicta"
+      },
+      "trigger": "neovitae:catalyst_transmute"
+    }
+  },
+  "display": {
+    "description": {
+      "translate": "advancements.neovitae.aspectum_omnia.description"
+    },
+    "frame": "challenge",
+    "hidden": true,
+    "icon": {
+      "count": 1,
+      "id": "neovitae:spiritus_invictus_catalyst"
+    },
+    "title": {
+      "translate": "advancements.neovitae.aspectum_omnia.title"
+    }
+  },
+  "requirements": [
+    [
+      "ruina"
+    ],
+    [
+      "nihilum"
+    ],
+    [
+      "vindicta"
+    ],
+    [
+      "invictus"
+    ]
+  ],
+  "sends_telemetry_event": true
+}

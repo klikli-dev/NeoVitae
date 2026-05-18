@@ -39,7 +39,7 @@ public class HellfireForgeRecipeCategory implements IRecipeCategory<ForgeRecipe>
 
     public HellfireForgeRecipeCategory(IGuiHelper guiHelper) {
         icon = guiHelper.createDrawableItemStack(new ItemStack(NVBlocks.HELLFIRE_FORGE.block().get()));
-        background = guiHelper.createDrawable(NeoVitae.rl("gui/jei/hellfire_forge.png"), 0, 0, WIDTH, HEIGHT);
+        background = guiHelper.createDrawable(NeoVitae.rl("textures/gui/jei/hellfire_forge.png"), 0, 0, WIDTH, HEIGHT);
     }
 
     @Override
@@ -83,7 +83,7 @@ public class HellfireForgeRecipeCategory implements IRecipeCategory<ForgeRecipe>
 
         var poseStack = guiGraphics.pose();
         poseStack.pushPose();
-        poseStack.translate(45, 23, 0);
+        poseStack.translate(40, 33, 0);
         poseStack.scale(0.5f, 0.5f, 1f);
         guiGraphics.drawString(Minecraft.getInstance().font, Component.translatable("jei.neovitae.recipe.will"), 0, 0, 0x8b8b8b, false);
         poseStack.popPose();
@@ -94,7 +94,7 @@ public class HellfireForgeRecipeCategory implements IRecipeCategory<ForgeRecipe>
         List<ItemStack> validGems = Lists.newArrayList();
         for (DefaultWill will : DefaultWill.values()) {
             if (will.minSouls >= recipe.getMinWill()) {
-                validGems.add(will.willStack);
+                validGems.add(will.spiritusStack);
             }
         }
         IRecipeSlotBuilder gems = builder.addSlot(RecipeIngredientRole.CATALYST, 43, 1);
@@ -120,11 +120,11 @@ public class HellfireForgeRecipeCategory implements IRecipeCategory<ForgeRecipe>
         GREATER(new ItemStack(NVItems.SPIRITUS_GEM_GREATER.get()), 4096),
         GRAND(new ItemStack(NVItems.SPIRITUS_GEM_GRAND.get()), 16384);
 
-        public final ItemStack willStack;
+        public final ItemStack spiritusStack;
         public final double minSouls;
 
-        DefaultWill(ItemStack willStack, double minSouls) {
-            this.willStack = willStack;
+        DefaultWill(ItemStack spiritusStack, double minSouls) {
+            this.spiritusStack = spiritusStack;
             this.minSouls = minSouls;
         }
     }

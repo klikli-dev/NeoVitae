@@ -4,8 +4,12 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.gametest.framework.GameTest;
 import net.minecraft.gametest.framework.GameTestHelper;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.world.Container;
+import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
+import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.entity.ChestBlockEntity;
@@ -13,9 +17,8 @@ import net.neoforged.neoforge.gametest.GameTestHolder;
 import net.neoforged.neoforge.gametest.PrefixGameTestTemplate;
 import com.breakinblocks.neovitae.common.block.NVBlocks;
 import com.breakinblocks.neovitae.common.blockentity.routing.*;
-import com.breakinblocks.neovitae.common.datacomponent.FilterInventory;
-import com.breakinblocks.neovitae.common.item.NVItems;
-import com.breakinblocks.neovitae.common.item.routing.ItemRouterFilter;
+import com.breakinblocks.neovitae.common.routing.FilterMode;
+import com.breakinblocks.neovitae.common.routing.SideFilterConfig;
 import com.breakinblocks.neovitae.api.routing.IMasterRoutingNode;
 import com.breakinblocks.neovitae.api.routing.IRoutingNode;
 
@@ -25,9 +28,7 @@ import net.neoforged.neoforge.fluids.capability.IFluidHandler;
 import com.breakinblocks.neovitae.common.blockentity.BloodTankBlockEntity;
 import com.breakinblocks.neovitae.common.fluid.NVFluids;
 
-import java.util.ArrayList;
 import java.util.LinkedList;
-import java.util.List;
 
 @GameTestHolder("neovitae")
 @PrefixGameTestTemplate(false)
@@ -38,7 +39,7 @@ public class RoutingNodeTests {
     // ==================== Helpers ====================
 
     private static <T extends BlockEntity> T placeAndGet(GameTestHelper helper, BlockPos pos,
-                                                          net.minecraft.world.level.block.Block block, Class<T> type) {
+                                                          Block block, Class<T> type) {
         helper.setBlock(pos, block.defaultBlockState());
         BlockEntity be = helper.getBlockEntity(pos);
         if (!type.isInstance(be)) {
@@ -84,39 +85,51 @@ public class RoutingNodeTests {
         connectToMaster(helper, input, master, absInput, absMaster);
         connectToMaster(helper, output, master, absOutput, absMaster);
 
-        ItemStack passAllFilter = createBlacklistFilter();
-        setNodeFilter(input, Direction.WEST, passAllFilter.copy());
-        setNodeFilter(output, Direction.EAST, passAllFilter.copy());
+        FilterSpec passAll = createBlacklistFilter();
+        setNodeFilter(input, Direction.WEST, passAll);
+        setNodeFilter(output, Direction.EAST, passAll);
 
         return new RoutingTestContext(srcChestPos, inputPos, masterPos, outputPos, dstChestPos);
     }
 
     record RoutingTestContext(BlockPos srcChest, BlockPos input, BlockPos master, BlockPos output, BlockPos dstChest) {}
 
-    private static ItemStack createWhitelistFilter(net.minecraft.world.item.Item... filterItems) {
-        ItemStack filter = new ItemStack(NVItems.ITEM_ROUTER_FILTER.get());
-        List<ItemStack> ghostItems = new ArrayList<>(FilterInventory.SIZE);
-        List<Integer> tagIndices = new ArrayList<>(FilterInventory.SIZE);
-        for (int i = 0; i < FilterInventory.SIZE; i++) {
-            ghostItems.add(i < filterItems.length ? new ItemStack(filterItems[i], 64) : ItemStack.EMPTY);
-            tagIndices.add(0);
+    /**
+     * Describes how a routing node side should be configured.
+     * A null spec means "disable this side" (blocks all routing).
+     */
+    record FilterSpec(FilterMode mode, Item[] items) {}
+
+    private static FilterSpec createWhitelistFilter(Item... filterItems) {
+        return new FilterSpec(FilterMode.WHITELIST, filterItems);
+    }
+
+    private static FilterSpec createBlacklistFilter(Item... filterItems) {
+        return new FilterSpec(FilterMode.BLACKLIST, filterItems);
+    }
+
+    /**
+     * Apply a FilterSpec to a routing node side. A null spec disables the side entirely.
+     */
+    private static void setNodeFilter(FilteredRoutingNodeBlockEntity node, Direction side, FilterSpec spec) {
+        SideFilterConfig cfg = node.getSideFilter(side);
+        if (spec == null) {
+            cfg.setEnabled(false);
+            cfg.clearItemGhosts();
+            node.setChanged();
+            return;
         }
-        ItemRouterFilter.setFilterInventory(filter, new FilterInventory(ghostItems, tagIndices));
-        ItemRouterFilter.setBlacklistState(filter, 0);
-        return filter;
+        cfg.setEnabled(true);
+        cfg.setItemMode(spec.mode());
+        cfg.clearItemGhosts();
+        int limit = Math.min(spec.items().length, SideFilterConfig.GHOST_SLOTS);
+        for (int i = 0; i < limit; i++) {
+            cfg.setItemGhost(i, new ItemStack(spec.items()[i]));
+        }
+        node.setChanged();
     }
 
-    private static ItemStack createBlacklistFilter(net.minecraft.world.item.Item... filterItems) {
-        ItemStack filter = createWhitelistFilter(filterItems);
-        ItemRouterFilter.setBlacklistState(filter, 1);
-        return filter;
-    }
-
-    private static void setNodeFilter(FilteredRoutingNodeBlockEntity node, Direction side, ItemStack filter) {
-        node.setItem(side.get3DDataValue(), filter);
-    }
-
-    private static int countItem(net.minecraft.world.Container container, net.minecraft.world.item.Item item) {
+    private static int countItem(Container container, Item item) {
         int count = 0;
         for (int i = 0; i < container.getContainerSize(); i++) {
             ItemStack stack = container.getItem(i);
@@ -239,7 +252,7 @@ public class RoutingNodeTests {
 
         helper.setBlock(srcChestPos, Blocks.CHEST.defaultBlockState());
         InputRoutingNodeBlockEntity input = placeAndGet(helper, inputPos, NVBlocks.INPUT_ROUTING_NODE.block().get(), InputRoutingNodeBlockEntity.class);
-        RoutingNodeBlockEntity relay = placeAndGet(helper, relayPos, NVBlocks.ROUTING_NODE.block().get(), RoutingNodeBlockEntity.class);
+        RoutingConduitBlockEntity relay = placeAndGet(helper, relayPos, NVBlocks.ROUTING_CONDUIT.block().get(), RoutingConduitBlockEntity.class);
         MasterRoutingNodeBlockEntity master = placeAndGet(helper, masterPos, NVBlocks.MASTER_ROUTING_NODE.block().get(), MasterRoutingNodeBlockEntity.class);
         OutputRoutingNodeBlockEntity output = placeAndGet(helper, outputPos, NVBlocks.OUTPUT_ROUTING_NODE.block().get(), OutputRoutingNodeBlockEntity.class);
         helper.setBlock(dstChestPos, Blocks.CHEST.defaultBlockState());
@@ -257,9 +270,9 @@ public class RoutingNodeTests {
         input.connectMasterToRemainingNode(helper.getLevel(), new LinkedList<>(), master);
         connectToMaster(helper, output, master, absOutput, absMaster);
 
-        ItemStack passAll = createBlacklistFilter();
-        setNodeFilter(input, Direction.WEST, passAll.copy());
-        setNodeFilter(output, Direction.EAST, passAll.copy());
+        FilterSpec passAll = createBlacklistFilter();
+        setNodeFilter(input, Direction.WEST, passAll);
+        setNodeFilter(output, Direction.EAST, passAll);
 
         ChestBlockEntity srcChest = (ChestBlockEntity) helper.getBlockEntity(srcChestPos);
         srcChest.setItem(0, new ItemStack(Items.DIAMOND, 16));
@@ -332,10 +345,10 @@ public class RoutingNodeTests {
         connectToMaster(helper, output1, master, helper.absolutePos(output1Pos), absMaster);
         connectToMaster(helper, output2, master, helper.absolutePos(output2Pos), absMaster);
 
-        ItemStack passAll = createBlacklistFilter();
-        setNodeFilter(input, Direction.WEST, passAll.copy());
-        setNodeFilter(output1, Direction.EAST, passAll.copy());
-        setNodeFilter(output2, Direction.EAST, passAll.copy());
+        FilterSpec passAll = createBlacklistFilter();
+        setNodeFilter(input, Direction.WEST, passAll);
+        setNodeFilter(output1, Direction.EAST, passAll);
+        setNodeFilter(output2, Direction.EAST, passAll);
 
         ChestBlockEntity srcChest = (ChestBlockEntity) helper.getBlockEntity(srcChestPos);
         srcChest.setItem(0, new ItemStack(Items.DIAMOND, 64));
@@ -442,10 +455,10 @@ public class RoutingNodeTests {
         connectToMaster(helper, lowOutput, master, helper.absolutePos(lowPriorityOutputPos), absMaster);
         connectToMaster(helper, highOutput, master, helper.absolutePos(highPriorityOutputPos), absMaster);
 
-        ItemStack passAll = createBlacklistFilter();
-        setNodeFilter(input, Direction.WEST, passAll.copy());
-        setNodeFilter(lowOutput, Direction.EAST, passAll.copy());
-        setNodeFilter(highOutput, Direction.EAST, passAll.copy());
+        FilterSpec passAll = createBlacklistFilter();
+        setNodeFilter(input, Direction.WEST, passAll);
+        setNodeFilter(lowOutput, Direction.EAST, passAll);
+        setNodeFilter(highOutput, Direction.EAST, passAll);
 
         // Set priorities: high=5, low=0 (Direction.EAST = index 5 in 3DDataValue)
         highOutput.priorities[Direction.EAST.get3DDataValue()] = 5;
@@ -517,7 +530,7 @@ public class RoutingNodeTests {
      */
     private static BloodTankBlockEntity placeBloodTank(GameTestHelper helper, BlockPos pos, int tier) {
         BloodTankBlockEntity tank = placeAndGet(helper, pos, NVBlocks.BLOOD_TANK.block().get(), BloodTankBlockEntity.class);
-        net.minecraft.nbt.CompoundTag tag = tank.saveWithoutMetadata(helper.getLevel().registryAccess());
+        CompoundTag tag = tank.saveWithoutMetadata(helper.getLevel().registryAccess());
         tag.putInt("tier", tier);
         tank.loadWithComponents(tag, helper.getLevel().registryAccess());
         return tank;
@@ -555,9 +568,9 @@ public class RoutingNodeTests {
         connectToMaster(helper, input, master, helper.absolutePos(inputPos), absMaster);
         connectToMaster(helper, output, master, helper.absolutePos(outputPos), absMaster);
 
-        ItemStack passAll = createBlacklistFilter();
-        setNodeFilter(input, Direction.WEST, passAll.copy());
-        setNodeFilter(output, Direction.EAST, passAll.copy());
+        FilterSpec passAll = createBlacklistFilter();
+        setNodeFilter(input, Direction.WEST, passAll);
+        setNodeFilter(output, Direction.EAST, passAll);
 
         // Fill source tank with 4000 mB of Life Essence
         IFluidHandler srcHandler = helper.getLevel().getCapability(
@@ -606,9 +619,9 @@ public class RoutingNodeTests {
         connectToMaster(helper, input, master, helper.absolutePos(inputPos), absMaster);
         connectToMaster(helper, output, master, helper.absolutePos(outputPos), absMaster);
 
-        ItemStack passAll = createBlacklistFilter();
-        setNodeFilter(input, Direction.WEST, passAll.copy());
-        setNodeFilter(output, Direction.EAST, passAll.copy());
+        FilterSpec passAll = createBlacklistFilter();
+        setNodeFilter(input, Direction.WEST, passAll);
+        setNodeFilter(output, Direction.EAST, passAll);
 
         // Fill source, leave dest empty — tests the empty tank output filter bypass
         IFluidHandler srcHandler = helper.getLevel().getCapability(
@@ -654,9 +667,9 @@ public class RoutingNodeTests {
         connectToMaster(helper, input, master, helper.absolutePos(inputPos), absMaster);
         connectToMaster(helper, output, master, helper.absolutePos(outputPos), absMaster);
 
-        ItemStack passAll = createBlacklistFilter();
-        setNodeFilter(input, Direction.WEST, passAll.copy());
-        setNodeFilter(output, Direction.EAST, passAll.copy());
+        FilterSpec passAll = createBlacklistFilter();
+        setNodeFilter(input, Direction.WEST, passAll);
+        setNodeFilter(output, Direction.EAST, passAll);
 
         srcEnergy.storage.receiveEnergy(50000, false);
 
@@ -717,8 +730,8 @@ public class RoutingNodeTests {
 
         InputRoutingNodeBlockEntity input = (InputRoutingNodeBlockEntity) helper.getBlockEntity(ctx.input);
         OutputRoutingNodeBlockEntity output = (OutputRoutingNodeBlockEntity) helper.getBlockEntity(ctx.output);
-        setNodeFilter(input, Direction.WEST, ItemStack.EMPTY);
-        setNodeFilter(output, Direction.EAST, ItemStack.EMPTY);
+        setNodeFilter(input, Direction.WEST, (FilterSpec) null);
+        setNodeFilter(output, Direction.EAST, (FilterSpec) null);
 
         ChestBlockEntity srcChest = (ChestBlockEntity) helper.getBlockEntity(ctx.srcChest);
         srcChest.setItem(0, new ItemStack(Items.DIAMOND, 32));

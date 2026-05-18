@@ -1,18 +1,24 @@
 package com.breakinblocks.neovitae.datagen.provider;
 
 import net.minecraft.data.PackOutput;
+import net.minecraft.world.item.ItemDisplayContext;
+import net.minecraft.world.item.SpawnEggItem;
 import net.neoforged.neoforge.client.model.generators.ItemModelBuilder;
 import net.neoforged.neoforge.client.model.generators.ItemModelProvider;
 import net.neoforged.neoforge.client.model.generators.ModelFile;
 import net.neoforged.neoforge.common.data.ExistingFileHelper;
 import com.breakinblocks.neovitae.NeoVitae;
 import com.breakinblocks.neovitae.common.datacomponent.SpiritusType;
+import com.breakinblocks.neovitae.common.item.BloodOrbItem;
 import com.breakinblocks.neovitae.common.item.MaterialItem;
 import com.breakinblocks.neovitae.common.item.NVItems;
 import com.breakinblocks.neovitae.common.item.ItemAnointmentProvider;
+import com.breakinblocks.neovitae.common.item.SpiritusCrystalItem;
+import com.breakinblocks.neovitae.common.item.soul.ISentientTool;
 import com.breakinblocks.neovitae.common.material.MaterialDefinition;
 import com.breakinblocks.neovitae.common.material.MaterialRegistry;
 
+import java.util.List;
 import java.util.function.Supplier;
 
 public class NVItemModelProvider extends ItemModelProvider {
@@ -31,14 +37,16 @@ public class NVItemModelProvider extends ItemModelProvider {
                 .filter(holder -> !(holder.get() instanceof ItemAnointmentProvider))
                 .filter(holder -> !(holder.get() instanceof MaterialItem))
                 .filter(holder -> holder != NVItems.SIGIL_BLOOD_LIGHT)
-                .filter(holder -> !(holder.get() instanceof com.breakinblocks.neovitae.common.item.BloodOrbItem))
-                .filter(holder -> !(holder.get() instanceof net.minecraft.world.item.SpawnEggItem))
+                .filter(holder -> !(holder.get() instanceof BloodOrbItem))
+                .filter(holder -> !(holder.get() instanceof ISentientTool))
+                .filter(holder -> !(holder.get() instanceof SpiritusCrystalItem))
+                .filter(holder -> !(holder.get() instanceof SpawnEggItem))
                 .map(Supplier::get)
                 .forEach(this::basicItem);
 
         // Spawn eggs use the vanilla template_spawn_egg parent model (tinted by egg colors)
         NVItems.BASIC_ITEMS.getEntries().stream()
-                .filter(holder -> holder.get() instanceof net.minecraft.world.item.SpawnEggItem)
+                .filter(holder -> holder.get() instanceof SpawnEggItem)
                 .forEach(holder -> getBuilder(holder.getId().getPath())
                         .parent(new ModelFile.UncheckedModelFile("minecraft:item/template_spawn_egg")));
         NVItems.TAB_REQ.getEntries().stream().map(Supplier::get).forEach(this::basicItem);
@@ -117,8 +125,8 @@ public class NVItemModelProvider extends ItemModelProvider {
             }
         }
 
-        // Process WILL_ITEMS - only items that need will type variants (not already-typed monster souls)
-        NVItems.WILL_ITEMS.getEntries().forEach(item -> {
+        // Process SPIRITUS_ITEMS - only items that need will type variants (not already-typed monster souls)
+        NVItems.SPIRITUS_ITEMS.getEntries().forEach(item -> {
             String path = item.getId().getPath();
             // Monster souls are already typed, just use basic item model
             if (path.startsWith("base_spiritus_soul")) {
@@ -126,7 +134,8 @@ public class NVItemModelProvider extends ItemModelProvider {
                 return;
             }
             // Other will items get variants for each will type
-            ItemModelBuilder builder = getBuilder(path);
+            ItemModelBuilder builder = getBuilder(path).parent(new ModelFile.UncheckedModelFile("minecraft:item/handheld"))
+                    .texture("layer0", modLoc("item/" + path + "_raw"));
             for (SpiritusType type : SpiritusType.values()) {
                 ModelFile modelFile = singleTexture(String.format("item/variant/%s_%s", path, type.getSerializedName()), mcLoc("item/handheld"), "layer0", modLoc(String.format("item/%s_%s", path, type.getSerializedName())));
                 builder.override().predicate(NeoVitae.TYPE_PROPERTY, type.ordinal()).model(modelFile).end();
@@ -137,7 +146,7 @@ public class NVItemModelProvider extends ItemModelProvider {
         singleTexture("blood_stained_glass_pane", mcLoc("item/generated"), "layer0", modLoc("block/blood_stained_glass")).renderType("translucent");
 
         // Blood orbs with fill level overlays
-        for (var orb : java.util.List.of(NVItems.ORB_WEAK, NVItems.ORB_APPRENTICE, NVItems.ORB_MAGICIAN,
+        for (var orb : List.of(NVItems.ORB_WEAK, NVItems.ORB_APPRENTICE, NVItems.ORB_MAGICIAN,
                 NVItems.ORB_MASTER, NVItems.ORB_ARCHMAGE, NVItems.ORB_TRANSCENDENT)) {
             String path = orb.getId().getPath();
             ModelFile emptyModel = singleTexture("item/variant/" + path + "_empty",
@@ -147,7 +156,7 @@ public class NVItemModelProvider extends ItemModelProvider {
                 fillModels[i] = getBuilder("item/variant/" + path + "_fill_" + (i + 1))
                         .parent(new ModelFile.UncheckedModelFile("minecraft:item/generated"))
                         .texture("layer0", modLoc("item/" + path))
-                        .texture("layer1", modLoc("item/orb_fill_" + (i + 1)));
+                        .texture("layer1", modLoc("item/" + path + "_fill_" + (i + 1)));
             }
             ItemModelBuilder orbBuilder = getBuilder(path);
             orbBuilder.override().predicate(NeoVitae.rl("fill_level"), 0).model(emptyModel).end();
@@ -158,13 +167,58 @@ public class NVItemModelProvider extends ItemModelProvider {
             orbBuilder.override().predicate(NeoVitae.rl("fill_level"), 0.8f).model(fillModels[4]).end();
         }
 
-        basicItem(NVItems.DAGGER_OF_SACRIFICE.get());
-
+        ModelFile normalDagger = withGuiOffset(
+                singleTexture("item/variant/sacrificial_dagger_normal", mcLoc("item/handheld"), "layer0", modLoc("item/sacrificial_dagger")),
+                2f, 2f);
+        ModelFile chargedDagger = withGuiOffset(
+                singleTexture("item/variant/sacrificial_dagger_charged", mcLoc("item/handheld"), "layer0", modLoc("item/sacrificial_dagger_charged")),
+                2f, 2f);
+        ModelFile alternateOrb = singleTexture("item/variant/sacrificial_dagger_alternate", mcLoc("item/generated"), "layer0", modLoc("item/glass_orb"));
         ItemModelBuilder builder = getBuilder(NVItems.SACRIFICIAL_DAGGER.getId().getPath());
-        ModelFile normalDagger = singleTexture("item/variant/sacrificial_dagger_normal", mcLoc("item/handheld"), "layer0", modLoc("item/sacrificial_dagger"));
-        ModelFile chargedDagger = singleTexture("item/variant/sacrificial_dagger_charged", mcLoc("item/handheld"), "layer0", modLoc("item/sacrificial_dagger_charged"));
+        builder.override().predicate(NeoVitae.rl("alternate"), 1).model(alternateOrb).end();
         builder.override().predicate(NeoVitae.INCENSE_PROPERTY, 0).model(normalDagger).end();
         builder.override().predicate(NeoVitae.INCENSE_PROPERTY, 1).model(chargedDagger).end();
+
+        String[] typeNames = {"ruina", "nihilum", "invictus", "vindicta"};
+
+        for (String stem : new String[] {"sentient_sword", "sentient_axe", "sentient_pickaxe", "sentient_shovel", "sentient_scythe"}) {
+            ModelFile[] typeVariants = new ModelFile[typeNames.length];
+            for (int i = 0; i < typeNames.length; i++) {
+                typeVariants[i] = singleTexture("item/variant/" + stem + "_" + typeNames[i],
+                        mcLoc("item/handheld"), "layer0", modLoc("item/" + stem + "_" + typeNames[i]));
+            }
+            ItemModelBuilder b = getBuilder(stem)
+                    .parent(new ModelFile.UncheckedModelFile(mcLoc("item/handheld")));
+            b.texture("layer0", modLoc("item/" + stem));
+            for (int i = 0; i < typeNames.length; i++) {
+                int typeOrdinal = i + 1;
+                b.override()
+                        .predicate(NeoVitae.rl("active"), 1)
+                        .predicate(NeoVitae.TYPE_PROPERTY, typeOrdinal)
+                        .model(typeVariants[i])
+                        .end();
+            }
+        }
+
+        ModelFile lexActiveRaw = singleTexture("item/variant/lex_vitae_active",
+                mcLoc("item/handheld"), "layer0", modLoc("item/lex_vitae_active"));
+        ModelFile[] lexActiveTyped = new ModelFile[typeNames.length];
+        for (int i = 0; i < typeNames.length; i++) {
+            lexActiveTyped[i] = singleTexture("item/variant/lex_vitae_active_" + typeNames[i],
+                    mcLoc("item/handheld"), "layer0", modLoc("item/lex_vitae_active_" + typeNames[i]));
+        }
+        ItemModelBuilder lexBuilder = getBuilder(NVItems.LEX_VITAE.getId().getPath())
+                .parent(new ModelFile.UncheckedModelFile(mcLoc("item/handheld")));
+        lexBuilder.texture("layer0", modLoc("item/lex_vitae"));
+        lexBuilder.override().predicate(NeoVitae.rl("active"), 1).model(lexActiveRaw).end();
+        for (int i = 0; i < typeNames.length; i++) {
+            int typeOrdinal = i + 1;
+            lexBuilder.override()
+                    .predicate(NeoVitae.rl("active"), 1)
+                    .predicate(NeoVitae.TYPE_PROPERTY, typeOrdinal)
+                    .model(lexActiveTyped[i])
+                    .end();
+        }
 
         // Array effect dummy items - use their alchemy array textures
         singleTexture("array_bounce", mcLoc("item/generated"), "layer0", modLoc("models/alchemyarrays/bouncearray"));
@@ -174,5 +228,26 @@ public class NVItemModelProvider extends ItemModelProvider {
         singleTexture("array_day", mcLoc("item/generated"), "layer0", modLoc("models/alchemyarrays/sunarray"));
         singleTexture("array_night", mcLoc("item/generated"), "layer0", modLoc("models/alchemyarrays/moonarray"));
         singleTexture("array_elevator", mcLoc("item/generated"), "layer0", modLoc("models/alchemyarrays/elevatorarray"));
+        singleTexture("array_repulsion", mcLoc("item/generated"), "layer0", modLoc("models/alchemyarrays/repulsionarray"));
+        singleTexture("array_collection", mcLoc("item/generated"), "layer0", modLoc("models/alchemyarrays/collectionarray"));
+        singleTexture("array_light", mcLoc("item/generated"), "layer0", modLoc("models/alchemyarrays/lightarray"));
+        singleTexture("array_furnace", mcLoc("item/generated"), "layer0", modLoc("models/alchemyarrays/furnacearray"));
+        singleTexture("array_rain", mcLoc("item/generated"), "layer0", modLoc("models/alchemyarrays/rainarray"));
+        singleTexture("array_growth", mcLoc("item/generated"), "layer0", modLoc("models/alchemyarrays/growtharray"));
+        singleTexture("array_freeze", mcLoc("item/generated"), "layer0", modLoc("models/alchemyarrays/freezearray"));
+        singleTexture("array_signal", mcLoc("item/generated"), "layer0", modLoc("models/alchemyarrays/signalarray"));
+        singleTexture("array_trigger", mcLoc("item/generated"), "layer0", modLoc("models/alchemyarrays/triggerarray"));
+        singleTexture("array_spirit_siphon", mcLoc("item/generated"), "layer0", modLoc("models/alchemyarrays/spiritsiphonarray"));
+        singleTexture("array_deflection", mcLoc("item/generated"), "layer0", modLoc("models/alchemyarrays/deflectionarray"));
+        singleTexture("array_endless_fountain", mcLoc("item/generated"), "layer0", modLoc("models/alchemyarrays/fountainarray"));
+        singleTexture("array_undertow", mcLoc("item/generated"), "layer0", modLoc("models/alchemyarrays/undertowarray"));
+    }
+
+    /** Apply a GUI-only translation (in display-pixel units) so an item icon can be nudged in inventory slots. */
+    private ItemModelBuilder withGuiOffset(ModelFile model, float dx, float dy) {
+        ItemModelBuilder b = (ItemModelBuilder) model;
+        b.transforms().transform(ItemDisplayContext.GUI)
+                .translation(dx, dy, 0f).end();
+        return b;
     }
 }

@@ -14,6 +14,7 @@ src/generated/resources/.cache
 
 # Visual Studio Code
 .vscode/
+.eclipse/
 docs/
 # Local History for Visual Studio Code
 .history/
@@ -40,3 +41,5 @@ gradlew
 gradlew.bat
 run-gametest/
 metadata/dungeon_mobs.md
+
+run-client.log

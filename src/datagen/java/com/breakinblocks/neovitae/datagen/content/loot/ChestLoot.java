@@ -8,6 +8,7 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.storage.loot.LootPool;
 import net.minecraft.world.level.storage.loot.LootTable;
+import net.minecraft.world.level.storage.loot.entries.EmptyLootItem;
 import net.minecraft.world.level.storage.loot.entries.LootItem;
 import net.minecraft.world.level.storage.loot.functions.EnchantWithLevelsFunction;
 import net.minecraft.world.level.storage.loot.functions.SetItemCountFunction;
@@ -17,7 +18,7 @@ import com.breakinblocks.neovitae.NeoVitae;
 import com.breakinblocks.neovitae.common.block.NVBlocks;
 import com.breakinblocks.neovitae.common.item.NVItems;
 import com.breakinblocks.neovitae.common.loot.NVTableLootEntry;
-import com.breakinblocks.neovitae.common.loot.SetWillRange;
+import com.breakinblocks.neovitae.common.loot.SetSpiritusRange;
 
 import java.util.function.BiConsumer;
 
@@ -25,7 +26,7 @@ import java.util.function.BiConsumer;
  * Generates simple_dungeon and standard_dungeon chest loot tables.
  *
  * Note: mines/ loot tables are kept as manual JSON files because they use
- * SetLivingUpgrade which requires registry access not available at datagen time,
+ * SetSentientUpgrade which requires registry access not available at datagen time,
  * and reference items not fully accessible from the datagen sourceset.
  * Those files are in: src/main/resources/data/neovitae/loot_table/chests/mines/
  */
@@ -63,6 +64,9 @@ public class ChestLoot implements LootTableSubProvider {
         generateStandardDungeonMinesKey(output);
         generateStandardDungeonPoorLoot(output);
         generateStandardDungeonStrongAlchemy(output);
+
+        // Foreman boss treasure (mine_entrance trial spawner)
+        generateForemanTreasure(output);
     }
 
     private ResourceKey<LootTable> chestKey(String path) {
@@ -382,13 +386,19 @@ public class ChestLoot implements LootTableSubProvider {
     private void generateStandardDungeonDecentLoot(BiConsumer<ResourceKey<LootTable>, LootTable.Builder> output) {
         output.accept(chestKey("standard_dungeon/decent_loot"), LootTable.lootTable()
             .withPool(LootPool.lootPool()
+                .setRolls(ConstantValue.exactly(1))
+                .add(NVTableLootEntry.builder(vanillaChestKey("stronghold_corridor")))
+            )
+            .withPool(LootPool.lootPool()
                 .setRolls(UniformGenerator.between(2.0f, 4.0f))
-                .add(LootItem.lootTableItem(NVItems.COPPER_FRAGMENT.get()).setWeight(20).setQuality(-4)
-                    .apply(SetItemCountFunction.setCount(UniformGenerator.between(8.0f, 18.0f))))
-                .add(LootItem.lootTableItem(NVItems.IRON_FRAGMENT.get()).setWeight(18).setQuality(1)
-                    .apply(SetItemCountFunction.setCount(UniformGenerator.between(5.0f, 12.0f))))
-                .add(LootItem.lootTableItem(NVItems.GOLD_FRAGMENT.get()).setWeight(14).setQuality(2)
+                .add(LootItem.lootTableItem(Items.RAW_COPPER).setWeight(20).setQuality(-4)
+                    .apply(SetItemCountFunction.setCount(UniformGenerator.between(6.0f, 14.0f))))
+                .add(LootItem.lootTableItem(Items.RAW_IRON).setWeight(18).setQuality(1)
                     .apply(SetItemCountFunction.setCount(UniformGenerator.between(4.0f, 10.0f))))
+                .add(LootItem.lootTableItem(Items.RAW_GOLD).setWeight(14).setQuality(2)
+                    .apply(SetItemCountFunction.setCount(UniformGenerator.between(3.0f, 8.0f))))
+                .add(LootItem.lootTableItem(NVItems.DEMONITE_RAW.get()).setWeight(10).setQuality(3)
+                    .apply(SetItemCountFunction.setCount(UniformGenerator.between(2.0f, 6.0f))))
                 .add(LootItem.lootTableItem(Items.DIAMOND).setWeight(5).setQuality(3)
                     .apply(SetItemCountFunction.setCount(UniformGenerator.between(1.0f, 4.0f))))
                 .add(LootItem.lootTableItem(Items.EMERALD).setWeight(4).setQuality(5)
@@ -401,6 +411,8 @@ public class ChestLoot implements LootTableSubProvider {
                     .apply(SetItemCountFunction.setCount(UniformGenerator.between(4.0f, 9.0f))))
                 .add(LootItem.lootTableItem(NVBlocks.STRONG_TAU.item().get()).setWeight(6).setQuality(3)
                     .apply(SetItemCountFunction.setCount(UniformGenerator.between(2.0f, 6.0f))))
+                .add(LootItem.lootTableItem(NVItems.ANIMUS_MOTE.get()).setWeight(3).setQuality(3)
+                    .apply(SetItemCountFunction.setCount(UniformGenerator.between(1.0f, 1.0f))))
             )
         );
     }
@@ -456,6 +468,12 @@ public class ChestLoot implements LootTableSubProvider {
     private void generateStandardDungeonGreatLoot(BiConsumer<ResourceKey<LootTable>, LootTable.Builder> output) {
         output.accept(chestKey("standard_dungeon/great_loot"), LootTable.lootTable()
             .withPool(LootPool.lootPool()
+                .setRolls(ConstantValue.exactly(1))
+                .add(NVTableLootEntry.builder(vanillaChestKey("end_city_treasure")).setWeight(1))
+                .add(NVTableLootEntry.builder(vanillaChestKey("stronghold_crossing")).setWeight(2))
+                .add(NVTableLootEntry.builder(vanillaChestKey("buried_treasure")).setWeight(2))
+            )
+            .withPool(LootPool.lootPool()
                 .setRolls(UniformGenerator.between(3.0f, 5.0f))
                 .add(LootItem.lootTableItem(Items.DIAMOND).setWeight(10).setQuality(3)
                     .apply(SetItemCountFunction.setCount(UniformGenerator.between(2.0f, 6.0f))))
@@ -463,6 +481,10 @@ public class ChestLoot implements LootTableSubProvider {
                     .apply(SetItemCountFunction.setCount(UniformGenerator.between(3.0f, 8.0f))))
                 .add(LootItem.lootTableItem(Items.NETHERITE_SCRAP).setWeight(3).setQuality(5)
                     .apply(SetItemCountFunction.setCount(UniformGenerator.between(1.0f, 3.0f))))
+                .add(LootItem.lootTableItem(NVItems.DEMONITE_RAW.get()).setWeight(8).setQuality(3)
+                    .apply(SetItemCountFunction.setCount(UniformGenerator.between(3.0f, 8.0f))))
+                .add(LootItem.lootTableItem(NVItems.HELLFORGED_INGOT.get()).setWeight(5).setQuality(4)
+                    .apply(SetItemCountFunction.setCount(UniformGenerator.between(1.0f, 4.0f))))
                 .add(LootItem.lootTableItem(Items.DIAMOND_PICKAXE).setWeight(4).setQuality(4)
                     .apply(EnchantWithLevelsFunction.enchantWithLevels(registries, UniformGenerator.between(25.0f, 40.0f))))
                 .add(LootItem.lootTableItem(Items.DIAMOND_SWORD).setWeight(4).setQuality(4)
@@ -474,7 +496,9 @@ public class ChestLoot implements LootTableSubProvider {
                 .add(LootItem.lootTableItem(NVBlocks.STRONG_TAU.item().get()).setWeight(12)
                     .apply(SetItemCountFunction.setCount(UniformGenerator.between(4.0f, 9.0f))))
                 .add(LootItem.lootTableItem(NVItems.MONSTER_SOUL_RAW.get()).setWeight(8)
-                    .apply(SetWillRange.builder(UniformGenerator.between(30.0f, 60.0f))))
+                    .apply(SetSpiritusRange.builder(UniformGenerator.between(30.0f, 60.0f))))
+                .add(LootItem.lootTableItem(NVItems.ANIMUS_MOTE.get()).setWeight(5).setQuality(4)
+                    .apply(SetItemCountFunction.setCount(UniformGenerator.between(1.0f, 2.0f))))
             )
         );
     }
@@ -505,30 +529,22 @@ public class ChestLoot implements LootTableSubProvider {
         output.accept(chestKey("standard_dungeon/poor_loot"), LootTable.lootTable()
             .withPool(LootPool.lootPool()
                 .setRolls(UniformGenerator.between(2.0f, 4.0f))
-                .add(LootItem.lootTableItem(NVItems.COPPER_FRAGMENT.get()).setWeight(25).setQuality(-4)
-                    .apply(SetItemCountFunction.setCount(UniformGenerator.between(6.0f, 15.0f))))
-                .add(LootItem.lootTableItem(NVItems.IRON_FRAGMENT.get()).setWeight(20).setQuality(1)
-                    .apply(SetItemCountFunction.setCount(UniformGenerator.between(4.0f, 8.0f))))
-                .add(LootItem.lootTableItem(NVItems.GOLD_FRAGMENT.get()).setWeight(15).setQuality(2)
+                .add(LootItem.lootTableItem(Items.RAW_COPPER).setWeight(22).setQuality(-4)
+                    .apply(SetItemCountFunction.setCount(UniformGenerator.between(4.0f, 10.0f))))
+                .add(LootItem.lootTableItem(Items.RAW_IRON).setWeight(18).setQuality(1)
                     .apply(SetItemCountFunction.setCount(UniformGenerator.between(3.0f, 7.0f))))
-                .add(LootItem.lootTableItem(Items.DIAMOND).setWeight(3).setQuality(3)
+                .add(LootItem.lootTableItem(Items.IRON_INGOT).setWeight(10).setQuality(1)
                     .apply(SetItemCountFunction.setCount(UniformGenerator.between(1.0f, 4.0f))))
-                .add(LootItem.lootTableItem(Items.EMERALD).setQuality(5)
+                .add(LootItem.lootTableItem(Items.COPPER_INGOT).setWeight(14).setQuality(-2)
                     .apply(SetItemCountFunction.setCount(UniformGenerator.between(3.0f, 8.0f))))
-                .add(LootItem.lootTableItem(Items.WHEAT).setWeight(8).setQuality(-2)
-                    .apply(SetItemCountFunction.setCount(UniformGenerator.between(3.0f, 8.0f))))
-                .add(LootItem.lootTableItem(Items.FEATHER).setWeight(8).setQuality(-2)
-                    .apply(SetItemCountFunction.setCount(UniformGenerator.between(3.0f, 7.0f))))
+                .add(LootItem.lootTableItem(Items.DIAMOND).setWeight(3).setQuality(3)
+                    .apply(SetItemCountFunction.setCount(UniformGenerator.between(1.0f, 3.0f))))
+                .add(LootItem.lootTableItem(Items.COAL).setWeight(15).setQuality(-2)
+                    .apply(SetItemCountFunction.setCount(UniformGenerator.between(4.0f, 10.0f))))
                 .add(LootItem.lootTableItem(Items.ROTTEN_FLESH).setWeight(8).setQuality(-2)
                     .apply(SetItemCountFunction.setCount(UniformGenerator.between(4.0f, 9.0f))))
                 .add(LootItem.lootTableItem(Items.GUNPOWDER).setWeight(8).setQuality(-2)
                     .apply(SetItemCountFunction.setCount(UniformGenerator.between(3.0f, 8.0f))))
-                .add(LootItem.lootTableItem(Items.WARPED_STEM).setWeight(20).setQuality(-1)
-                    .apply(SetItemCountFunction.setCount(UniformGenerator.between(8.0f, 12.0f))))
-                .add(LootItem.lootTableItem(Items.STICK).setWeight(15).setQuality(-1)
-                    .apply(SetItemCountFunction.setCount(UniformGenerator.between(9.0f, 15.0f))))
-                .add(LootItem.lootTableItem(Items.SUGAR_CANE).setWeight(8).setQuality(-1)
-                    .apply(SetItemCountFunction.setCount(UniformGenerator.between(4.0f, 10.0f))))
                 .add(LootItem.lootTableItem(NVItems.SULFUR.get()).setWeight(6).setQuality(1)
                     .apply(SetItemCountFunction.setCount(UniformGenerator.between(2.0f, 7.0f))))
                 .add(LootItem.lootTableItem(NVItems.SIMPLE_KEY.get()).setWeight(3).setQuality(2)
@@ -565,6 +581,34 @@ public class ChestLoot implements LootTableSubProvider {
                     .apply(SetItemCountFunction.setCount(UniformGenerator.between(1.0f, 2.0f))))
                 .add(LootItem.lootTableItem(NVBlocks.STRONG_TAU.item().get()).setWeight(10)
                     .apply(SetItemCountFunction.setCount(UniformGenerator.between(4.0f, 9.0f))))
+            )
+        );
+    }
+
+    private void generateForemanTreasure(BiConsumer<ResourceKey<LootTable>, LootTable.Builder> output) {
+        output.accept(chestKey("foreman/treasure"), LootTable.lootTable()
+            // End-city-tier base loot via the vanilla end_city_treasure table.
+            .withPool(LootPool.lootPool()
+                .setRolls(UniformGenerator.between(2.0f, 4.0f))
+                .add(NVTableLootEntry.builder(vanillaChestKey("end_city_treasure")).setWeight(1))
+            )
+            // 10% nether star: weight 1 against weight-9 empty entry over a single roll.
+            .withPool(LootPool.lootPool()
+                .setRolls(ConstantValue.exactly(1))
+                .add(EmptyLootItem.emptyItem().setWeight(9))
+                .add(LootItem.lootTableItem(Items.NETHER_STAR).setWeight(1).setQuality(10)
+                    .apply(SetItemCountFunction.setCount(ConstantValue.exactly(1))))
+            )
+            // Spiritus + neovitae trophies for the boss kill.
+            .withPool(LootPool.lootPool()
+                .setRolls(UniformGenerator.between(1.0f, 2.0f))
+                .add(LootItem.lootTableItem(NVItems.MONSTER_SOUL_INVICTUS.get()).setWeight(8)
+                    .apply(SetSpiritusRange.builder(UniformGenerator.between(120.0f, 240.0f))))
+                .add(LootItem.lootTableItem(NVItems.MONSTER_SOUL_RUINA.get()).setWeight(8)
+                    .apply(SetSpiritusRange.builder(UniformGenerator.between(120.0f, 240.0f))))
+                .add(LootItem.lootTableItem(NVItems.HELLFORGED_INGOT.get()).setWeight(6).setQuality(5)
+                    .apply(SetItemCountFunction.setCount(UniformGenerator.between(2.0f, 4.0f))))
+                .add(LootItem.lootTableItem(NVItems.UPGRADE_TOME.get()).setWeight(4).setQuality(6))
             )
         );
     }

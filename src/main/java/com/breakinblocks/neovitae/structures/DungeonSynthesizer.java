@@ -63,8 +63,10 @@ public class DungeonSynthesizer {
 
     // Room progression tracking
     private int activatedDoors = 0;
+    private int activeSealCount = 0;
     private List<ResourceLocation> specialRoomBuffer = new ArrayList<>();
     private Map<ResourceLocation, Integer> placementsSinceLastSpecial = new HashMap<>();
+    private final java.util.ArrayDeque<BlockPos> pendingValidation = new java.util.ArrayDeque<>();
 
     /**
      * Gets the available door master map.
@@ -123,6 +125,17 @@ public class DungeonSynthesizer {
                 .ifPresent(nbt -> tag.put("placementTracker", nbt));
 
         tag.putInt("activatedDoors", activatedDoors);
+        tag.putInt("activeSealCount", activeSealCount);
+
+        net.minecraft.nbt.ListTag validationQueue = new net.minecraft.nbt.ListTag();
+        for (BlockPos pos : pendingValidation) {
+            net.minecraft.nbt.CompoundTag posTag = new net.minecraft.nbt.CompoundTag();
+            posTag.putInt("X", pos.getX());
+            posTag.putInt("Y", pos.getY());
+            posTag.putInt("Z", pos.getZ());
+            validationQueue.add(posTag);
+        }
+        if (!validationQueue.isEmpty()) tag.put("pendingValidation", validationQueue);
     }
 
     /**
@@ -131,10 +144,17 @@ public class DungeonSynthesizer {
     public void readFromNBT(CompoundTag tag) {
         // Deserialize door master map using Codec
         if (tag.contains("doorMasterMap")) {
-            availableDoorMasterMap = DOOR_MASTER_MAP_CODEC.parse(NbtOps.INSTANCE, tag.get("doorMasterMap"))
+            Map<String, Map<Direction, List<BlockPos>>> parsed = DOOR_MASTER_MAP_CODEC.parse(NbtOps.INSTANCE, tag.get("doorMasterMap"))
                     .resultOrPartial(LOGGER::error)
-                    .map(HashMap::new)
                     .orElse(new HashMap<>());
+            availableDoorMasterMap = new HashMap<>();
+            for (var entry : parsed.entrySet()) {
+                HashMap<Direction, List<BlockPos>> innerMap = new HashMap<>();
+                for (var inner : entry.getValue().entrySet()) {
+                    innerMap.put(inner.getKey(), new ArrayList<>(inner.getValue()));
+                }
+                availableDoorMasterMap.put(entry.getKey(), innerMap);
+            }
         }
 
         // Deserialize area descriptors
@@ -164,6 +184,16 @@ public class DungeonSynthesizer {
         }
 
         activatedDoors = tag.getInt("activatedDoors");
+        activeSealCount = tag.getInt("activeSealCount");
+
+        pendingValidation.clear();
+        if (tag.contains("pendingValidation")) {
+            net.minecraft.nbt.ListTag validationQueue = tag.getList("pendingValidation", 10);
+            for (int i = 0; i < validationQueue.size(); i++) {
+                net.minecraft.nbt.CompoundTag posTag = validationQueue.getCompound(i);
+                pendingValidation.add(new BlockPos(posTag.getInt("X"), posTag.getInt("Y"), posTag.getInt("Z")));
+            }
+        }
     }
 
     /**
@@ -204,11 +234,13 @@ public class DungeonSynthesizer {
             }
         }
 
-        // Place the room structure
+        settings.addProcessor(new TrialSpawnerEntityProcessor());
         initialRoom.placeStructureAtPosition(rand, settings, world, roomPlacementPosition);
 
-        // Place controller block
         world.setBlockAndUpdate(spawningPosition, NVBlocks.DUNGEON_CONTROLLER.block().get().defaultBlockState());
+        if (world.getBlockEntity(spawningPosition) instanceof com.breakinblocks.neovitae.common.blockentity.DungeonControllerBlockEntity controller) {
+            controller.setDungeonSynthesizer(this);
+        }
 
         // Create door seal blocks for each potential connection
         List<DungeonDoor> doorTypeMap = initialRoom.getPotentialConnectedRoomTypes(settings, roomPlacementPosition);
@@ -257,8 +289,8 @@ public class DungeonSynthesizer {
             return;
         }
 
-        // Place the seal block on top of the filled doorway
         world.setBlockAndUpdate(sealPos, NVBlocks.DUNGEON_SEAL.block().get().defaultBlockState());
+        activeSealCount++;
 
         // Configure the seal block entity
         if (world.getBlockEntity(sealPos) instanceof DungeonSealBlockEntity seal) {
@@ -278,6 +310,28 @@ public class DungeonSynthesizer {
     public boolean isBlockInDescriptor(BlockPos blockPos) {
         for (AreaDescriptor descriptor : descriptorList) {
             if (descriptor.isWithinArea(blockPos)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * Checks if a block position is within or near any placed room's area.
+     * Uses a tolerance to avoid ejecting players standing in doorways.
+     */
+    public boolean isBlockNearDescriptor(BlockPos blockPos, int tolerance) {
+        for (AreaDescriptor descriptor : descriptorList) {
+            if (descriptor instanceof AreaDescriptor.Rectangle rect) {
+                if (blockPos.getX() >= rect.getMinimumOffset().getX() - tolerance &&
+                    blockPos.getX() <= rect.getMaximumOffset().getX() + tolerance &&
+                    blockPos.getY() >= rect.getMinimumOffset().getY() - tolerance &&
+                    blockPos.getY() <= rect.getMaximumOffset().getY() + tolerance &&
+                    blockPos.getZ() >= rect.getMinimumOffset().getZ() - tolerance &&
+                    blockPos.getZ() <= rect.getMaximumOffset().getZ() + tolerance) {
+                    return true;
+                }
+            } else if (descriptor.isWithinArea(blockPos)) {
                 return true;
             }
         }
@@ -317,66 +371,93 @@ public class DungeonSynthesizer {
 
     /**
      * Attempts to place a random room connecting to an existing door.
+     * Tries all rooms in the pool (in weighted-random order) across all rotations
+     * and door offsets before giving up.
      *
      * @return DungeonRoomPlacement if successful, null otherwise
      */
     public DungeonRoomPlacement getRandomPlacement(ServerLevel world, ResourceLocation roomType,
                                                     RandomSource rand, BlockPos activatedDoorPos,
                                                     Direction doorFacing, String activatedDoorType) {
-        StructurePlaceSettings settings = new StructurePlaceSettings();
-        settings.setMirror(Mirror.NONE);
-        settings.setRotation(Rotation.NONE);
-        settings.setIgnoreEntities(false);
-        settings.setKnownShape(true);
-
-        Direction oppositeDoorFacing = doorFacing.getOpposite();
-        DungeonRoom testingRoom = getRandomRoom(roomType, rand);
-
-        if (testingRoom == null) {
-            LOGGER.debug("No room found for type: {}", roomType);
+        List<Pair<ResourceLocation, Integer>> poolEntries = DungeonRoomRegistry.getRoomPoolEntries(roomType);
+        if (poolEntries == null || poolEntries.isEmpty()) {
+            LOGGER.debug("No room pool found for type: {}", roomType);
             return null;
         }
 
-        List<Rotation> rotationList = Rotation.getShuffled(rand);
+        List<Pair<ResourceLocation, Integer>> shuffled = new ArrayList<>(poolEntries);
+        Collections.shuffle(shuffled, new Random(rand.nextLong()));
 
-        for (Rotation rotation : rotationList) {
-            settings.setRotation(rotation);
+        Direction oppositeDoorFacing = doorFacing.getOpposite();
 
-            List<BlockPos> otherDoorList = testingRoom.getDoorOffsetsForFacing(settings, activatedDoorType,
-                    oppositeDoorFacing, BlockPos.ZERO);
+        for (Pair<ResourceLocation, Integer> entry : shuffled) {
+            DungeonRoom testingRoom = DungeonRoomRegistry.getDungeonRoom(entry.getLeft());
+            if (testingRoom == null) continue;
 
-            if (otherDoorList == null || otherDoorList.isEmpty()) {
-                continue;
-            }
+            StructurePlaceSettings settings = new StructurePlaceSettings();
+            settings.setMirror(Mirror.NONE);
+            settings.setRotation(Rotation.NONE);
+            settings.setIgnoreEntities(false);
+            settings.setKnownShape(true);
 
-            int doorIndex = rand.nextInt(otherDoorList.size());
-            BlockPos testDoor = otherDoorList.get(doorIndex);
-            BlockPos roomLocation = activatedDoorPos.subtract(testDoor).offset(doorFacing.getNormal());
+            List<Rotation> rotationList = Rotation.getShuffled(rand);
 
-            // Check for collisions
-            List<AreaDescriptor> descriptors = testingRoom.getAreaDescriptors(settings, roomLocation);
-            boolean valid = true;
+            for (Rotation rotation : rotationList) {
+                settings.setRotation(rotation);
 
-            for (AreaDescriptor testDesc : descriptors) {
-                if (!isAreaDescriptorInBounds(world, testDesc)) {
-                    valid = false;
-                    break;
+                List<BlockPos> otherDoorList = testingRoom.getDoorOffsetsForFacing(settings, activatedDoorType,
+                        oppositeDoorFacing, BlockPos.ZERO);
+
+                if (otherDoorList == null || otherDoorList.isEmpty()) {
+                    continue;
                 }
-                for (AreaDescriptor currentDesc : descriptorList) {
-                    if (testDesc.intersects(currentDesc)) {
-                        valid = false;
-                        break;
+
+                List<BlockPos> shuffledDoors = new ArrayList<>(otherDoorList);
+                Collections.shuffle(shuffledDoors, new Random(rand.nextLong()));
+
+                for (BlockPos testDoor : shuffledDoors) {
+                    BlockPos roomLocation = activatedDoorPos.subtract(testDoor).offset(doorFacing.getNormal());
+
+                    List<AreaDescriptor> descriptors = testingRoom.getAreaDescriptors(settings, roomLocation);
+                    boolean valid = true;
+                    String rejectReason = null;
+
+                    for (AreaDescriptor testDesc : descriptors) {
+                        if (!isAreaDescriptorInBounds(world, testDesc)) {
+                            valid = false;
+                            rejectReason = "out_of_bounds";
+                            break;
+                        }
+                        for (AreaDescriptor currentDesc : descriptorList) {
+                            if (testDesc.intersects(currentDesc)) {
+                                valid = false;
+                                if (testDesc instanceof AreaDescriptor.Rectangle tr && currentDesc instanceof AreaDescriptor.Rectangle cr) {
+                                    rejectReason = "intersects existing descriptor [" +
+                                            cr.getMinimumOffset() + " to " + cr.getMaximumOffset() +
+                                            "] test=[" + tr.getMinimumOffset() + " to " + tr.getMaximumOffset() + "]";
+                                } else {
+                                    rejectReason = "intersects existing descriptor";
+                                }
+                                break;
+                            }
+                        }
+                        if (!valid) break;
+                    }
+
+                    if (!valid) {
+                        LOGGER.warn("Rejected {} rot={} at {}: {}",
+                                testingRoom.getKey(), rotation, roomLocation, rejectReason);
+                    }
+
+                    if (valid) {
+                        settings.clearProcessors();
+                        settings.addProcessor(new StoneToOreProcessor(testingRoom.getOreDensity()));
+                        settings.addProcessor(new TrialSpawnerEntityProcessor());
+
+                        Pair<Direction, BlockPos> addedDoor = Pair.of(oppositeDoorFacing, testDoor.offset(roomLocation));
+                        return new DungeonRoomPlacement(testingRoom, world, settings, roomLocation, addedDoor);
                     }
                 }
-                if (!valid) break;
-            }
-
-            if (valid) {
-                settings.clearProcessors();
-                settings.addProcessor(new StoneToOreProcessor(testingRoom.getOreDensity()));
-
-                Pair<Direction, BlockPos> addedDoor = Pair.of(oppositeDoorFacing, testDoor.offset(roomLocation));
-                return new DungeonRoomPlacement(testingRoom, world, settings, roomLocation, addedDoor);
             }
         }
 
@@ -386,16 +467,15 @@ public class DungeonSynthesizer {
     /**
      * Checks and updates special room requirements based on progression.
      */
-    public void checkSpecialRoomRequirements(int currentRoomDepth) {
-        // Increment counters
+    public List<ResourceLocation> checkSpecialRoomRequirements(int currentRoomDepth) {
         for (ResourceLocation res : placementsSinceLastSpecial.keySet()) {
             placementsSinceLastSpecial.merge(res, 1, Integer::sum);
         }
 
-        // Check for new special rooms to add
         List<ResourceLocation> newSpecialPools = SpecialDungeonRoomPoolRegistry.getSpecialRooms(
                 activatedDoors, currentRoomDepth, placementsSinceLastSpecial, specialRoomBuffer);
         specialRoomBuffer.addAll(newSpecialPools);
+        return newSpecialPools;
     }
 
     /**
@@ -410,5 +490,60 @@ public class DungeonSynthesizer {
      */
     public void incrementActivatedDoors() {
         activatedDoors++;
+    }
+
+    public int getActiveSealCount() { return activeSealCount; }
+    public List<ResourceLocation> getSpecialRoomBuffer() { return specialRoomBuffer; }
+    public Map<ResourceLocation, Integer> getPlacementsSinceLastSpecial() { return placementsSinceLastSpecial; }
+    public void incrementSealCount() { activeSealCount++; }
+    public void decrementSealCount() { activeSealCount = Math.max(0, activeSealCount - 1); }
+
+    public java.util.ArrayDeque<BlockPos> getPendingValidation() { return pendingValidation; }
+
+    public void queueSealForValidation(BlockPos pos) {
+        if (!pendingValidation.contains(pos)) pendingValidation.add(pos);
+    }
+
+    public boolean canAnythingFit(ServerLevel level, BlockPos doorPos, Direction doorFacing, String doorType, ResourceLocation[] pools) {
+        StructurePlaceSettings settings = new StructurePlaceSettings();
+        settings.setMirror(Mirror.NONE);
+        settings.setIgnoreEntities(false);
+        settings.setKnownShape(true);
+
+        Direction opposite = doorFacing.getOpposite();
+
+        for (ResourceLocation poolName : pools) {
+            List<org.apache.commons.lang3.tuple.Pair<ResourceLocation, Integer>> poolEntries =
+                    DungeonRoomRegistry.getRoomPoolEntries(poolName);
+            if (poolEntries == null) continue;
+
+            for (var entry : poolEntries) {
+                DungeonRoom room = DungeonRoomRegistry.getDungeonRoom(entry.getLeft());
+                if (room == null) continue;
+
+                for (Rotation rotation : Rotation.values()) {
+                    settings.setRotation(rotation);
+                    List<BlockPos> doors = room.getDoorOffsetsForFacing(settings, doorType, opposite, BlockPos.ZERO);
+                    if (doors == null || doors.isEmpty()) continue;
+
+                    for (BlockPos testDoor : doors) {
+                        BlockPos roomLocation = doorPos.subtract(testDoor).offset(doorFacing.getNormal());
+                        List<AreaDescriptor> descs = room.getAreaDescriptors(settings, roomLocation);
+                        boolean valid = true;
+
+                        for (AreaDescriptor testDesc : descs) {
+                            if (!isAreaDescriptorInBounds(level, testDesc)) { valid = false; break; }
+                            for (AreaDescriptor current : descriptorList) {
+                                if (testDesc.intersects(current)) { valid = false; break; }
+                            }
+                            if (!valid) break;
+                        }
+
+                        if (valid) return true;
+                    }
+                }
+            }
+        }
+        return false;
     }
 }

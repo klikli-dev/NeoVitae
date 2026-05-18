@@ -35,7 +35,7 @@ public abstract class Ritual {
      *
      * @param name           Unique identifier for this ritual
      * @param crystalLevel   Required activation crystal tier (1 = weak, 2 = awakened)
-     * @param activationCost Base LP cost to activate
+     * @param activationCost Base EV cost to activate
      * @param translationKey Translation key prefix for localization
      */
     public Ritual(String name, int crystalLevel, int activationCost, String translationKey) {
@@ -212,14 +212,25 @@ public abstract class Ritual {
      * Calculates a scaled refresh time based on the amount of spiritus present.
      * Higher will amounts result in faster (lower) refresh times, clamped to a minimum.
      *
-     * @param willAmount  The amount of spiritus influencing the refresh time
+     * @param spiritusAmount  The amount of spiritus influencing the refresh time
      * @param baseTime    The base refresh time in ticks (used when no will is present)
      * @param minTime     The minimum refresh time in ticks (floor value)
      * @param willDivisor The divisor applied to the will amount to determine tick reduction
      * @return The scaled refresh time, no lower than {@code minTime}
      */
-    protected static int scaleRefreshTime(double willAmount, int baseTime, int minTime, double willDivisor) {
-        return Math.max(minTime, baseTime - (int) (willAmount / willDivisor));
+    protected static int scaleRefreshTime(double spiritusAmount, int baseTime, int minTime, double willDivisor) {
+        return Math.max(minTime, baseTime - (int) (spiritusAmount / willDivisor));
+    }
+
+    /**
+     * Applies {@link #scaleRefreshTime} when raw spiritus is present, otherwise
+     * returns {@code baseTime}. Collapses the common
+     * {@code hasRaw ? scaleRefreshTime(...) : baseTime} ternary used by the
+     * raw-spiritus-accelerated rituals (animal growth, crushing, green grove).
+     */
+    protected static int scaleByRawWill(com.breakinblocks.neovitae.api.will.SpiritusState will,
+                                        int baseTime, int minTime, double willDivisor) {
+        return will.hasDefault() ? scaleRefreshTime(will.getDefault(), baseTime, minTime, willDivisor) : baseTime;
     }
 
     protected final void addParallelRunes(Consumer<RitualComponent> components, int offset, int y, EnumRuneType rune) {

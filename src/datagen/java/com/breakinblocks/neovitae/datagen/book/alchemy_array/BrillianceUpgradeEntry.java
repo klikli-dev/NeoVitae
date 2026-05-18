@@ -4,7 +4,7 @@ import com.klikli_dev.modonomicon.api.datagen.CategoryProviderBase;
 import com.klikli_dev.modonomicon.api.datagen.EntryBackground;
 import com.klikli_dev.modonomicon.api.datagen.EntryProvider;
 import com.klikli_dev.modonomicon.api.datagen.book.BookIconModel;
-import com.breakinblocks.neovitae.datagen.book.page.BookLivingUpgradeTablePageModel;
+import com.breakinblocks.neovitae.datagen.book.page.BookSentientUpgradeTablePageModel;
 import com.mojang.datafixers.util.Pair;
 import net.minecraft.world.item.Items;
 
@@ -16,14 +16,14 @@ public class BrillianceUpgradeEntry extends EntryProvider {
 
     @Override
     protected void generatePages() {
-        this.page("intro", () -> BookLivingUpgradeTablePageModel.create()
+        this.page("intro", () -> BookSentientUpgradeTablePageModel.create()
                 .withTitle(this.context().pageTitle())
                 .withText(this.context().pageText()));
         this.pageTitle("Brilliance");
-        this.pageText("The armour responds to the knowledge you inscribe upon living tomes, hardening "
+        this.pageText("The armour responds to the knowledge you inscribe upon [#](8B0000)Upgrade Tomes[#](), hardening "
                 + "its lattice with each lesson. Grants up to +5 [#](4A0080)Armour[#]() and +8 "
                 + "[#](4A0080)Toughness[#]().\\\n\\\n"
-                + "[#](B8860B)Trained by[#](): Crafting a living tome in the Tabula Vitae. Each tome grants "
+                + "[#](B8860B)Trained by[#](): Crafting an [#](8B0000)Upgrade Tome[#]() in the Tabula Vitae. Each tome grants "
                 + "1 level.\\\n\\\n"
                 + "[#](B8860B)Maximum level[#](): 5");
     }

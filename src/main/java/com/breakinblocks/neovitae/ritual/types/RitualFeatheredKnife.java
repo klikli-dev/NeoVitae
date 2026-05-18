@@ -6,11 +6,11 @@ import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.entity.player.Player;
 import com.breakinblocks.neovitae.NeoVitae;
 import com.breakinblocks.neovitae.api.ritual.AreaDescriptor;
+import com.breakinblocks.neovitae.api.stream.StreamPresets;
 import com.breakinblocks.neovitae.common.blockentity.AraVitaeTile;
 import com.breakinblocks.neovitae.common.damagesource.NVDamageSources;
-import com.breakinblocks.neovitae.common.datacomponent.SpiritusType;
 import com.breakinblocks.neovitae.common.effect.NVMobEffects;
-import com.breakinblocks.neovitae.common.living.LivingHelper;
+import com.breakinblocks.neovitae.common.sentient.SentientHelper;
 import com.breakinblocks.neovitae.incense.IncenseHelper;
 import com.breakinblocks.neovitae.ritual.*;
 import com.breakinblocks.neovitae.ritual.RitualHelper.RitualContext;
@@ -29,7 +29,7 @@ import java.util.function.Consumer;
  *   <li><b>Steadfast</b> - Raises health threshold to 70% (safer for players)</li>
  *   <li><b>Vengeful</b> - Lowers health threshold to 10% (more aggressive)</li>
  *   <li><b>Corrosive</b> - Incense mode: consumes incense for massive LP, applies Soul Fray</li>
- *   <li><b>Destructive</b> - LP multiplier based on will amount</li>
+ *   <li><b>Destructive</b> - EV multiplier based on will amount</li>
  * </ul>
  */
 public class RitualFeatheredKnife extends Ritual {
@@ -37,7 +37,7 @@ public class RitualFeatheredKnife extends Ritual {
     public static final String SACRIFICE_RANGE = "sacrificeRange";
     public static final String ALTAR_RANGE = "altarRange";
 
-    private static final double MIN_WILL = 0.5;
+    private static final double MIN_SPIRITUS = 0.5;
     private static final double CORROSIVE_WILL_PER_USE = 5.0;
     private static final double DESTRUCTIVE_WILL_PER_USE = 0.5;
 
@@ -62,7 +62,7 @@ public class RitualFeatheredKnife extends Ritual {
 
         BlockPos masterPos = ctx.masterPos();
 
-        SpiritusState will = RitualHelper.queryWill(ctx.level(), masterPos, MIN_WILL);
+        SpiritusState will = RitualHelper.queryWill(ctx.level(), masterPos, MIN_SPIRITUS);
 
         refreshTime = will.hasDefault() ? 10 : 20;
 
@@ -84,11 +84,11 @@ public class RitualFeatheredKnife extends Ritual {
             healthThreshold = 0.3F;
         }
 
-        // LP multiplier from destructive will
-        double lpMultiplier = 1.0;
-        if (will.hasDestructive()) {
-            lpMultiplier = 1.0 + will.getDestructive() * 0.2 / 100.0;
-        }
+        // Loop invariants: resolve once so each player iteration avoids
+        // re-querying the spiritus state map for the same booleans/values.
+        boolean hasCorrosive = will.hasCorrosive();
+        boolean hasDestructive = will.hasDestructive();
+        double lpMultiplier = hasDestructive ? 1.0 + will.getDestructive() * 0.2 / 100.0 : 1.0;
 
         List<Player> players = RitualHelper.getEntitiesInRange(ctx, this, SACRIFICE_RANGE, Player.class,
                 player -> player.isAlive() && !player.isCreative() && !player.isSpectator());
@@ -104,11 +104,11 @@ public class RitualFeatheredKnife extends Ritual {
 
             if (health <= threshold) continue;
 
-            // CORROSIVE: Incense mode — consume accumulated incense for massive self-sacrifice
-            if (will.hasCorrosive() && (will.getCorrosive() - corrosiveUsed) >= CORROSIVE_WILL_PER_USE) {
+            BlockPos altarPos = altar.getBlockPos();
+
+            if (hasCorrosive && (will.getCorrosive() - corrosiveUsed) >= CORROSIVE_WILL_PER_USE) {
                 double incense = IncenseHelper.getCurrentIncense(player);
                 if (incense > 0) {
-                    // Sacrifice more health (down to threshold)
                     float damage = health - threshold;
                     if (damage > 0) {
                         player.hurt(ctx.level().damageSources().source(NVDamageSources.SELF_SACRIFICE, player), damage);
@@ -117,8 +117,9 @@ public class RitualFeatheredKnife extends Ritual {
                             int lp = AltarUtil.calculateSelfSacrificeLP(player, healthLost, incense);
                             lp = (int) (lp * lpMultiplier);
                             totalEV += lp;
+                            StreamPresets.bloodTendril(player, altarPos).build()
+                                    .sendToNearby(ctx.serverLevel(), altarPos, 64);
                         }
-                        // Apply Soul Fray to prevent immediate re-sacrifice with incense
                         player.addEffect(new MobEffectInstance(NVMobEffects.SOUL_FRAY, 400, 0, true, true));
                         IncenseHelper.clearIncense(player);
                         corrosiveUsed += CORROSIVE_WILL_PER_USE;
@@ -137,18 +138,20 @@ public class RitualFeatheredKnife extends Ritual {
                 int healthLost = (int) Math.ceil(health - player.getHealth());
                 int lp = AltarUtil.calculateSelfSacrificeLP(player, healthLost);
 
-                // Living armor self-sacrifice bonus
-                if (LivingHelper.hasFullSet(player)) {
+                if (SentientHelper.hasFullSet(player)) {
                     lp = (int) (lp * 1.1);
                 }
 
-                // Destructive will LP multiplier
-                if (will.hasDestructive() && (will.getDestructive() - destructiveUsed) >= DESTRUCTIVE_WILL_PER_USE) {
+                if (hasDestructive && (will.getDestructive() - destructiveUsed) >= DESTRUCTIVE_WILL_PER_USE) {
                     lp = (int) (lp * lpMultiplier);
                     destructiveUsed += DESTRUCTIVE_WILL_PER_USE;
                 }
 
                 totalEV += lp;
+
+                RitualHelper.chanceStream(ctx.level(), 6, () ->
+                        StreamPresets.bloodTendril(player, altarPos).build()
+                                .sendToNearby(ctx.serverLevel(), altarPos, 64));
             }
         }
 
@@ -158,9 +161,8 @@ public class RitualFeatheredKnife extends Ritual {
             altar.addSacrificeEV(totalEV, false);
         }
 
-        will.use(SpiritusType.CORROSIVE, corrosiveUsed);
-        will.use(SpiritusType.DESTRUCTIVE, destructiveUsed);
-        will.drain(ctx.level(), masterPos);
+        RitualHelper.drainSpiritus(will, ctx.level(), masterPos,
+                0, corrosiveUsed, destructiveUsed, 0, 0);
     }
 
     private AraVitaeTile findAltar(RitualContext ctx) {

@@ -62,8 +62,8 @@ public final class NVRituals {
     public static final DeferredHolder<Ritual, RitualPump> PUMP =
             registerRitual("pump", RitualPump::new);
 
-    public static final DeferredHolder<Ritual, RitualCrystalHarvest> CRYSTAL_HARVEST =
-            registerRitual("crystal_harvest", RitualCrystalHarvest::new);
+    public static final DeferredHolder<Ritual, RitualCrystallumFractura> CRYSTALLUM_FRACTURA =
+            registerRitual(RitualCrystallumFractura.NAME, RitualCrystallumFractura::new);
 
     public static final DeferredHolder<Ritual, RitualDowngrade> DOWNGRADE =
             registerRitual("downgrade", RitualDowngrade::new);
@@ -86,14 +86,11 @@ public final class NVRituals {
     public static final DeferredHolder<Ritual, RitualSphere> SPHERE =
             registerRitual("sphere", RitualSphere::new);
 
-    public static final DeferredHolder<Ritual, RitualArmourEvolve> ARMOUR_EVOLVE =
-            registerRitual("armour_evolve", RitualArmourEvolve::new);
+    public static final DeferredHolder<Ritual, RitualSentientArmourEvolve> ARMOUR_EVOLVE =
+            registerRitual("armour_evolve", RitualSentientArmourEvolve::new);
 
     public static final DeferredHolder<Ritual, RitualUpgradeRemove> UPGRADE_REMOVE =
             registerRitual("upgrade_remove", RitualUpgradeRemove::new);
-
-    public static final DeferredHolder<Ritual, RitualCrystalSplit> CRYSTAL_SPLIT =
-            registerRitual("crystal_split", RitualCrystalSplit::new);
 
     public static final DeferredHolder<Ritual, RitualCrafting> CRAFTING =
             registerRitual("crafting", RitualCrafting::new);
@@ -107,9 +104,6 @@ public final class NVRituals {
     public static final DeferredHolder<Ritual, RitualGrounding> GROUNDING =
             registerRitual("grounding", RitualGrounding::new);
 
-    public static final DeferredHolder<Ritual, RitualGeode> GEODE =
-            registerRitual("geode", RitualGeode::new);
-
     public static final DeferredHolder<Ritual, RitualSimpleDungeon> SIMPLE_DUNGEON =
             registerRitual("simple_dungeon", RitualSimpleDungeon::new);
 
@@ -118,6 +112,9 @@ public final class NVRituals {
 
     public static final DeferredHolder<Ritual, RitualPhantomBridge> PHANTOM_BRIDGE =
             registerRitual("phantom_bridge", RitualPhantomBridge::new);
+
+    public static final DeferredHolder<Ritual, RitualTormentNexus> TORMENT_NEXUS =
+            registerRitual(RitualTormentNexus.NAME, RitualTormentNexus::new);
 
     public static final DeferredHolder<ImperfectRitual, com.breakinblocks.neovitae.ritual.imperfect.ImperfectRitualRain> IMPERFECT_RAIN =
             registerImperfectRitual("rain", com.breakinblocks.neovitae.ritual.imperfect.ImperfectRitualRain::new);

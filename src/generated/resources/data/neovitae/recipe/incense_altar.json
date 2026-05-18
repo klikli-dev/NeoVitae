@@ -2,24 +2,24 @@
   "type": "minecraft:crafting_shaped",
   "category": "misc",
   "key": {
-    "c": {
-      "tag": "c:cobblestones"
-    },
     "h": {
-      "item": "minecraft:charcoal"
+      "tag": "minecraft:coals"
+    },
+    "l": {
+      "tag": "minecraft:logs"
     },
     "o": {
       "type": "neovitae:orb_tier",
       "tier": 1
     },
     "s": {
-      "tag": "c:stones"
+      "tag": "neovitae:vitae_stone"
     }
   },
   "pattern": [
     "s s",
     "shs",
-    "coc"
+    "lol"
   ],
   "result": {
     "count": 1,

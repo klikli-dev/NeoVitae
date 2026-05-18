@@ -13,6 +13,7 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.TooltipFlag;
 import net.minecraft.world.item.context.BlockPlaceContext;
 import net.minecraft.world.level.Level;
+import com.breakinblocks.neovitae.ritual.RitualLayouts;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.EntityBlock;
 import net.minecraft.world.level.block.SoundType;
@@ -31,6 +32,7 @@ import com.breakinblocks.neovitae.common.blockentity.MasterRitualStoneBlockEntit
 import com.breakinblocks.neovitae.common.datacomponent.NVDataComponents;
 import com.breakinblocks.neovitae.common.datacomponent.Binding;
 import com.breakinblocks.neovitae.common.item.ItemActivationCrystal;
+import com.breakinblocks.neovitae.common.item.ItemRitualDiviner;
 import com.breakinblocks.neovitae.ritual.Ritual;
 import com.breakinblocks.neovitae.ritual.RitualRegistry;
 
@@ -90,9 +92,9 @@ public class BlockMasterRitualStone extends Block implements EntityBlock {
             return ItemInteractionResult.PASS_TO_DEFAULT_BLOCK_INTERACTION;
         }
 
-        if (stack.getItem() instanceof com.breakinblocks.neovitae.common.item.ItemRitualDiviner diviner) {
+        if (stack.getItem() instanceof ItemRitualDiviner diviner) {
             if (level.isClientSide()) {
-                com.breakinblocks.neovitae.common.item.ItemRitualDiviner.spawnParticles(level, pos.relative(hitResult.getDirection()), 15);
+                ItemRitualDiviner.spawnParticles(level, pos.relative(hitResult.getDirection()), 15);
                 return ItemInteractionResult.SUCCESS;
             }
 
@@ -138,7 +140,7 @@ public class BlockMasterRitualStone extends Block implements EntityBlock {
 
             for (Ritual ritual : RitualRegistry.getAllRituals()) {
                 if (tile.checkStructure(ritual)) {
-                    int componentCount = countRitualComponents(ritual);
+                    int componentCount = countRitualComponents(level, ritual);
                     if (componentCount > bestMatchSize) {
                         bestMatchSize = componentCount;
                         bestMatch = ritual;
@@ -213,9 +215,7 @@ public class BlockMasterRitualStone extends Block implements EntityBlock {
         super.appendHoverText(stack, context, tooltip, flag);
     }
 
-    private int countRitualComponents(Ritual ritual) {
-        java.util.List<com.breakinblocks.neovitae.ritual.RitualComponent> components = new java.util.ArrayList<>();
-        ritual.gatherComponents(components::add);
-        return components.size();
+    private int countRitualComponents(Level level, Ritual ritual) {
+        return RitualLayouts.get(level, ritual).size();
     }
 }

@@ -22,11 +22,14 @@ import com.breakinblocks.neovitae.common.item.ItemRitualDiviner;
 import com.breakinblocks.neovitae.common.item.sigil.ItemSigilHolding;
 import com.breakinblocks.neovitae.client.ClientHandler;
 import com.breakinblocks.neovitae.client.ClientSpiritusCache;
+import com.breakinblocks.neovitae.client.sound.LoopSoundManager;
 import com.breakinblocks.neovitae.common.item.NVItems;
 import com.breakinblocks.neovitae.common.network.BloodLightCyclePayload;
 import com.breakinblocks.neovitae.common.network.NVPayloads;
+import com.breakinblocks.neovitae.common.network.OpenTrainerFromCurioPayload;
 import com.breakinblocks.neovitae.common.network.RitualDivinerCyclePayload;
 import com.breakinblocks.neovitae.common.network.SigilHoldingCyclePayload;
+import com.breakinblocks.neovitae.compat.curios.CuriosCompat;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -40,7 +43,7 @@ public class ClientEventHandler {
         ClientSpiritusCache.clear();
         ClientHandler.setRitualHoloToNull();
         ClientHandler.setRitualRangeHoloToNull();
-        com.breakinblocks.neovitae.client.sound.LoopSoundManager.clear();
+        LoopSoundManager.clear();
     }
 
     @SubscribeEvent
@@ -53,6 +56,15 @@ public class ClientEventHandler {
             boolean reverse = player != null && player.isShiftKeyDown();
             NVPayloads.sendToServer(new BloodLightCyclePayload(reverse));
         }
+    }
+
+    @SubscribeEvent
+    public static void onRightClickEmpty(PlayerInteractEvent.RightClickEmpty event) {
+        LocalPlayer player = Minecraft.getInstance().player;
+        if (player == null || !player.isShiftKeyDown()) return;
+        if (!player.getMainHandItem().isEmpty() || !player.getOffhandItem().isEmpty()) return;
+        if (!CuriosCompat.isEquippedCurio(player, new ItemStack(NVItems.TRAINING_BRACELET.get()))) return;
+        NVPayloads.sendToServer(OpenTrainerFromCurioPayload.INSTANCE);
     }
 
     @SubscribeEvent

@@ -2,15 +2,13 @@ package com.breakinblocks.neovitae.datagen.content;
 
 import net.minecraft.data.worldgen.BootstrapContext;
 import net.minecraft.resources.ResourceKey;
+import net.minecraft.world.level.material.Fluids;
 import com.breakinblocks.neovitae.api.sigil.ISigilEffect;
 import com.breakinblocks.neovitae.api.sigil.SigilType;
 import com.breakinblocks.neovitae.api.sigil.effects.*;
 import com.breakinblocks.neovitae.registry.SigilTypeRegistry;
 
 import java.util.Optional;
-
-import static net.minecraft.world.level.material.Fluids.LAVA;
-import static net.minecraft.world.level.material.Fluids.WATER;
 
 /**
  * Bootstrap content for sigil types datapack registry.
@@ -32,15 +30,17 @@ public class SigilTypes {
     public static final ResourceKey<SigilType> SUPPRESSION = SigilTypeRegistry.key("suppression");
     public static final ResourceKey<SigilType> TELEPOSITION = SigilTypeRegistry.key("teleposition");
     public static final ResourceKey<SigilType> PHANTOM_BRIDGE = SigilTypeRegistry.key("phantom_bridge");
+    public static final ResourceKey<SigilType> NECROMANCY = SigilTypeRegistry.key("necromancy");
+    public static final ResourceKey<SigilType> BOUND_TREASURES = SigilTypeRegistry.key("bound_treasures");
 
     public static void bootstrap(BootstrapContext<SigilType> context) {
-        // Divination sigils - information display, no LP cost
+        // Divination sigils - information display, no EV cost
         context.register(DIVINATION, simple(0, new DivinationSigilEffect(false)));
         context.register(SEER, simple(0, new DivinationSigilEffect(true)));
 
         // Fluid placement sigils
-        context.register(WATER, simple(100, new PlaceFluidSigilEffect(net.minecraft.world.level.material.Fluids.WATER, 1000)));
-        context.register(LAVA, simple(1000, new PlaceFluidSigilEffect(net.minecraft.world.level.material.Fluids.LAVA, 1000)));
+        context.register(WATER, simple(100, new PlaceFluidSigilEffect(Fluids.WATER, 1000)));
+        context.register(LAVA, simple(1000, new PlaceFluidSigilEffect(Fluids.LAVA, 1000)));
 
         // Void sigil - removes fluids
         context.register(VOID, simple(50, new VoidSigilEffect()));
@@ -57,6 +57,8 @@ public class SigilTypes {
         context.register(AIR, simple(50, new AirSigilEffect()));
         context.register(BLOOD_LIGHT, simple(10, new BloodLightSigilEffect(15)));
         context.register(TELEPOSITION, simple(1000, new TelepositionSigilEffect()));
+        context.register(NECROMANCY, simple(2000, new NecromancySigilEffect()));
+        context.register(BOUND_TREASURES, simple(200, new BoundTreasuresSigilEffect()));
     }
 
     /**

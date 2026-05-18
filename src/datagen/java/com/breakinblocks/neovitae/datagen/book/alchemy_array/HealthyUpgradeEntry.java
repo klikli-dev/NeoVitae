@@ -4,7 +4,7 @@ import com.klikli_dev.modonomicon.api.datagen.CategoryProviderBase;
 import com.klikli_dev.modonomicon.api.datagen.EntryBackground;
 import com.klikli_dev.modonomicon.api.datagen.EntryProvider;
 import com.klikli_dev.modonomicon.api.datagen.book.BookIconModel;
-import com.breakinblocks.neovitae.datagen.book.page.BookLivingUpgradeTablePageModel;
+import com.breakinblocks.neovitae.datagen.book.page.BookSentientUpgradeTablePageModel;
 import com.mojang.datafixers.util.Pair;
 import net.minecraft.world.item.Items;
 
@@ -16,12 +16,12 @@ public class HealthyUpgradeEntry extends EntryProvider {
 
     @Override
     protected void generatePages() {
-        this.page("intro", () -> BookLivingUpgradeTablePageModel.create()
+        this.page("intro", () -> BookSentientUpgradeTablePageModel.create()
                 .withTitle(this.context().pageTitle())
                 .withText(this.context().pageText()));
         this.pageTitle("Healthy");
-        this.pageText("The armour learns from each wound mended and expands your vitality in turn. Grants "
-                + "additional health up to 50 half-hearts.\\\n\\\n"
+        this.pageText("The armour learns from each wound mended and expands your vitality in turn, greatly "
+                + "increasing the amount of punishment your body can endure.\\\n\\\n"
                 + "[#](B8860B)Trained by[#](): Restoring health through any means, natural regeneration, "
                 + "potions, or vitaemantic healing.\\\n\\\n"
                 + "[#](B8860B)Maximum level[#](): 10");

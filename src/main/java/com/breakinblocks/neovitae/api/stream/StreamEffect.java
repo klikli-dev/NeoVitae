@@ -117,6 +117,16 @@ public final class StreamEffect {
     /** Entity ID to track as the target. {@code -1} = no tracking, use fixed coordinates. */
     public final int targetEntityId;
 
+    /**
+     * Number of colored particles to spawn at the stream's head each client tick
+     * as it advances. {@code 0} disables the trail. Used to give fuzzy, wispy
+     * streams a particle wake — matches the effect's {@link #color}.
+     */
+    public final int trailDensity;
+
+    /** When true, trail particles render with the effect's color un-biased. */
+    public final boolean rawTrailColor;
+
     private StreamEffect(Builder b) {
         this.sourceX = b.sourceX;
         this.sourceY = b.sourceY;
@@ -143,6 +153,8 @@ public final class StreamEffect {
         this.drainSpeed = b.drainSpeed;
         this.blockyMode = b.blockyMode;
         this.targetEntityId = b.targetEntityId;
+        this.trailDensity = b.trailDensity;
+        this.rawTrailColor = b.rawTrailColor;
     }
 
     /**
@@ -214,6 +226,8 @@ public final class StreamEffect {
         buf.writeFloat(drainSpeed);
         buf.writeInt(blockyMode.ordinal());
         buf.writeInt(targetEntityId);
+        buf.writeInt(trailDensity);
+        buf.writeBoolean(rawTrailColor);
     }
 
     /**
@@ -243,6 +257,8 @@ public final class StreamEffect {
         b.drainSpeed = buf.readFloat();
         b.blockyMode = BlockyMode.values()[buf.readInt()];
         b.targetEntityId = buf.readInt();
+        b.trailDensity = buf.readInt();
+        b.rawTrailColor = buf.readBoolean();
         return new StreamEffect(b);
     }
 
@@ -272,6 +288,8 @@ public final class StreamEffect {
         private float drainSpeed = 1.0f;
         private BlockyMode blockyMode = BlockyMode.NONE;
         private int targetEntityId = -1;
+        private int trailDensity = 0;
+        private boolean rawTrailColor = false;
 
         private Builder(double x, double y, double z) {
             this.sourceX = x;
@@ -412,6 +430,26 @@ public final class StreamEffect {
 
         public Builder blockyMode(BlockyMode mode) {
             this.blockyMode = mode;
+            return this;
+        }
+
+        /**
+         * Number of colored particles to spawn at the stream's head each tick
+         * as it advances. {@code 0} disables the trail (default). Typical
+         * values are 1–3 — higher counts quickly become visual clutter.
+         */
+        public Builder trailDensity(int count) {
+            this.trailDensity = Math.max(0, count);
+            return this;
+        }
+
+        /**
+         * When true, the trail particles render with the effect's raw color
+         * instead of the default BloodGlowParticle brightening bias. Use for
+         * effects that need to appear as a pure single hue.
+         */
+        public Builder rawTrailColor(boolean raw) {
+            this.rawTrailColor = raw;
             return this;
         }
 

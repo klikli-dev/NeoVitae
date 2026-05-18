@@ -11,6 +11,7 @@ import com.breakinblocks.neovitae.api.stream.StreamEffect;
 import com.breakinblocks.neovitae.common.attribute.NVAttributes;
 import com.breakinblocks.neovitae.common.item.BloodOrbItem;
 import com.breakinblocks.neovitae.common.item.OrbFluidHandler;
+import com.breakinblocks.neovitae.common.item.sigil.ItemSigilDamned;
 import com.breakinblocks.neovitae.common.fluid.NVFluids;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
@@ -106,7 +107,7 @@ public class BloodSiphonHandler {
 
         int lpCost = (int) (damagePrevented * NeoVitae.SERVER_CONFIG.BLOOD_SHIELD_LP_COST_MULTIPLIER.get());
 
-        // Only apply the shield if we can afford the LP cost
+        // Only apply the shield if we can afford the EV cost
         int currentLP = network.getCurrentEV();
         if (currentLP >= lpCost) {
             network.syphon(AnimaTicket.create(lpCost));
@@ -131,6 +132,8 @@ public class BloodSiphonHandler {
     @SubscribeEvent
     public static void onEntityKilled(LivingDeathEvent event) {
         if (!(event.getSource().getEntity() instanceof ServerPlayer player)) return;
+
+        ItemSigilDamned.onKill(player, event.getEntity());
 
         ItemStack offhand = player.getOffhandItem();
         if (offhand.isEmpty() || !(offhand.getItem() instanceof BloodOrbItem)) return;

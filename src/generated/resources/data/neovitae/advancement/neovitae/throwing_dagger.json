@@ -1,0 +1,34 @@
+{
+  "parent": "neovitae:neovitae/root",
+  "criteria": {
+    "get_dagger": {
+      "conditions": {
+        "items": [
+          {
+            "items": "neovitae:throwing_dagger"
+          }
+        ]
+      },
+      "trigger": "minecraft:inventory_changed"
+    }
+  },
+  "display": {
+    "announce_to_chat": false,
+    "description": {
+      "translate": "advancements.neovitae.throwing_dagger.description"
+    },
+    "icon": {
+      "count": 1,
+      "id": "neovitae:throwing_dagger"
+    },
+    "title": {
+      "translate": "advancements.neovitae.throwing_dagger.title"
+    }
+  },
+  "requirements": [
+    [
+      "get_dagger"
+    ]
+  ],
+  "sends_telemetry_event": true
+}

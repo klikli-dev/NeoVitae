@@ -6,7 +6,11 @@ import net.minecraft.core.HolderLookup;
 import net.minecraft.core.NonNullList;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
+import net.minecraft.nbt.Tag;
 import net.minecraft.network.chat.Component;
+import net.minecraft.network.protocol.Packet;
+import net.minecraft.network.protocol.game.ClientGamePacketListener;
+import net.minecraft.network.protocol.game.ClientboundBlockEntityDataPacket;
 import net.minecraft.world.Container;
 import net.minecraft.world.ContainerHelper;
 import net.minecraft.world.MenuProvider;
@@ -14,13 +18,20 @@ import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.chunk.LevelChunk;
 import org.apache.commons.lang3.tuple.Triple;
+import com.breakinblocks.neovitae.client.event.RoutingBeamHandler;
+import com.breakinblocks.neovitae.client.particle.ColoredParticleOptions;
+import com.breakinblocks.neovitae.common.block.BlockRoutingNode;
 import com.breakinblocks.neovitae.common.blockentity.NVTiles;
 import com.breakinblocks.neovitae.common.datamap.RoutingNodeHelper;
+import com.breakinblocks.neovitae.common.menu.MasterRoutingNodeMenu;
+import com.breakinblocks.neovitae.common.particle.NVParticles;
 import com.breakinblocks.neovitae.api.routing.*;
 import com.breakinblocks.neovitae.common.routing.*;
 import com.breakinblocks.neovitae.util.Constants;
@@ -35,9 +46,23 @@ public class MasterRoutingNodeBlockEntity extends BlockEntity implements IMaster
     public static final int SLOT_STACK_UPGRADE = 0;
     public static final int SLOT_SPEED_UPGRADE = 1;
 
+    public static final int ENERGY_RATE_DEFAULT = 500;
+    /** Hard storage cap; effective rate is further clamped by {@link #getUpgradeEnergyCeiling()}. */
+    public static final int ENERGY_RATE_MAX = 1_000_000;
+    public static final int ENERGY_RATE_MIN = 0;
+
+    private static final int PHANTOM_SWEEP_INTERVAL_TICKS = 1200;
+
     private int currentInput;
+    private int configuredEnergyRate = ENERGY_RATE_DEFAULT;
+    /** Authoritative adjacency map; BFS over this drives connectivity without loading any BEs. */
     private TreeMap<BlockPos, List<BlockPos>> connectionMap = new TreeMap<>();
     private List<BlockPos> generalNodeList = new ArrayList<>();
+    private boolean legacyMigrationAttempted = false;
+    private int ticksSincePhantomSweep = 0;
+
+    private List<BlockPos> clientRenderNeighbors = new ArrayList<>();
+    private boolean pendingClientSync = false;
 
     // Channel-keyed node lists: channelId -> list of node positions
     private final Map<String, List<BlockPos>> inputNodeLists = new LinkedHashMap<>();
@@ -61,10 +86,38 @@ public class MasterRoutingNodeBlockEntity extends BlockEntity implements IMaster
         return outputNodeLists.computeIfAbsent(channelId, k -> new ArrayList<>());
     }
 
+    @Override
+    public void onLoad() {
+        super.onLoad();
+        if (level != null && level.isClientSide) {
+            RoutingBeamHandler.register(this);
+        }
+    }
+
+    @Override
+    public void setRemoved() {
+        if (level != null && level.isClientSide) {
+            RoutingBeamHandler.unregister(this);
+        }
+        super.setRemoved();
+    }
+
     public void tick(Level level, BlockPos pos, BlockState state) {
         if (level.isClientSide) return;
 
+        if (pendingClientSync) {
+            pendingClientSync = false;
+            BlockState bs = level.getBlockState(pos);
+            level.sendBlockUpdated(pos, bs, bs, 3);
+        }
+
         currentInput = level.getDirectSignalTo(pos);
+
+        // Sweep runs independently of channel tick rate so a slow master still self-heals.
+        if (++ticksSincePhantomSweep >= PHANTOM_SWEEP_INTERVAL_TICKS) {
+            ticksSincePhantomSweep = 0;
+            sweepPhantomEntries(level);
+        }
 
         int tickMod = RoutingNodeHelper.getEffectiveTickRate(
                 getBlockState().getBlock(),
@@ -72,48 +125,182 @@ public class MasterRoutingNodeBlockEntity extends BlockEntity implements IMaster
         );
         if (level.getGameTime() % tickMod != 0) return;
 
-        Set<BlockPos> visitedNodes = new HashSet<>();
+        // One-shot rebuild for pre-persistence saves that only stored the graph on nodes.
+        if (!legacyMigrationAttempted) {
+            legacyMigrationAttempted = true;
+            if (connectionMap.isEmpty() && !generalNodeList.isEmpty()) {
+                rebuildConnectionMapFromLoadedNodes(level);
+            }
+        }
 
         for (RoutingChannel<?> channel : RoutingChannelRegistry.getChannels()) {
-            processChannel(channel, visitedNodes, level);
+            processChannel(channel, level);
         }
     }
 
+    /**
+     * Prune graph entries whose chunks are loaded but no longer hold a routing-node block.
+     * Catches WorldEdit fast-mode, region-file deletion, and any destructive op that
+     * bypasses {@code Block.onRemove}. Unloaded positions are left alone.
+     */
+    private void sweepPhantomEntries(Level level) {
+        if (connectionMap.isEmpty()) return;
+
+        List<BlockPos> toRemove = new ArrayList<>();
+        for (BlockPos pos : connectionMap.keySet()) {
+            if (pos.equals(worldPosition)) continue;
+            if (!level.hasChunk(pos.getX() >> 4, pos.getZ() >> 4)) continue;
+
+            BlockState state = level.getBlockState(pos);
+            if (!(state.getBlock() instanceof BlockRoutingNode)) {
+                toRemove.add(pos);
+            }
+        }
+
+        if (toRemove.isEmpty()) return;
+
+        for (BlockPos pos : toRemove) {
+            removeNodeFromGraph(pos);
+            generalNodeList.remove(pos);
+            for (List<BlockPos> list : inputNodeLists.values()) list.remove(pos);
+            for (List<BlockPos> list : outputNodeLists.values()) list.remove(pos);
+        }
+        setChanged();
+    }
+
+    /** Best-effort: rebuild {@link #connectionMap} from whatever nodes are currently loaded. */
+    private void rebuildConnectionMapFromLoadedNodes(Level level) {
+        for (BlockPos nodePos : new ArrayList<>(generalNodeList)) {
+            BlockEntity tile = level.getBlockEntity(nodePos);
+            if (!(tile instanceof IRoutingNode node)) continue;
+            for (BlockPos neighbor : node.getConnected()) {
+                addConnection(nodePos, neighbor);
+            }
+        }
+    }
+
+    /** Emergency rebuild from live BEs in range. Preserves upgrade/energy settings. */
+    public int rescanNetwork(int radius) {
+        Level lvl = getLevel();
+        if (lvl == null) return 0;
+
+        connectionMap.clear();
+        generalNodeList.clear();
+        inputNodeLists.values().forEach(List::clear);
+        outputNodeLists.values().forEach(List::clear);
+
+        int added = 0;
+        int r = Math.max(1, radius);
+        int radiusSq = r * r;
+
+        int minCx = (worldPosition.getX() - r) >> 4;
+        int maxCx = (worldPosition.getX() + r) >> 4;
+        int minCz = (worldPosition.getZ() - r) >> 4;
+        int maxCz = (worldPosition.getZ() + r) >> 4;
+
+        for (int cx = minCx; cx <= maxCx; cx++) {
+            for (int cz = minCz; cz <= maxCz; cz++) {
+                if (!lvl.hasChunk(cx, cz)) continue;
+                LevelChunk chunk = lvl.getChunk(cx, cz);
+                for (Map.Entry<BlockPos, BlockEntity> entry : chunk.getBlockEntities().entrySet()) {
+                    BlockEntity be = entry.getValue();
+                    if (!(be instanceof IRoutingNode node)) continue;
+                    if (be instanceof IMasterRoutingNode && !entry.getKey().equals(worldPosition)) continue;
+                    BlockPos nodePos = entry.getKey();
+                    if (nodePos.distSqr(worldPosition) > radiusSq) continue;
+
+                    if (!nodePos.equals(worldPosition)) {
+                        addNodeToList(node);
+                        added++;
+                    }
+                    for (BlockPos neighbor : node.getConnected()) {
+                        addConnection(nodePos, neighbor);
+                    }
+                    if (!(be instanceof IMasterRoutingNode)) {
+                        node.connectMasterToRemainingNode(lvl, new LinkedList<>(), this);
+                    }
+                }
+            }
+        }
+
+        setChanged();
+        return added;
+    }
+
+    public boolean graphContains(BlockPos pos) {
+        return pos.equals(worldPosition) || connectionMap.containsKey(pos);
+    }
+
+    /** BFS over connectionMap; never loads block entities during traversal. */
+    public boolean isConnectedViaGraph(BlockPos startPos) {
+        if (startPos.equals(this.worldPosition)) return true;
+        if (!connectionMap.containsKey(startPos)) return false;
+
+        BlockPos target = this.worldPosition;
+        Set<BlockPos> visited = new HashSet<>();
+        ArrayDeque<BlockPos> queue = new ArrayDeque<>();
+        queue.add(startPos);
+        visited.add(startPos);
+
+        while (!queue.isEmpty()) {
+            BlockPos cur = queue.poll();
+            if (cur.equals(target)) return true;
+
+            // Respect redstone-gating only when the node is loaded; unloaded nodes can't be receiving signals.
+            if (level != null && level.hasChunk(cur.getX() >> 4, cur.getZ() >> 4)) {
+                BlockEntity tile = level.getBlockEntity(cur);
+                if (tile instanceof IRoutingNode node && !node.isConnectionEnabled(cur)) {
+                    continue;
+                }
+            }
+
+            List<BlockPos> neighbors = connectionMap.get(cur);
+            if (neighbors == null) continue;
+            for (BlockPos n : neighbors) {
+                if (visited.add(n)) {
+                    queue.add(n);
+                }
+            }
+        }
+        return false;
+    }
+
+    private record FilterEntry<F extends IRoutingFilter>(BlockPos nodePos, F filter) {}
+
     @SuppressWarnings("unchecked")
-    private <F extends IRoutingFilter> void processChannel(RoutingChannel<F> channel,
-                                                            Set<BlockPos> visitedNodes, Level level) {
+    private <F extends IRoutingFilter> void processChannel(RoutingChannel<F> channel, Level level) {
         List<BlockPos> outputNodes = getOutputList(channel.id());
         List<BlockPos> inputNodes = getInputList(channel.id());
 
-        Map<Integer, List<F>> outputMap = new TreeMap<>();
+        Map<Integer, List<FilterEntry<F>>> outputMap = new TreeMap<>();
         for (BlockPos outputPos : outputNodes) {
-            visitedNodes.clear();
             BlockEntity tile = level.getBlockEntity(outputPos);
-            if (tile != null && isConnectedOptimized(visitedNodes, outputPos)) {
+            if (tile != null && isConnectedViaGraph(outputPos)) {
                 for (Direction facing : Direction.values()) {
                     if (!channel.isConnectedOnSide(tile, facing) || !channel.isOutputSide(tile, facing)) continue;
 
                     F filter = channel.getOutputFilter(tile, facing);
                     if (filter != null) {
                         int priority = channel.getPriority(tile, facing);
-                        outputMap.computeIfAbsent(TREE_OFFSET - priority, k -> new ArrayList<>()).add(filter);
+                        outputMap.computeIfAbsent(TREE_OFFSET - priority, k -> new ArrayList<>())
+                                .add(new FilterEntry<>(outputPos, filter));
                     }
                 }
             }
         }
 
-        Map<Integer, List<F>> inputMap = new TreeMap<>();
+        Map<Integer, List<FilterEntry<F>>> inputMap = new TreeMap<>();
         for (BlockPos inputPos : inputNodes) {
-            visitedNodes.clear();
             BlockEntity tile = level.getBlockEntity(inputPos);
-            if (tile != null && isConnectedOptimized(visitedNodes, inputPos)) {
+            if (tile != null && isConnectedViaGraph(inputPos)) {
                 for (Direction facing : Direction.values()) {
                     if (!channel.isConnectedOnSide(tile, facing) || !channel.isInputSide(tile, facing)) continue;
 
                     F filter = channel.getInputFilter(tile, facing);
                     if (filter != null) {
                         int priority = channel.getPriority(tile, facing);
-                        inputMap.computeIfAbsent(TREE_OFFSET - priority, k -> new ArrayList<>()).add(filter);
+                        inputMap.computeIfAbsent(TREE_OFFSET - priority, k -> new ArrayList<>())
+                                .add(new FilterEntry<>(inputPos, filter));
                     }
                 }
             }
@@ -121,11 +308,14 @@ public class MasterRoutingNodeBlockEntity extends BlockEntity implements IMaster
 
         int maxTransfer = channel.getMaxTransfer(this);
 
-        for (Entry<Integer, List<F>> outputEntry : outputMap.entrySet()) {
-            for (F outputFilter : outputEntry.getValue()) {
-                for (Entry<Integer, List<F>> inputEntry : inputMap.entrySet()) {
-                    for (F inputFilter : inputEntry.getValue()) {
-                        int transferred = channel.transfer(inputFilter, outputFilter, maxTransfer);
+        for (Entry<Integer, List<FilterEntry<F>>> outputEntry : outputMap.entrySet()) {
+            for (FilterEntry<F> outEntry : outputEntry.getValue()) {
+                for (Entry<Integer, List<FilterEntry<F>>> inputEntry : inputMap.entrySet()) {
+                    for (FilterEntry<F> inEntry : inputEntry.getValue()) {
+                        int transferred = channel.transfer(inEntry.filter(), outEntry.filter(), maxTransfer);
+                        if (transferred > 0) {
+                            spawnActivityParticles(level, outEntry.nodePos(), inEntry.nodePos());
+                        }
                         maxTransfer -= transferred;
                         if (maxTransfer <= 0) return;
                     }
@@ -134,28 +324,16 @@ public class MasterRoutingNodeBlockEntity extends BlockEntity implements IMaster
         }
     }
 
-    private boolean isConnectedOptimized(Set<BlockPos> visited, BlockPos nodePos) {
-        if (getLevel() == null) return false;
-
-        BlockEntity tile = getLevel().getBlockEntity(nodePos);
-        if (!(tile instanceof IRoutingNode node)) return false;
-
-        List<BlockPos> connectionList = node.getConnected();
-        visited.add(nodePos);
-
-        for (BlockPos testPos : connectionList) {
-            if (visited.contains(testPos)) continue;
-
-            if (testPos.equals(this.getBlockPos()) && node.isConnectionEnabled(testPos)) {
-                return true;
-            } else if (node.isConnectionEnabled(testPos)) {
-                BlockEntity testTile = getLevel().getBlockEntity(testPos);
-                if (testTile instanceof IRoutingNode testNode && testNode.isConnectionEnabled(nodePos)) {
-                    if (isConnectedOptimized(visited, testPos)) return true;
-                }
-            }
-        }
-        return false;
+    private static void spawnActivityParticles(Level level, BlockPos outputNodePos, BlockPos inputNodePos) {
+        if (!(level instanceof ServerLevel sl)) return;
+        ColoredParticleOptions outputGlow = new ColoredParticleOptions(NVParticles.BLOOD_GLOW.get(), 0xFF8744, true);
+        ColoredParticleOptions inputGlow = new ColoredParticleOptions(NVParticles.BLOOD_GLOW.get(), 0x4488FF, true);
+        sl.sendParticles(outputGlow,
+                outputNodePos.getX() + 0.5, outputNodePos.getY() + 0.6, outputNodePos.getZ() + 0.5,
+                4, 0.25, 0.25, 0.25, 0.0);
+        sl.sendParticles(inputGlow,
+                inputNodePos.getX() + 0.5, inputNodePos.getY() + 0.6, inputNodePos.getZ() + 0.5,
+                4, 0.25, 0.25, 0.25, 0.0);
     }
 
     public int getMaxTransfer() {
@@ -172,11 +350,58 @@ public class MasterRoutingNodeBlockEntity extends BlockEntity implements IMaster
         );
     }
 
+    /** Raw value the player has entered in the UI ("I want up to this much per pulse"). */
+    public int getConfiguredEnergyRate() {
+        return configuredEnergyRate;
+    }
+
+    public void setConfiguredEnergyRate(int rate) {
+        int clamped = Math.max(ENERGY_RATE_MIN, Math.min(ENERGY_RATE_MAX, rate));
+        if (clamped != this.configuredEnergyRate) {
+            this.configuredEnergyRate = clamped;
+            setChanged();
+        }
+    }
+
+    /** Ceiling derived from installed stack upgrades via the datamap formula. */
+    public int getUpgradeEnergyCeiling() {
+        return RoutingNodeHelper.getEffectiveEnergyTransfer(
+                getBlockState().getBlock(),
+                getItem(SLOT_STACK_UPGRADE).getCount()
+        );
+    }
+
+    /** The configured throttle clamped by the upgrade-derived ceiling. */
+    public int getEffectiveEnergyRate() {
+        return Math.min(configuredEnergyRate, getUpgradeEnergyCeiling());
+    }
+
     @Override
     protected void saveAdditional(CompoundTag tag, HolderLookup.Provider registries) {
         super.saveAdditional(tag, registries);
         ContainerHelper.saveAllItems(tag, items, registries);
+        tag.putInt("configuredEnergyRate", configuredEnergyRate);
         savePosList(tag, Constants.NBT.ROUTING_MASTER_GENERAL, generalNodeList);
+
+        ListTag graphTag = new ListTag();
+        for (Entry<BlockPos, List<BlockPos>> entry : connectionMap.entrySet()) {
+            CompoundTag entryTag = new CompoundTag();
+            BlockPos key = entry.getKey();
+            entryTag.putInt("kx", key.getX());
+            entryTag.putInt("ky", key.getY());
+            entryTag.putInt("kz", key.getZ());
+            ListTag neighbors = new ListTag();
+            for (BlockPos neighbor : entry.getValue()) {
+                CompoundTag nbTag = new CompoundTag();
+                nbTag.putInt("x", neighbor.getX());
+                nbTag.putInt("y", neighbor.getY());
+                nbTag.putInt("z", neighbor.getZ());
+                neighbors.add(nbTag);
+            }
+            entryTag.put("n", neighbors);
+            graphTag.add(entryTag);
+        }
+        tag.put("connectionGraph", graphTag);
 
         for (RoutingChannel<?> channel : RoutingChannelRegistry.getChannels()) {
             savePosList(tag, "channel_input_" + channel.id(), getInputList(channel.id()));
@@ -188,7 +413,29 @@ public class MasterRoutingNodeBlockEntity extends BlockEntity implements IMaster
     protected void loadAdditional(CompoundTag tag, HolderLookup.Provider registries) {
         super.loadAdditional(tag, registries);
         ContainerHelper.loadAllItems(tag, items, registries);
+        if (tag.contains("configuredEnergyRate", Tag.TAG_INT)) {
+            this.configuredEnergyRate = Math.max(ENERGY_RATE_MIN, Math.min(ENERGY_RATE_MAX, tag.getInt("configuredEnergyRate")));
+        } else {
+            this.configuredEnergyRate = ENERGY_RATE_DEFAULT;
+        }
         generalNodeList = loadPosList(tag, Constants.NBT.ROUTING_MASTER_GENERAL);
+
+        connectionMap.clear();
+        if (tag.contains("connectionGraph", Tag.TAG_LIST)) {
+            ListTag graphTag = tag.getList("connectionGraph", Tag.TAG_COMPOUND);
+            for (int i = 0; i < graphTag.size(); i++) {
+                CompoundTag entryTag = graphTag.getCompound(i);
+                BlockPos key = new BlockPos(entryTag.getInt("kx"), entryTag.getInt("ky"), entryTag.getInt("kz"));
+                ListTag neighbors = entryTag.getList("n", Tag.TAG_COMPOUND);
+                List<BlockPos> list = new ArrayList<>(neighbors.size());
+                for (int j = 0; j < neighbors.size(); j++) {
+                    CompoundTag nbTag = neighbors.getCompound(j);
+                    list.add(new BlockPos(nbTag.getInt("x"), nbTag.getInt("y"), nbTag.getInt("z")));
+                }
+                connectionMap.put(key, list);
+            }
+        }
+        legacyMigrationAttempted = false;
 
         for (RoutingChannel<?> channel : RoutingChannelRegistry.getChannels()) {
             String inputKey = "channel_input_" + channel.id();
@@ -310,6 +557,9 @@ public class MasterRoutingNodeBlockEntity extends BlockEntity implements IMaster
         if (!connectionMap.get(pos2).contains(pos1)) {
             connectionMap.get(pos2).add(pos1);
         }
+        if (pos1.equals(worldPosition) || pos2.equals(worldPosition)) {
+            pendingClientSync = true;
+        }
     }
 
     @Override
@@ -322,6 +572,30 @@ public class MasterRoutingNodeBlockEntity extends BlockEntity implements IMaster
             connectionMap.get(pos2).remove(pos1);
             if (connectionMap.get(pos2).isEmpty()) connectionMap.remove(pos2);
         }
+        if (pos1.equals(worldPosition) || pos2.equals(worldPosition)) {
+            pendingClientSync = true;
+        }
+        setChanged();
+    }
+
+    @Override
+    public void removeNodeFromGraph(BlockPos pos) {
+        List<BlockPos> neighbors = connectionMap.remove(pos);
+        if (neighbors != null) {
+            for (BlockPos neighbor : neighbors) {
+                List<BlockPos> neighborList = connectionMap.get(neighbor);
+                if (neighborList != null) {
+                    neighborList.remove(pos);
+                    if (neighborList.isEmpty()) connectionMap.remove(neighbor);
+                }
+            }
+            if (neighbors.contains(worldPosition) || pos.equals(worldPosition)) {
+                pendingClientSync = true;
+            }
+        }
+        // Defensive scrub for any stale references not captured via neighbors above.
+        connectionMap.values().forEach(list -> list.remove(pos));
+        setChanged();
     }
 
     @Override
@@ -335,7 +609,43 @@ public class MasterRoutingNodeBlockEntity extends BlockEntity implements IMaster
 
     @Override
     public List<BlockPos> getConnected() {
-        return new ArrayList<>();
+        if (level != null && level.isClientSide) {
+            return clientRenderNeighbors;
+        }
+        return connectionMap.getOrDefault(getBlockPos(), List.of());
+    }
+
+    @Override
+    public CompoundTag getUpdateTag(HolderLookup.Provider registries) {
+        CompoundTag tag = super.getUpdateTag(registries);
+        ListTag list = new ListTag();
+        for (BlockPos pos : connectionMap.getOrDefault(getBlockPos(), List.of())) {
+            CompoundTag posTag = new CompoundTag();
+            posTag.putInt("x", pos.getX());
+            posTag.putInt("y", pos.getY());
+            posTag.putInt("z", pos.getZ());
+            list.add(posTag);
+        }
+        tag.put("renderNeighbors", list);
+        return tag;
+    }
+
+    @Override
+    public void handleUpdateTag(CompoundTag tag, HolderLookup.Provider registries) {
+        super.handleUpdateTag(tag, registries);
+        clientRenderNeighbors.clear();
+        if (tag.contains("renderNeighbors", Tag.TAG_LIST)) {
+            ListTag list = tag.getList("renderNeighbors", Tag.TAG_COMPOUND);
+            for (int i = 0; i < list.size(); i++) {
+                CompoundTag posTag = list.getCompound(i);
+                clientRenderNeighbors.add(new BlockPos(posTag.getInt("x"), posTag.getInt("y"), posTag.getInt("z")));
+            }
+        }
+    }
+
+    @Override
+    public Packet<ClientGamePacketListener> getUpdatePacket() {
+        return ClientboundBlockEntityDataPacket.create(this);
     }
 
     @Override
@@ -430,7 +740,7 @@ public class MasterRoutingNodeBlockEntity extends BlockEntity implements IMaster
 
     @Override
     public AbstractContainerMenu createMenu(int containerId, Inventory playerInventory, Player player) {
-        return new com.breakinblocks.neovitae.common.menu.MasterRoutingNodeMenu(containerId, playerInventory, this);
+        return new MasterRoutingNodeMenu(containerId, playerInventory, this);
     }
 
     @Override

@@ -28,7 +28,9 @@ public class NVMenus {
 
     public static final DeferredHolder<MenuType<?>, MenuType<MasterRoutingNodeMenu>> MASTER_ROUTING_NODE = MENUS.register("master_routing_node", () -> IMenuTypeExtension.create(MasterRoutingNodeMenu::new));
 
-    public static final DeferredHolder<MenuType<?>, MenuType<FilterMenu>> FILTER = MENUS.register("filter", () -> IMenuTypeExtension.create(FilterMenu::new));
+    public static final DeferredHolder<MenuType<?>, MenuType<DungeonSealMenu>> DUNGEON_SEAL = MENUS.register("dungeon_seal", () -> IMenuTypeExtension.create(DungeonSealMenu::new));
+
+    public static final DeferredHolder<MenuType<?>, MenuType<SpiritCacheMenu>> SPIRIT_CACHE = MENUS.register("spirit_cache", () -> IMenuTypeExtension.create(SpiritCacheMenu::new));
 
     public static void register(IEventBus modbus) {
         MENUS.register(modbus);

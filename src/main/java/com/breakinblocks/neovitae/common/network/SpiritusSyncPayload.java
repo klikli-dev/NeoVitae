@@ -18,7 +18,12 @@ public record SpiritusSyncPayload(
         double corrosiveWill,
         double destructiveWill,
         double vengefulWill,
-        double steadfastWill
+        double steadfastWill,
+        double bonusRaw,
+        double bonusCorrosive,
+        double bonusDestructive,
+        double bonusVengeful,
+        double bonusSteadfast
 ) implements CustomPacketPayload {
 
     public static final Type<SpiritusSyncPayload> TYPE = new Type<>(NeoVitae.rl("will_chunk_sync"));
@@ -29,6 +34,11 @@ public record SpiritusSyncPayload(
             return new SpiritusSyncPayload(
                     buf.readInt(),
                     buf.readInt(),
+                    buf.readDouble(),
+                    buf.readDouble(),
+                    buf.readDouble(),
+                    buf.readDouble(),
+                    buf.readDouble(),
                     buf.readDouble(),
                     buf.readDouble(),
                     buf.readDouble(),
@@ -46,6 +56,11 @@ public record SpiritusSyncPayload(
             buf.writeDouble(payload.destructiveWill);
             buf.writeDouble(payload.vengefulWill);
             buf.writeDouble(payload.steadfastWill);
+            buf.writeDouble(payload.bonusRaw);
+            buf.writeDouble(payload.bonusCorrosive);
+            buf.writeDouble(payload.bonusDestructive);
+            buf.writeDouble(payload.bonusVengeful);
+            buf.writeDouble(payload.bonusSteadfast);
         }
     };
 
@@ -53,16 +68,24 @@ public record SpiritusSyncPayload(
         return new SpiritusSyncPayload(
                 chunkX,
                 chunkZ,
-                willChunk.getWill(SpiritusType.DEFAULT),
-                willChunk.getWill(SpiritusType.CORROSIVE),
-                willChunk.getWill(SpiritusType.DESTRUCTIVE),
-                willChunk.getWill(SpiritusType.VENGEFUL),
-                willChunk.getWill(SpiritusType.STEADFAST)
+                willChunk.getSpiritus(SpiritusType.RAW),
+                willChunk.getSpiritus(SpiritusType.RUINA),
+                willChunk.getSpiritus(SpiritusType.NIHILUM),
+                willChunk.getSpiritus(SpiritusType.VINDICTA),
+                willChunk.getSpiritus(SpiritusType.INVICTUS),
+                willChunk.getMaxBonus(SpiritusType.RAW),
+                willChunk.getMaxBonus(SpiritusType.RUINA),
+                willChunk.getMaxBonus(SpiritusType.NIHILUM),
+                willChunk.getMaxBonus(SpiritusType.VINDICTA),
+                willChunk.getMaxBonus(SpiritusType.INVICTUS)
         );
     }
 
     public SpiritusChunk toSpiritusChunk() {
-        return new SpiritusChunk(rawSpiritus, corrosiveWill, destructiveWill, vengefulWill, steadfastWill);
+        return new SpiritusChunk(
+                rawSpiritus, corrosiveWill, destructiveWill, vengefulWill, steadfastWill,
+                bonusRaw, bonusCorrosive, bonusDestructive, bonusVengeful, bonusSteadfast
+        );
     }
 
     @Override

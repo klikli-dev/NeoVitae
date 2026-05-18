@@ -7,6 +7,7 @@ import net.minecraft.world.level.Level;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import com.breakinblocks.neovitae.NeoVitae;
+import com.breakinblocks.neovitae.api.stream.StreamPresets;
 import com.breakinblocks.neovitae.ritual.EnumRuneType;
 import com.breakinblocks.neovitae.ritual.IMasterRitualStone;
 import com.breakinblocks.neovitae.ritual.Ritual;
@@ -35,7 +36,7 @@ public class RitualStandardDungeon extends DungeonRitualBase {
         Level world = masterRitualStone.getWorldObj();
         BlockPos masterPos = masterRitualStone.getMasterBlockPos();
 
-        if (world.isClientSide || !(world instanceof ServerLevel)) {
+        if (world.isClientSide || !(world instanceof ServerLevel serverWorld)) {
             return;
         }
 
@@ -70,21 +71,36 @@ public class RitualStandardDungeon extends DungeonRitualBase {
 
         LOGGER.info("Dungeon generated. Player spawn: {}, Portal: {}", playerSpawnPos, portalPos);
 
-        // Calculate positions - pillar is 4 blocks up (same as 1.20.1)
-        // This works because cleanup happens first, converting the rune at (0,4,0) to smooth stone
-        BlockPos pillarPos = masterPos.relative(Direction.UP, 4);
+        storeControllerPosition(masterRitualStone, dungeonControllerPos);
+
         BlockPos overworldPlayerPos = masterPos.relative(Direction.UP).relative(masterRitualStone.getDirection(), 2);
 
-        // Perform cleanup FIRST (converts ritual stones to smooth stone)
-        // This must happen before placing the pillar, otherwise the pillar would be overwritten
-        performRitualCleanup(masterRitualStone, world);
+        for (BlockPos offset : new BlockPos[]{
+                masterPos.north(4), masterPos.south(4),
+                masterPos.east(4),  masterPos.west(4),
+                masterPos.north(4).east(4), masterPos.south(4).west(4)}) {
+            StreamPresets.voidTendril(offset, masterPos).build()
+                    .sendToNearby(serverWorld, masterPos, 128);
+        }
 
-        // Spawn portal pillars AFTER cleanup
-        spawnPortalPillar(world, dungeonWorld, pillarPos, playerSpawnPos);
+        if (!applyRitualStructure(masterRitualStone, serverWorld)) {
+            LOGGER.error("Failed to apply ritual structure for standard dungeon");
+            masterRitualStone.stopRitual(Ritual.BreakType.DEACTIVATE);
+            return;
+        }
+        wireFunctionalInversionPillar(serverWorld, masterPos, dungeonWorld, playerSpawnPos);
         spawnPortalPillar(dungeonWorld, world, portalPos, overworldPlayerPos);
 
-        // Stop the ritual since it's a one-time effect
+        if (dungeonWorld.getBlockEntity(dungeonControllerPos) instanceof com.breakinblocks.neovitae.common.blockentity.DungeonControllerBlockEntity controller) {
+            controller.setPortalPos(portalPos);
+        }
+
         masterRitualStone.stopRitual(Ritual.BreakType.DEACTIVATE);
+    }
+
+    @Override
+    protected net.minecraft.resources.ResourceLocation getStructureId() {
+        return NeoVitae.rl("ritual/pathway_to_the_endless_realm");
     }
 
     @Override

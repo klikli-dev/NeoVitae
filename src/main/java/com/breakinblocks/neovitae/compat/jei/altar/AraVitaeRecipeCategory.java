@@ -38,7 +38,7 @@ public class AraVitaeRecipeCategory implements IRecipeCategory<AraVitaeRecipe> {
 
     public AraVitaeRecipeCategory(IGuiHelper guiHelper) {
         icon = guiHelper.createDrawableItemStack(new ItemStack(NVBlocks.ARA_VITAE.block().get()));
-        background = guiHelper.createDrawable(NeoVitae.rl("gui/jei/altar.png"), 3, 4, WIDTH, HEIGHT);
+        background = guiHelper.createDrawable(NeoVitae.rl("textures/gui/jei/altar.png"), 3, 4, WIDTH, HEIGHT);
     }
 
     @Override
@@ -81,8 +81,8 @@ public class AraVitaeRecipeCategory implements IRecipeCategory<AraVitaeRecipe> {
         background.draw(guiGraphics);
 
         Minecraft mc = Minecraft.getInstance();
-        String tierText = "Tier " + toRoman(recipe.getMinTier() + 1);
-        String lpText = recipe.getTotalBlood() + " LP";
+        String tierText = "Tier " + recipe.getMinTier();
+        String lpText = recipe.getTotalBlood() + " EV";
 
         guiGraphics.drawString(mc.font, tierText, 90 - mc.font.width(tierText) / 2, 0, Color.gray.getRGB(), false);
         guiGraphics.drawString(mc.font, lpText, 90 - mc.font.width(lpText) / 2, 10, Color.gray.getRGB(), false);

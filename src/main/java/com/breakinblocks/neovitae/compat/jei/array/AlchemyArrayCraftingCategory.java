@@ -1,11 +1,8 @@
 package com.breakinblocks.neovitae.compat.jei.array;
 
-import com.mojang.blaze3d.systems.RenderSystem;
 import mezz.jei.api.gui.builder.IRecipeLayoutBuilder;
 import mezz.jei.api.gui.builder.IRecipeSlotBuilder;
-import mezz.jei.api.gui.builder.ITooltipBuilder;
 import mezz.jei.api.gui.drawable.IDrawable;
-import mezz.jei.api.gui.ingredient.IRecipeSlotsView;
 import mezz.jei.api.helpers.IGuiHelper;
 import mezz.jei.api.recipe.IFocusGroup;
 import mezz.jei.api.recipe.RecipeIngredientRole;
@@ -13,18 +10,24 @@ import mezz.jei.api.recipe.RecipeType;
 import mezz.jei.api.recipe.category.IRecipeCategory;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.network.chat.Component;
-import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.ItemStack;
 import com.breakinblocks.neovitae.NeoVitae;
-import com.breakinblocks.neovitae.common.alchemyarray.AlchemyArrayEffectType;
 import com.breakinblocks.neovitae.common.item.NVItems;
 import com.breakinblocks.neovitae.common.recipe.alchemyarray.AlchemyArrayRecipe;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
+/**
+ * JEI category for alchemy array recipes that produce an item output
+ * ({@link com.breakinblocks.neovitae.common.alchemyarray.AlchemyArrayEffectType#CRAFTING CRAFTING}
+ * and {@link com.breakinblocks.neovitae.common.alchemyarray.AlchemyArrayEffectType#BINDING BINDING}
+ * effect types). Persistent environmental effects live in the sibling
+ * {@link AlchemyArrayEffectCategory}.
+ */
 public class AlchemyArrayCraftingCategory implements IRecipeCategory<AlchemyArrayRecipe> {
-    public static final RecipeType<AlchemyArrayRecipe> RECIPE_TYPE = RecipeType.create(NeoVitae.MODID, "alchemyarray", AlchemyArrayRecipe.class);
+    public static final RecipeType<AlchemyArrayRecipe> RECIPE_TYPE =
+            RecipeType.create(NeoVitae.MODID, "array_crafting", AlchemyArrayRecipe.class);
 
     private static final int WIDTH = 100;
     private static final int HEIGHT = 30;
@@ -34,14 +37,14 @@ public class AlchemyArrayCraftingCategory implements IRecipeCategory<AlchemyArra
     private final IDrawable icon;
 
     public AlchemyArrayCraftingCategory(IGuiHelper guiHelper) {
-        icon = guiHelper.createDrawableItemStack(new ItemStack(NVItems.ARCANE_ASHES.get()));
-        background = guiHelper.createDrawable(NeoVitae.rl("gui/jei/binding.png"), 0, 0, WIDTH, HEIGHT);
+        icon = guiHelper.createDrawableItemStack(new ItemStack(NVItems.ARCANE_SCRIBE_TOOL.get()));
+        background = guiHelper.createDrawable(NeoVitae.rl("textures/gui/jei/binding.png"), 0, 0, WIDTH, HEIGHT);
     }
 
     @Nonnull
     @Override
     public Component getTitle() {
-        return Component.translatable("jei.neovitae.recipe.alchemyarraycrafting");
+        return Component.translatable("jei.neovitae.recipe.array_crafting");
     }
 
     @Override
@@ -62,11 +65,10 @@ public class AlchemyArrayCraftingCategory implements IRecipeCategory<AlchemyArra
 
     @Override
     public void setRecipe(IRecipeLayoutBuilder builder, AlchemyArrayRecipe recipe, IFocusGroup focuses) {
+        IRecipeSlotBuilder output = builder.addSlot(RecipeIngredientRole.OUTPUT, 74, 6);
         if (!recipe.getOutput().isEmpty()) {
-            IRecipeSlotBuilder output = builder.addSlot(RecipeIngredientRole.OUTPUT, 74, 6);
             output.addItemStack(recipe.getOutput());
         }
-
 
         IRecipeSlotBuilder catalyst = builder.addSlot(RecipeIngredientRole.INPUT, 30, 4);
         catalyst.addIngredients(recipe.getAddedInput());
@@ -76,24 +78,9 @@ public class AlchemyArrayCraftingCategory implements IRecipeCategory<AlchemyArra
     }
 
     @Override
-    public void getTooltip(ITooltipBuilder tooltip, AlchemyArrayRecipe recipe, IRecipeSlotsView recipeSlotsView, double mouseX, double mouseY) {
-        if (recipe.getOutput().isEmpty() && mouseX >= 70 && mouseX <= 95 && mouseY >= 2 && mouseY <= 27) {
-            AlchemyArrayEffectType effectType = recipe.getEffectType();
-            tooltip.add(Component.translatable("jei.neovitae.effect." + effectType.getSerializedName() + ".name"));
-            tooltip.add(Component.translatable("jei.neovitae.effect." + effectType.getSerializedName() + ".desc"));
-        }
-    }
-
-    @Override
-    public void draw(AlchemyArrayRecipe recipe, IRecipeSlotsView recipeSlotsView, GuiGraphics guiGraphics, double mouseX, double mouseY) {
-        // Draw background
+    public void draw(AlchemyArrayRecipe recipe, mezz.jei.api.gui.ingredient.IRecipeSlotsView recipeSlotsView,
+                     GuiGraphics guiGraphics, double mouseX, double mouseY) {
         background.draw(guiGraphics);
-
-        if (recipe.getOutput().isEmpty()) {
-            ResourceLocation textureRL = recipe.getTexture();
-            RenderSystem.setShaderTexture(0, textureRL);
-            guiGraphics.blit(textureRL, 74, 6, 0, 0, 16, 16, 16, 16);
-        }
     }
 
     @Override

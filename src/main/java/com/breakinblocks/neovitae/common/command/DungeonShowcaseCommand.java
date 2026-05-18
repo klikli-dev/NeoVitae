@@ -2,7 +2,7 @@ package com.breakinblocks.neovitae.common.command;
 
 import com.breakinblocks.neovitae.NeoVitae;
 import com.mojang.brigadier.Command;
-import com.mojang.brigadier.CommandDispatcher;
+import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import com.mojang.brigadier.context.CommandContext;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
@@ -15,6 +15,7 @@ import net.minecraft.server.packs.resources.Resource;
 import net.minecraft.server.packs.resources.ResourceManager;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.StructureBlock;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.entity.SignBlockEntity;
 import net.minecraft.world.level.block.entity.SignText;
@@ -36,12 +37,10 @@ public class DungeonShowcaseCommand {
     private static final int PADDING = 5;
     private static final int COLUMNS = 6;
 
-    public static void register(CommandDispatcher<CommandSourceStack> dispatcher) {
-        dispatcher.register(
-                Commands.literal("nv-dungeon-showcase")
-                        .requires(source -> source.hasPermission(Commands.LEVEL_GAMEMASTERS))
-                        .executes(DungeonShowcaseCommand::placeShowcase)
-        );
+    public static LiteralArgumentBuilder<CommandSourceStack> build() {
+        return Commands.literal("dungeon-showcase")
+                .requires(source -> source.hasPermission(Commands.LEVEL_GAMEMASTERS))
+                .executes(DungeonShowcaseCommand::placeShowcase);
     }
 
     private static int placeShowcase(CommandContext<CommandSourceStack> context) {
@@ -163,7 +162,7 @@ public class DungeonShowcaseCommand {
 
     private static void placeStructureBlock(ServerLevel level, BlockPos pos, ResourceLocation structureId, Vec3i size) {
         level.setBlock(pos, Blocks.STRUCTURE_BLOCK.defaultBlockState().setValue(
-                net.minecraft.world.level.block.StructureBlock.MODE, StructureMode.SAVE), 2);
+                StructureBlock.MODE, StructureMode.SAVE), 2);
 
         BlockEntity be = level.getBlockEntity(pos);
         if (be instanceof StructureBlockEntity sb) {

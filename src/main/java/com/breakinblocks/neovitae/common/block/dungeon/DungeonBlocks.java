@@ -12,7 +12,9 @@ import com.breakinblocks.neovitae.util.helper.BlockWithItemHolder;
 import com.breakinblocks.neovitae.util.helper.BlockWithItemRegister;
 
 import java.util.EnumMap;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 import java.util.function.Supplier;
 
 public class DungeonBlocks {
@@ -60,6 +62,7 @@ public class DungeonBlocks {
     public static final Map<DungeonVariant, BlockWithItemHolder<SlabBlock, BlockItem>> DUNGEON_POLISHED_SLAB = new EnumMap<>(DungeonVariant.class);
 
     public static BlockWithItemHolder<Block, BlockItem> DUNGEON_ORE;
+    public static BlockWithItemHolder<BlockPrismaticDemonite, BlockItem> PRISMATIC_DEMONITE;
     public static BlockWithItemHolder<Block, BlockItem> DUNGEON_BRICK_ASSORTED;
 
     public static BlockWithItemHolder<BlockSpikes, BlockItem> SPIKES;
@@ -78,6 +81,7 @@ public class DungeonBlocks {
     static {
         DUNGEON_ORE = REG.register("dungeon_ore", BlockBehaviour.Properties.of()
                 .strength(3.0F, 3.0F).sound(SoundType.STONE).requiresCorrectToolForDrops(), new Item.Properties());
+        PRISMATIC_DEMONITE = REG.register("prismatic_demonite", BlockPrismaticDemonite::new);
         DUNGEON_BRICK_ASSORTED = REG.register("dungeon_brick_assorted", BlockBehaviour.Properties.of()
                 .strength(20.0F, 50.0F).sound(SoundType.STONE).requiresCorrectToolForDrops(), new Item.Properties());
 
@@ -169,6 +173,18 @@ public class DungeonBlocks {
 
     private static BlockWithItemHolder<SlabBlock, BlockItem> registerSlab(String name) {
         return REG.register(name, () -> new SlabBlock(DUNGEON_STONE_PROPS));
+    }
+
+    private static Set<Block> dungeonBlockSet;
+
+    public static boolean isDungeonBlock(Block block) {
+        if (dungeonBlockSet == null) {
+            dungeonBlockSet = new HashSet<>();
+            for (var entry : BLOCKS.getEntries()) {
+                dungeonBlockSet.add(entry.get());
+            }
+        }
+        return dungeonBlockSet.contains(block);
     }
 
     public static void register(IEventBus modBus) {

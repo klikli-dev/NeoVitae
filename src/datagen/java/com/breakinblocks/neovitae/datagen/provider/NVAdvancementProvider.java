@@ -1,10 +1,12 @@
 package com.breakinblocks.neovitae.datagen.provider;
 
 import com.breakinblocks.neovitae.NeoVitae;
+import com.breakinblocks.neovitae.common.advancement.CatalystTransmuteTrigger;
 import com.breakinblocks.neovitae.common.advancement.ImperfectRitualActivatedTrigger;
 import com.breakinblocks.neovitae.common.advancement.NVCriteriaTriggers;
 import com.breakinblocks.neovitae.common.advancement.RitualActivatedTrigger;
 import com.breakinblocks.neovitae.common.block.NVBlocks;
+import com.breakinblocks.neovitae.common.datacomponent.SpiritusType;
 import com.breakinblocks.neovitae.common.item.NVItems;
 import net.minecraft.advancements.Advancement;
 import net.minecraft.advancements.AdvancementHolder;
@@ -97,47 +99,47 @@ public class NVAdvancementProvider extends AdvancementProvider {
             // Slate Progression (branch off weak_blood_orb)
             AdvancementHolder blankSlate = Advancement.Builder.advancement()
                     .parent(weakBloodOrb)
-                    .display(NVItems.SLATE_BLANK.get(),
+                    .display(NVItems.TABULA_RASA.get(),
                             Component.translatable("advancements.neovitae.blank_slate.title"),
                             Component.translatable("advancements.neovitae.blank_slate.description"),
                             null, AdvancementType.TASK, true, false, false)
-                    .addCriterion("get_slate", InventoryChangeTrigger.TriggerInstance.hasItems(NVItems.SLATE_BLANK.get()))
+                    .addCriterion("get_slate", InventoryChangeTrigger.TriggerInstance.hasItems(NVItems.TABULA_RASA.get()))
                     .save(saver, NeoVitae.rl("neovitae/blank_slate").toString());
 
             AdvancementHolder reinforcedSlate = Advancement.Builder.advancement()
                     .parent(blankSlate)
-                    .display(NVItems.SLATE_REINFORCED.get(),
+                    .display(NVItems.TABULA_ROBUR.get(),
                             Component.translatable("advancements.neovitae.reinforced_slate.title"),
                             Component.translatable("advancements.neovitae.reinforced_slate.description"),
                             null, AdvancementType.TASK, true, false, false)
-                    .addCriterion("get_slate", InventoryChangeTrigger.TriggerInstance.hasItems(NVItems.SLATE_REINFORCED.get()))
+                    .addCriterion("get_slate", InventoryChangeTrigger.TriggerInstance.hasItems(NVItems.TABULA_ROBUR.get()))
                     .save(saver, NeoVitae.rl("neovitae/reinforced_slate").toString());
 
             AdvancementHolder imbuedSlate = Advancement.Builder.advancement()
                     .parent(reinforcedSlate)
-                    .display(NVItems.SLATE_IMBUED.get(),
+                    .display(NVItems.TABULA_ANIMATA.get(),
                             Component.translatable("advancements.neovitae.imbued_slate.title"),
                             Component.translatable("advancements.neovitae.imbued_slate.description"),
                             null, AdvancementType.TASK, true, false, false)
-                    .addCriterion("get_slate", InventoryChangeTrigger.TriggerInstance.hasItems(NVItems.SLATE_IMBUED.get()))
+                    .addCriterion("get_slate", InventoryChangeTrigger.TriggerInstance.hasItems(NVItems.TABULA_ANIMATA.get()))
                     .save(saver, NeoVitae.rl("neovitae/imbued_slate").toString());
 
             AdvancementHolder demonicSlate = Advancement.Builder.advancement()
                     .parent(imbuedSlate)
-                    .display(NVItems.SLATE_DEMONIC.get(),
+                    .display(NVItems.TABULA_SPIRITUS.get(),
                             Component.translatable("advancements.neovitae.demonic_slate.title"),
                             Component.translatable("advancements.neovitae.demonic_slate.description"),
                             null, AdvancementType.GOAL, true, true, false)
-                    .addCriterion("get_slate", InventoryChangeTrigger.TriggerInstance.hasItems(NVItems.SLATE_DEMONIC.get()))
+                    .addCriterion("get_slate", InventoryChangeTrigger.TriggerInstance.hasItems(NVItems.TABULA_SPIRITUS.get()))
                     .save(saver, NeoVitae.rl("neovitae/demonic_slate").toString());
 
             AdvancementHolder etherealSlate = Advancement.Builder.advancement()
                     .parent(demonicSlate)
-                    .display(NVItems.SLATE_ETHEREAL.get(),
+                    .display(NVItems.TABULA_AETHEREA.get(),
                             Component.translatable("advancements.neovitae.ethereal_slate.title"),
                             Component.translatable("advancements.neovitae.ethereal_slate.description"),
                             null, AdvancementType.CHALLENGE, true, true, false)
-                    .addCriterion("get_slate", InventoryChangeTrigger.TriggerInstance.hasItems(NVItems.SLATE_ETHEREAL.get()))
+                    .addCriterion("get_slate", InventoryChangeTrigger.TriggerInstance.hasItems(NVItems.TABULA_AETHEREA.get()))
                     .save(saver, NeoVitae.rl("neovitae/ethereal_slate").toString());
 
             // Crafting Stations (branch off weak_blood_orb)
@@ -236,14 +238,64 @@ public class NVAdvancementProvider extends AdvancementProvider {
                     .addCriterion("activate", NVCriteriaTriggers.RITUAL_ACTIVATED.get().createCriterion(RitualActivatedTrigger.forRitual("neovitae:simple_dungeon")))
                     .save(saver, NeoVitae.rl("neovitae/edge_of_hidden_realm").toString());
 
-            AdvancementHolder crackOfFracturedCrystal = Advancement.Builder.advancement()
+            // Crystallum Fractura activation (off firstRitual)
+            AdvancementHolder crystallumFractura = Advancement.Builder.advancement()
                     .parent(firstRitual)
-                    .display(NVBlocks.MASTER_RITUAL_STONE,
-                            Component.translatable("advancements.neovitae.crack_of_fractured_crystal.title"),
-                            Component.translatable("advancements.neovitae.crack_of_fractured_crystal.description"),
+                    .display(NVItems.RAW_SPIRITUS_CRYSTAL_ITEM.get(),
+                            Component.translatable("advancements.neovitae.crystallum_fractura.title"),
+                            Component.translatable("advancements.neovitae.crystallum_fractura.description"),
                             null, AdvancementType.CHALLENGE, true, true, false)
-                    .addCriterion("activate", NVCriteriaTriggers.RITUAL_ACTIVATED.get().createCriterion(RitualActivatedTrigger.forRitual("neovitae:crystal_split")))
-                    .save(saver, NeoVitae.rl("neovitae/crack_of_fractured_crystal").toString());
+                    .addCriterion("activate", NVCriteriaTriggers.RITUAL_ACTIVATED.get().createCriterion(RitualActivatedTrigger.forRitual("neovitae:crystallum_fractura")))
+                    .save(saver, NeoVitae.rl("neovitae/crystallum_fractura").toString());
+
+            // Catalyst transmutation chain (off crystallumFractura)
+            AdvancementHolder transmuteRuina = Advancement.Builder.advancement()
+                    .parent(crystallumFractura)
+                    .display(NVItems.SPIRITUS_RUINA_CATALYST.get(),
+                            Component.translatable("advancements.neovitae.transmute_ruina.title"),
+                            Component.translatable("advancements.neovitae.transmute_ruina.description"),
+                            null, AdvancementType.TASK, true, false, false)
+                    .addCriterion("transmute", NVCriteriaTriggers.CATALYST_TRANSMUTE.get().createCriterion(CatalystTransmuteTrigger.forAspect(SpiritusType.RUINA)))
+                    .save(saver, NeoVitae.rl("neovitae/transmute_ruina").toString());
+
+            Advancement.Builder.advancement()
+                    .parent(transmuteRuina)
+                    .display(NVItems.SPIRITUS_NIHILUM_CATALYST.get(),
+                            Component.translatable("advancements.neovitae.transmute_nihilum.title"),
+                            Component.translatable("advancements.neovitae.transmute_nihilum.description"),
+                            null, AdvancementType.TASK, true, false, false)
+                    .addCriterion("transmute", NVCriteriaTriggers.CATALYST_TRANSMUTE.get().createCriterion(CatalystTransmuteTrigger.forAspect(SpiritusType.NIHILUM)))
+                    .save(saver, NeoVitae.rl("neovitae/transmute_nihilum").toString());
+
+            Advancement.Builder.advancement()
+                    .parent(transmuteRuina)
+                    .display(NVItems.SPIRITUS_VINDICTA_CATALYST.get(),
+                            Component.translatable("advancements.neovitae.transmute_vindicta.title"),
+                            Component.translatable("advancements.neovitae.transmute_vindicta.description"),
+                            null, AdvancementType.TASK, true, false, false)
+                    .addCriterion("transmute", NVCriteriaTriggers.CATALYST_TRANSMUTE.get().createCriterion(CatalystTransmuteTrigger.forAspect(SpiritusType.VINDICTA)))
+                    .save(saver, NeoVitae.rl("neovitae/transmute_vindicta").toString());
+
+            Advancement.Builder.advancement()
+                    .parent(transmuteRuina)
+                    .display(NVItems.SPIRITUS_INVICTUS_CATALYST.get(),
+                            Component.translatable("advancements.neovitae.transmute_invictus.title"),
+                            Component.translatable("advancements.neovitae.transmute_invictus.description"),
+                            null, AdvancementType.TASK, true, false, false)
+                    .addCriterion("transmute", NVCriteriaTriggers.CATALYST_TRANSMUTE.get().createCriterion(CatalystTransmuteTrigger.forAspect(SpiritusType.INVICTUS)))
+                    .save(saver, NeoVitae.rl("neovitae/transmute_invictus").toString());
+
+            Advancement.Builder.advancement()
+                    .parent(transmuteRuina)
+                    .display(NVItems.SPIRITUS_INVICTUS_CATALYST.get(),
+                            Component.translatable("advancements.neovitae.aspectum_omnia.title"),
+                            Component.translatable("advancements.neovitae.aspectum_omnia.description"),
+                            null, AdvancementType.CHALLENGE, true, true, true)
+                    .addCriterion("ruina", NVCriteriaTriggers.CATALYST_TRANSMUTE.get().createCriterion(CatalystTransmuteTrigger.forAspect(SpiritusType.RUINA)))
+                    .addCriterion("nihilum", NVCriteriaTriggers.CATALYST_TRANSMUTE.get().createCriterion(CatalystTransmuteTrigger.forAspect(SpiritusType.NIHILUM)))
+                    .addCriterion("vindicta", NVCriteriaTriggers.CATALYST_TRANSMUTE.get().createCriterion(CatalystTransmuteTrigger.forAspect(SpiritusType.VINDICTA)))
+                    .addCriterion("invictus", NVCriteriaTriggers.CATALYST_TRANSMUTE.get().createCriterion(CatalystTransmuteTrigger.forAspect(SpiritusType.INVICTUS)))
+                    .save(saver, NeoVitae.rl("neovitae/aspectum_omnia").toString());
 
             AdvancementHolder serenadeOfNether = Advancement.Builder.advancement()
                     .parent(firstRitual)
@@ -271,7 +323,7 @@ public class NVAdvancementProvider extends AdvancementProvider {
                             null, AdvancementType.CHALLENGE, true, true, true)
                     .addCriterion("suffering", NVCriteriaTriggers.RITUAL_ACTIVATED.get().createCriterion(RitualActivatedTrigger.forRitual("neovitae:well_of_suffering")))
                     .addCriterion("dungeon", NVCriteriaTriggers.RITUAL_ACTIVATED.get().createCriterion(RitualActivatedTrigger.forRitual("neovitae:simple_dungeon")))
-                    .addCriterion("crystal", NVCriteriaTriggers.RITUAL_ACTIVATED.get().createCriterion(RitualActivatedTrigger.forRitual("neovitae:crystal_split")))
+                    .addCriterion("crystal", NVCriteriaTriggers.RITUAL_ACTIVATED.get().createCriterion(RitualActivatedTrigger.forRitual("neovitae:crystallum_fractura")))
                     .addCriterion("lava", NVCriteriaTriggers.RITUAL_ACTIVATED.get().createCriterion(RitualActivatedTrigger.forRitual("neovitae:lava")))
                     .addCriterion("meteor", NVCriteriaTriggers.RITUAL_ACTIVATED.get().createCriterion(RitualActivatedTrigger.forRitual("neovitae:meteor")))
                     .save(saver, NeoVitae.rl("neovitae/master_of_ceremonies").toString());
@@ -287,17 +339,17 @@ public class NVAdvancementProvider extends AdvancementProvider {
                     .save(saver, NeoVitae.rl("neovitae/teleposer").toString());
 
             // Spiritus Branch (off root)
-            AdvancementHolder spiritusSnare = Advancement.Builder.advancement()
+            AdvancementHolder throwingDagger = Advancement.Builder.advancement()
                     .parent(root)
-                    .display(NVItems.SPIRITUS_SNARE.get(),
-                            Component.translatable("advancements.neovitae.spiritus_snare.title"),
-                            Component.translatable("advancements.neovitae.spiritus_snare.description"),
+                    .display(NVItems.THROWING_DAGGER.get(),
+                            Component.translatable("advancements.neovitae.throwing_dagger.title"),
+                            Component.translatable("advancements.neovitae.throwing_dagger.description"),
                             null, AdvancementType.TASK, true, false, false)
-                    .addCriterion("get_snare", InventoryChangeTrigger.TriggerInstance.hasItems(NVItems.SPIRITUS_SNARE.get()))
-                    .save(saver, NeoVitae.rl("neovitae/spiritus_snare").toString());
+                    .addCriterion("get_dagger", InventoryChangeTrigger.TriggerInstance.hasItems(NVItems.THROWING_DAGGER.get()))
+                    .save(saver, NeoVitae.rl("neovitae/throwing_dagger").toString());
 
             AdvancementHolder spiritus = Advancement.Builder.advancement()
-                    .parent(spiritusSnare)
+                    .parent(throwingDagger)
                     .display(NVItems.MONSTER_SOUL_RAW.get(),
                             Component.translatable("advancements.neovitae.spiritus.title"),
                             Component.translatable("advancements.neovitae.spiritus.description"),
@@ -382,12 +434,39 @@ public class NVAdvancementProvider extends AdvancementProvider {
 
             Advancement.Builder.advancement()
                     .parent(hellfireForge)
-                    .display(NVItems.LIVING_PLATE.get(),
-                            Component.translatable("advancements.neovitae.living_armor.title"),
-                            Component.translatable("advancements.neovitae.living_armor.description"),
+                    .display(NVItems.SENTIENT_PLATE.get(),
+                            Component.translatable("advancements.neovitae.sentient_armor.title"),
+                            Component.translatable("advancements.neovitae.sentient_armor.description"),
                             null, AdvancementType.GOAL, true, true, false)
-                    .addCriterion("get_armor", InventoryChangeTrigger.TriggerInstance.hasItems(NVItems.LIVING_PLATE.get()))
-                    .save(saver, NeoVitae.rl("neovitae/living_armor").toString());
+                    .addCriterion("get_armor", InventoryChangeTrigger.TriggerInstance.hasItems(NVItems.SENTIENT_PLATE.get()))
+                    .save(saver, NeoVitae.rl("neovitae/sentient_armor").toString());
+
+            Advancement.Builder.advancement()
+                    .parent(weakBloodOrb)
+                    .display(NVItems.ARCANE_SCRIBE_TOOL.get(),
+                            Component.translatable("advancements.neovitae.arcane_scribe.title"),
+                            Component.translatable("advancements.neovitae.arcane_scribe.description"),
+                            null, AdvancementType.GOAL, true, true, false)
+                    .addCriterion("get_scribe", InventoryChangeTrigger.TriggerInstance.hasItems(NVItems.ARCANE_SCRIBE_TOOL.get()))
+                    .save(saver, NeoVitae.rl("neovitae/arcane_scribe").toString());
+
+            AdvancementHolder demonite = Advancement.Builder.advancement()
+                    .parent(hellfireForge)
+                    .display(NVItems.DEMONITE_RAW.get(),
+                            Component.translatable("advancements.neovitae.demonite.title"),
+                            Component.translatable("advancements.neovitae.demonite.description"),
+                            null, AdvancementType.TASK, true, false, false)
+                    .addCriterion("get_demonite", InventoryChangeTrigger.TriggerInstance.hasItems(NVItems.DEMONITE_RAW.get()))
+                    .save(saver, NeoVitae.rl("neovitae/demonite").toString());
+
+            Advancement.Builder.advancement()
+                    .parent(demonite)
+                    .display(NVItems.HELLFORGED_INGOT.get(),
+                            Component.translatable("advancements.neovitae.hellforged_ingot.title"),
+                            Component.translatable("advancements.neovitae.hellforged_ingot.description"),
+                            null, AdvancementType.CHALLENGE, true, true, false)
+                    .addCriterion("get_ingot", InventoryChangeTrigger.TriggerInstance.hasItems(NVItems.HELLFORGED_INGOT.get()))
+                    .save(saver, NeoVitae.rl("neovitae/hellforged_ingot").toString());
 
             // Self-sacrifice progression (off root)
             AdvancementHolder selfSacrifice = Advancement.Builder.advancement()
@@ -399,14 +478,6 @@ public class NVAdvancementProvider extends AdvancementProvider {
                     .addCriterion("get_dagger", InventoryChangeTrigger.TriggerInstance.hasItems(NVItems.SACRIFICIAL_DAGGER.get()))
                     .save(saver, NeoVitae.rl("neovitae/self_sacrifice").toString());
 
-            Advancement.Builder.advancement()
-                    .parent(selfSacrifice)
-                    .display(NVItems.DAGGER_OF_SACRIFICE.get(),
-                            Component.translatable("advancements.neovitae.sacrifice.title"),
-                            Component.translatable("advancements.neovitae.sacrifice.description"),
-                            null, AdvancementType.GOAL, true, true, false)
-                    .addCriterion("get_dagger", InventoryChangeTrigger.TriggerInstance.hasItems(NVItems.DAGGER_OF_SACRIFICE.get()))
-                    .save(saver, NeoVitae.rl("neovitae/sacrifice").toString());
 
             // Epic Hidden Achievement (off transcendent_blood_orb)
             Advancement.Builder.advancement()

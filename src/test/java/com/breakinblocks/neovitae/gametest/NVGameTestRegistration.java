@@ -4,7 +4,7 @@ import net.neoforged.neoforge.event.RegisterGameTestsEvent;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 
-@EventBusSubscriber(bus = EventBusSubscriber.Bus.MOD)
+@EventBusSubscriber
 public class NVGameTestRegistration {
 
     @SubscribeEvent
@@ -22,6 +22,7 @@ public class NVGameTestRegistration {
         event.register(MultiblockTests.class);
         event.register(DataValidationTests.class);
         event.register(SacrificeTests.class);
-        event.register(StreamEffectTests.class);
+
+        event.register(BloodOrbTests.class);
     }
 }

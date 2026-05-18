@@ -13,8 +13,10 @@ import mezz.jei.api.recipe.category.IRecipeCategory;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.core.registries.Registries;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.tags.TagKey;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
@@ -80,7 +82,7 @@ public class MeteorRecipeCategory implements IRecipeCategory<MeteorRecipe> {
     public void draw(MeteorRecipe recipe, IRecipeSlotsView recipeSlotsView, GuiGraphics guiGraphics, double mouseX, double mouseY) {
         Minecraft mc = Minecraft.getInstance();
 
-        String costText = "Cost: " + DECIMAL_FORMAT.format(recipe.getSyphon()) + " LP";
+        String costText = "Cost: " + DECIMAL_FORMAT.format(recipe.getSyphon()) + " EV";
         guiGraphics.drawString(mc.font, costText, 30, 3, Color.GRAY.getRGB(), false);
 
         String explosionText = "Explosion: " + recipe.getExplosionRadius();
@@ -223,7 +225,7 @@ public class MeteorRecipeCategory implements IRecipeCategory<MeteorRecipe> {
             }
             try {
                 ResourceLocation tagLoc = ResourceLocation.parse(tagName);
-                var tagKey = net.minecraft.tags.TagKey.create(net.minecraft.core.registries.Registries.BLOCK, tagLoc);
+                var tagKey = TagKey.create(Registries.BLOCK, tagLoc);
                 var optional = BuiltInRegistries.BLOCK.getTag(tagKey);
                 if (optional.isPresent()) {
                     var holders = optional.get().stream().toList();

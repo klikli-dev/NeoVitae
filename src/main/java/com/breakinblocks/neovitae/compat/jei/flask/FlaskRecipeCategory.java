@@ -36,13 +36,13 @@ public class FlaskRecipeCategory implements IRecipeCategory<FlaskRecipe> {
 
     public FlaskRecipeCategory(IGuiHelper guiHelper) {
         icon = guiHelper.createDrawableItemStack(new ItemStack(NVItems.ALCHEMY_FLASK.get()));
-        background = guiHelper.createDrawable(NeoVitae.rl("gui/jei/alchemytable.png"), 0, 0, WIDTH, HEIGHT);
+        background = guiHelper.createDrawable(NeoVitae.rl("textures/gui/jei/alchemytable.png"), 0, 0, WIDTH, HEIGHT);
     }
 
     @Override
     public void getTooltip(ITooltipBuilder tooltip, FlaskRecipe recipe, IRecipeSlotsView recipeSlotsView, double mouseX, double mouseY) {
         if (mouseX >= 58 && mouseX <= 78 && mouseY >= 21 && mouseY <= 34) {
-            tooltip.add(Component.translatable("jei.neovitae.recipe.requiredtier", DECIMAL_FORMAT.format(recipe.getMinimumTier() + 1)));
+            tooltip.add(Component.translatable("jei.neovitae.recipe.requiredtier", DECIMAL_FORMAT.format(recipe.getMinimumTier())));
             tooltip.add(Component.translatable("jei.neovitae.recipe.lpDrained", DECIMAL_FORMAT.format(recipe.getSyphon())));
             tooltip.add(Component.translatable("jei.neovitae.recipe.ticksRequired", DECIMAL_FORMAT.format(recipe.getTicks())));
         }

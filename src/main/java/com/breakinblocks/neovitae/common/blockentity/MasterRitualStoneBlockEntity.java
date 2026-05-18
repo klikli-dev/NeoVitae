@@ -25,12 +25,16 @@ import com.breakinblocks.neovitae.ritual.*;
 import com.breakinblocks.neovitae.util.helper.AnimaHelper;
 import com.breakinblocks.neovitae.common.NVSounds;
 import com.breakinblocks.neovitae.client.particle.ColoredParticleOptions;
+import com.breakinblocks.neovitae.client.sound.LoopSoundManager;
 import com.breakinblocks.neovitae.common.particle.NVParticles;
 import com.breakinblocks.neovitae.api.stream.StreamPresets;
+import com.breakinblocks.neovitae.ritual.RitualLayouts;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.sounds.SoundSource;
 
+import javax.annotation.Nullable;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
@@ -44,7 +48,7 @@ public class MasterRitualStoneBlockEntity extends BaseBlockEntity implements IMa
     private boolean inverted = false;
     private int cooldown = 0;
     private long runningTime = 0;
-    private SpiritusType activeWillConfig = SpiritusType.DEFAULT;
+    private SpiritusType activeSpiritusAspect = SpiritusType.RAW;
 
     private Map<String, AreaDescriptor> blockRanges = new HashMap<>();
 
@@ -58,7 +62,7 @@ public class MasterRitualStoneBlockEntity extends BaseBlockEntity implements IMa
     public static void tick(Level level, BlockPos pos, BlockState state, MasterRitualStoneBlockEntity tile) {
         if (level.isClientSide()) {
             if (tile.active && tile.currentRitual != null) {
-                com.breakinblocks.neovitae.client.sound.LoopSoundManager.tryStartLoop(
+                LoopSoundManager.tryStartLoop(
                         NVSounds.RITUAL_AMBIENT.get(), 0.2f, level, pos,
                         be -> be instanceof MasterRitualStoneBlockEntity mrs && mrs.active && mrs.currentRitual != null
                 );
@@ -232,7 +236,7 @@ public class MasterRitualStoneBlockEntity extends BaseBlockEntity implements IMa
      * Force activates a ritual without cost, structure check, or owner requirement.
      * Used for admin commands and testing.
      */
-    public void forceActivateRitual(Ritual ritual, @javax.annotation.Nullable Player player) {
+    public void forceActivateRitual(Ritual ritual, @Nullable Player player) {
         if (level == null || level.isClientSide()) return;
 
         if (active && currentRitual != null) {
@@ -349,10 +353,8 @@ public class MasterRitualStoneBlockEntity extends BaseBlockEntity implements IMa
         };
     }
 
-    private java.util.List<RitualComponent> getRitualComponents(Ritual ritual) {
-        java.util.List<RitualComponent> components = new java.util.ArrayList<>();
-        ritual.gatherComponents(components::add);
-        return components;
+    private List<RitualComponent> getRitualComponents(Ritual ritual) {
+        return RitualLayouts.get(getLevel(), ritual);
     }
 
     @Override
@@ -378,13 +380,13 @@ public class MasterRitualStoneBlockEntity extends BaseBlockEntity implements IMa
     }
 
     @Override
-    public SpiritusType getActiveWillConfig() {
-        return activeWillConfig;
+    public SpiritusType getActiveSpiritusAspect() {
+        return activeSpiritusAspect;
     }
 
     @Override
-    public void setActiveWillConfig(SpiritusType type) {
-        this.activeWillConfig = type;
+    public void setActiveSpiritusAspect(SpiritusType type) {
+        this.activeSpiritusAspect = type;
         setChanged();
     }
 
@@ -440,7 +442,7 @@ public class MasterRitualStoneBlockEntity extends BaseBlockEntity implements IMa
         tag.putInt("cooldown", cooldown);
         tag.putLong("runningTime", runningTime);
         tag.putString("direction", direction.getName());
-        tag.putString("willConfig", activeWillConfig.getSerializedName());
+        tag.putString("activeAspect", activeSpiritusAspect.getSerializedName());
 
         if (currentRitual != null && currentRitualId != null) {
             tag.putString("ritual", currentRitualId.toString());
@@ -484,11 +486,11 @@ public class MasterRitualStoneBlockEntity extends BaseBlockEntity implements IMa
             if (direction == null) direction = Direction.NORTH;
         }
 
-        if (tag.contains("willConfig")) {
+        if (tag.contains("activeAspect")) {
             try {
-                activeWillConfig = SpiritusType.valueOf(tag.getString("willConfig").toUpperCase());
+                activeSpiritusAspect = SpiritusType.valueOf(tag.getString("activeAspect").toUpperCase());
             } catch (IllegalArgumentException e) {
-                activeWillConfig = SpiritusType.DEFAULT;
+                activeSpiritusAspect = SpiritusType.RAW;
             }
         }
 

@@ -20,6 +20,8 @@ import net.neoforged.neoforge.fluids.FluidStack;
 import com.breakinblocks.neovitae.NeoVitae;
 import com.breakinblocks.neovitae.common.block.NVBlocks;
 import com.breakinblocks.neovitae.common.block.dungeon.DungeonBlocks;
+import com.breakinblocks.neovitae.common.block.dungeon.DungeonVariant;
+import com.breakinblocks.neovitae.common.datacomponent.SpiritusType;
 import com.breakinblocks.neovitae.common.fluid.NVFluids;
 import com.breakinblocks.neovitae.common.item.NVItems;
 import com.breakinblocks.neovitae.common.tag.NVTags;
@@ -30,11 +32,14 @@ import com.breakinblocks.neovitae.datagen.builder.TabulaVitaeRecipeBuilder;
 import com.breakinblocks.neovitae.datagen.builder.recipe.AthanorRecipeBuilder;
 import com.breakinblocks.neovitae.datagen.builder.recipe.AthanorPotionRecipeBuilder;
 import com.breakinblocks.neovitae.datagen.builder.recipe.AltarRecipeBuilder;
+import com.breakinblocks.neovitae.datagen.builder.recipe.ForgeSpiritusInfusionRecipeBuilder;
+import com.breakinblocks.neovitae.datagen.builder.recipe.ForgeTransformRecipeBuilder;
+import com.breakinblocks.neovitae.datagen.builder.recipe.ForgeUpgradeRecipeBuilder;
 import com.breakinblocks.neovitae.datagen.builder.recipe.HellfireForgeRecipeBuilder;
 import com.breakinblocks.neovitae.datagen.builder.recipe.TieredRecipeBuilder;
 import com.breakinblocks.neovitae.datagen.builder.recipe.MeteorRecipeBuilder;
 import com.breakinblocks.neovitae.datagen.builder.recipe.FlaskRecipeBuilder;
-import com.breakinblocks.neovitae.datagen.builder.recipe.LivingDowngradeRecipeBuilder;
+import com.breakinblocks.neovitae.datagen.builder.recipe.SentientDowngradeRecipeBuilder;
 import com.breakinblocks.neovitae.common.meteor.MeteorLayer;
 import com.breakinblocks.neovitae.common.effect.NVMobEffects;
 import net.minecraft.core.Holder;
@@ -65,12 +70,14 @@ public class NVRecipeProvider extends RecipeProvider {
         addTieredRecipes(output);
         addAraVitaeRecipes(output);
         addHellfireForgeRecipes(output);
+        addForgeUpgradeRecipes(output);
         addAlchemyArrayRecipes(output);
         addTabulaVitaeRecipes(output);
         addAthanorRecipes(output);
+        addDungeonRecipes(output);
         addMeteorRecipes(output);
         addFlaskRecipes(output);
-        addLivingDowngradeRecipes(output);
+        addSentientDowngradeRecipes(output);
     }
 
     private void addVanillaCraftingRecipes(RecipeOutput output) {
@@ -90,7 +97,7 @@ public class NVRecipeProvider extends RecipeProvider {
                 .pattern("s s")
                 .pattern("sfs")
                 .pattern("ggg")
-                .define('s', Tags.Items.STONES)
+                .define('s', NVTags.Items.VITAE_STONE)
                 .define('f', Items.FURNACE)
                 .define('g', Tags.Items.INGOTS_GOLD)
                 .unlockedBy("has_furnace", has(Items.FURNACE))
@@ -102,10 +109,10 @@ public class NVRecipeProvider extends RecipeProvider {
                 .pattern("sSs")
                 .pattern("sos")
                 .define('i', Tags.Items.INGOTS_IRON)
-                .define('s', Tags.Items.STONES)
-                .define('S', NVItems.SLATE_BLANK.get())
+                .define('s', NVTags.Items.VITAE_STONE)
+                .define('S', NVItems.TABULA_RASA.get())
                 .define('o', Tags.Items.STORAGE_BLOCKS_IRON)
-                .unlockedBy("has_blank_slate", has(NVItems.SLATE_BLANK.get()))
+                .unlockedBy("has_blank_slate", has(NVItems.TABULA_RASA.get()))
                 .save(output);
 
         // Bloodstone
@@ -122,7 +129,7 @@ public class NVRecipeProvider extends RecipeProvider {
         ShapedRecipeBuilder.shaped(RecipeCategory.BUILDING_BLOCKS, NVBlocks.BLOODSTONE_BRICK.block().get(), 4)
                 .pattern("ss")
                 .pattern("sb")
-                .define('s', Tags.Items.STONES)
+                .define('s', NVTags.Items.VITAE_STONE)
                 .define('b', NVItems.WEAK_BLOOD_SHARD.get())
                 .unlockedBy("has_weak_blood_shard", has(NVItems.WEAK_BLOOD_SHARD.get()))
                 .save(output);
@@ -237,10 +244,10 @@ public class NVRecipeProvider extends RecipeProvider {
                 .pattern("asa")
                 .pattern("aoa")
                 .pattern("aaa")
-                .define('a', Tags.Items.STONES)
-                .define('s', NVItems.SLATE_BLANK.get())
+                .define('a', NVTags.Items.VITAE_STONE)
+                .define('s', NVItems.TABULA_RASA.get())
                 .define('o', OrbTierIngredient.of(1))
-                .unlockedBy("has_blank_slate", has(NVItems.SLATE_BLANK.get()))
+                .unlockedBy("has_blank_slate", has(NVItems.TABULA_RASA.get()))
                 .save(output);
 
         // Speed Rune - stone(a), blank_slate(b), sugar(c), blank_rune(d) - NO orb
@@ -249,8 +256,8 @@ public class NVRecipeProvider extends RecipeProvider {
                 .pattern("aba")
                 .pattern("cdc")
                 .pattern("aba")
-                .define('a', Tags.Items.STONES)
-                .define('b', NVItems.SLATE_BLANK.get())
+                .define('a', NVTags.Items.VITAE_STONE)
+                .define('b', NVItems.TABULA_RASA.get())
                 .define('c', Items.SUGAR)
                 .define('d', NVBlocks.RUNE_BLANK.block().get())
                 .unlockedBy("has_blank_rune", has(NVBlocks.RUNE_BLANK.block().get()))
@@ -262,12 +269,12 @@ public class NVRecipeProvider extends RecipeProvider {
                 .pattern("aba")
                 .pattern("cdc")
                 .pattern("aea")
-                .define('a', Tags.Items.STONES)
-                .define('b', NVItems.SLATE_REINFORCED.get())
+                .define('a', NVTags.Items.VITAE_STONE)
+                .define('b', NVItems.TABULA_ROBUR.get())
                 .define('c', Tags.Items.INGOTS_GOLD)
                 .define('d', NVBlocks.RUNE_BLANK.block().get())
                 .define('e', OrbTierIngredient.of(2))
-                .unlockedBy("has_reinforced_slate", has(NVItems.SLATE_REINFORCED.get()))
+                .unlockedBy("has_reinforced_slate", has(NVItems.TABULA_ROBUR.get()))
                 .save(output);
 
         // Self-Sacrifice Rune - reinforced_slate(b), glowstone_dust(c), blank_rune(d), orb_tier_2(e)
@@ -276,12 +283,12 @@ public class NVRecipeProvider extends RecipeProvider {
                 .pattern("aba")
                 .pattern("cdc")
                 .pattern("aea")
-                .define('a', Tags.Items.STONES)
-                .define('b', NVItems.SLATE_REINFORCED.get())
+                .define('a', NVTags.Items.VITAE_STONE)
+                .define('b', NVItems.TABULA_ROBUR.get())
                 .define('c', Items.GLOWSTONE_DUST)
                 .define('d', NVBlocks.RUNE_BLANK.block().get())
                 .define('e', OrbTierIngredient.of(2))
-                .unlockedBy("has_reinforced_slate", has(NVItems.SLATE_REINFORCED.get()))
+                .unlockedBy("has_reinforced_slate", has(NVItems.TABULA_ROBUR.get()))
                 .save(output);
 
         // Capacity Rune - bucket(a), imbued_slate(d), blank_rune(c) - NO orb
@@ -290,11 +297,11 @@ public class NVRecipeProvider extends RecipeProvider {
                 .pattern("aba")
                 .pattern("bcb")
                 .pattern("ada")
-                .define('a', Tags.Items.STONES)
+                .define('a', NVTags.Items.VITAE_STONE)
                 .define('b', Items.BUCKET)
                 .define('c', NVBlocks.RUNE_BLANK.block().get())
-                .define('d', NVItems.SLATE_IMBUED.get())
-                .unlockedBy("has_imbued_slate", has(NVItems.SLATE_IMBUED.get()))
+                .define('d', NVItems.TABULA_ANIMATA.get())
+                .unlockedBy("has_imbued_slate", has(NVItems.TABULA_ANIMATA.get()))
                 .save(output);
 
         // Dislocation Rune - water_bucket(b), imbued_slate(d), blank_rune(c) - NO orb
@@ -303,11 +310,11 @@ public class NVRecipeProvider extends RecipeProvider {
                 .pattern("aba")
                 .pattern("bcb")
                 .pattern("ada")
-                .define('a', Tags.Items.STONES)
+                .define('a', NVTags.Items.VITAE_STONE)
                 .define('b', Items.WATER_BUCKET)
                 .define('c', NVBlocks.RUNE_BLANK.block().get())
-                .define('d', NVItems.SLATE_IMBUED.get())
-                .unlockedBy("has_imbued_slate", has(NVItems.SLATE_IMBUED.get()))
+                .define('d', NVItems.TABULA_ANIMATA.get())
+                .unlockedBy("has_imbued_slate", has(NVItems.TABULA_ANIMATA.get()))
                 .save(output);
 
         // Charging Rune - special pattern with demonic_slate, orb_tier_4
@@ -317,11 +324,11 @@ public class NVRecipeProvider extends RecipeProvider {
                 .pattern("GrG")
                 .pattern("ReR")
                 .define('R', Tags.Items.DUSTS_REDSTONE)
-                .define('s', NVItems.SLATE_DEMONIC.get())
+                .define('s', NVItems.TABULA_SPIRITUS.get())
                 .define('G', Tags.Items.DUSTS_GLOWSTONE)
                 .define('r', NVBlocks.RUNE_BLANK.block().get())
                 .define('e', OrbTierIngredient.of(4))
-                .unlockedBy("has_demonic_slate", has(NVItems.SLATE_DEMONIC.get()))
+                .unlockedBy("has_demonic_slate", has(NVItems.TABULA_SPIRITUS.get()))
                 .save(output);
 
         // Acceleration Rune - bucket(a), demonic_slate(b), gold(c), speed_rune(d), orb_tier_4(e)
@@ -331,7 +338,7 @@ public class NVRecipeProvider extends RecipeProvider {
                 .pattern("cdc")
                 .pattern("aea")
                 .define('a', Items.BUCKET)
-                .define('b', NVItems.SLATE_DEMONIC.get())
+                .define('b', NVItems.TABULA_SPIRITUS.get())
                 .define('c', Tags.Items.INGOTS_GOLD)
                 .define('d', NVBlocks.RUNE_SPEED.block().get())
                 .define('e', OrbTierIngredient.of(4))
@@ -345,7 +352,7 @@ public class NVRecipeProvider extends RecipeProvider {
                 .pattern("cdc")
                 .pattern("aea")
                 .define('a', Tags.Items.OBSIDIANS)
-                .define('b', NVItems.SLATE_DEMONIC.get())
+                .define('b', NVItems.TABULA_SPIRITUS.get())
                 .define('c', Items.BUCKET)
                 .define('d', NVBlocks.RUNE_CAPACITY.block().get())
                 .define('e', OrbTierIngredient.of(4))
@@ -358,7 +365,7 @@ public class NVRecipeProvider extends RecipeProvider {
                 .pattern("aba")
                 .pattern("cdc")
                 .pattern("aba")
-                .define('a', Tags.Items.STONES)
+                .define('a', NVTags.Items.VITAE_STONE)
                 .define('b', OrbTierIngredient.of(1))
                 .define('c', NVBlocks.RUNE_BLANK.block().get())
                 .define('d', OrbTierIngredient.of(4))
@@ -372,7 +379,7 @@ public class NVRecipeProvider extends RecipeProvider {
                 .pattern("hrh")
                 .pattern("ReR")
                 .define('R', Tags.Items.DUSTS_REDSTONE)
-                .define('s', NVItems.SLATE_ETHEREAL.get())
+                .define('s', NVItems.TABULA_AETHEREA.get())
                 .define('h', NVItems.HELLFORGED_PARTS.get())
                 .define('r', NVBlocks.RUNE_BLANK.block().get())
                 .define('e', OrbTierIngredient.of(5))
@@ -396,19 +403,19 @@ public class NVRecipeProvider extends RecipeProvider {
                 .pattern("nrn")
                 .define('n', Items.NETHERITE_SCRAP)
                 .define('r', NVBlocks.RUNE_EFFICIENCY.block().get())
-                .define('s', net.minecraft.tags.ItemTags.STONE_CRAFTING_MATERIALS)
+                .define('s', ItemTags.STONE_CRAFTING_MATERIALS)
                 .unlockedBy("has_efficiency_rune", has(NVBlocks.RUNE_EFFICIENCY.block().get()))
                 .save(output);
 
         // Crystal Cluster (Hellfire Forge)
         HellfireForgeRecipeBuilder.build(NVBlocks.CRYSTAL_CLUSTER.block().get())
                 .requires(Items.SCULK)
-                .requires(NVItems.SLATE_ETHEREAL.get())
+                .requires(NVItems.TABULA_AETHEREA.get())
                 .requires(NVItems.WEAK_BLOOD_SHARD.get())
                 .requires(Items.NETHER_STAR)
-                .minWill(2048)
+                .minSpiritus(2048)
                 .drain(1024)
-                .unlockedBy("has_ethereal_slate", has(NVItems.SLATE_ETHEREAL.get()))
+                .unlockedBy("has_ethereal_slate", has(NVItems.TABULA_AETHEREA.get()))
                 .save(output, NeoVitae.rl("crystal_cluster"));
 
         // Crystal Cluster Brick (from crystal cluster)
@@ -441,10 +448,10 @@ public class NVRecipeProvider extends RecipeProvider {
         ShapedRecipeBuilder.shaped(RecipeCategory.DECORATIONS, NVBlocks.INCENSE_ALTAR.block().get())
                 .pattern("s s")
                 .pattern("shs")
-                .pattern("coc")
-                .define('s', Tags.Items.STONES)
-                .define('h', Items.CHARCOAL)
-                .define('c', Tags.Items.COBBLESTONES)
+                .pattern("lol")
+                .define('s', NVTags.Items.VITAE_STONE)
+                .define('h', ItemTags.COALS)
+                .define('l', ItemTags.LOGS)
                 .define('o', OrbTierIngredient.of(1))
                 .unlockedBy("has_weak_orb", has(NVItems.ORB_WEAK.get()))
                 .save(output);
@@ -468,9 +475,9 @@ public class NVRecipeProvider extends RecipeProvider {
                 .pattern("scs")
                 .pattern("oso")
                 .define('o', Tags.Items.OBSIDIANS)
-                .define('s', NVItems.SLATE_REINFORCED.get())
+                .define('s', NVItems.TABULA_ROBUR.get())
                 .define('c', OrbTierIngredient.of(2))
-                .unlockedBy("has_reinforced_slate", has(NVItems.SLATE_REINFORCED.get()))
+                .unlockedBy("has_reinforced_slate", has(NVItems.TABULA_ROBUR.get()))
                 .save(output, NeoVitae.rl("ritual_stone_blank"));
 
         // Master Ritual Stone - obsidian around, ritual stones corners, tier 3+ orb center
@@ -491,7 +498,7 @@ public class NVRecipeProvider extends RecipeProvider {
                 .pattern("scs")
                 .pattern("oso")
                 .define('o', Tags.Items.OBSIDIANS)
-                .define('s', Tags.Items.STONES)
+                .define('s', NVTags.Items.VITAE_STONE)
                 .define('c', NVItems.ORB_WEAK.get())
                 .unlockedBy("has_weak_orb", has(NVItems.ORB_WEAK.get()))
                 .save(output, NeoVitae.rl("imperfect_ritual_stone"));
@@ -501,11 +508,11 @@ public class NVRecipeProvider extends RecipeProvider {
                 .pattern("gog")
                 .pattern("isi")
                 .pattern(" s ")
-                .define('s', NVItems.SLATE_DEMONIC.get())
+                .define('s', NVItems.TABULA_SPIRITUS.get())
                 .define('g', Tags.Items.GLASS_BLOCKS)
                 .define('i', Tags.Items.INGOTS_GOLD)
                 .define('o', OrbTierIngredient.of(4))
-                .unlockedBy("has_demonic_slate", has(NVItems.SLATE_DEMONIC.get()))
+                .unlockedBy("has_demonic_slate", has(NVItems.TABULA_SPIRITUS.get()))
                 .save(output);
 
         // Ritual Diviner (base) - diamonds, inscription tools, stick
@@ -527,10 +534,10 @@ public class NVRecipeProvider extends RecipeProvider {
                 .pattern(" S ")
                 .pattern("tdt")
                 .pattern(" S ")
-                .define('S', NVItems.SLATE_DEMONIC.get())
+                .define('S', NVItems.TABULA_SPIRITUS.get())
                 .define('t', NVItems.INSCRIPTION_TOOL_DUSK.get())
                 .define('d', NVItems.RITUAL_DIVINER.get())
-                .unlockedBy("has_demonic_slate", has(NVItems.SLATE_DEMONIC.get()))
+                .unlockedBy("has_demonic_slate", has(NVItems.TABULA_SPIRITUS.get()))
                 .save(output);
 
         // Incense Path Blocks
@@ -555,10 +562,10 @@ public class NVRecipeProvider extends RecipeProvider {
 
         // Stone Brick Path - 4x stone + tier 3+ orb
         ShapelessRecipeBuilder.shapeless(RecipeCategory.BUILDING_BLOCKS, DungeonBlocks.STONE_BRICK_PATH.block().get(), 4)
-                .requires(Ingredient.of(Tags.Items.STONES))
-                .requires(Ingredient.of(Tags.Items.STONES))
-                .requires(Ingredient.of(Tags.Items.STONES))
-                .requires(Ingredient.of(Tags.Items.STONES))
+                .requires(Ingredient.of(NVTags.Items.VITAE_STONE))
+                .requires(Ingredient.of(NVTags.Items.VITAE_STONE))
+                .requires(Ingredient.of(NVTags.Items.VITAE_STONE))
+                .requires(Ingredient.of(NVTags.Items.VITAE_STONE))
                 .requires(OrbTierIngredient.of(3))
                 .unlockedBy("has_magician_orb", has(NVItems.ORB_MAGICIAN.get()))
                 .save(output, NeoVitae.rl("path/path_stone_brick"));
@@ -702,69 +709,50 @@ public class NVRecipeProvider extends RecipeProvider {
                 .save(output, NeoVitae.rl("awakened_activation_crystal"));
 
         // Slates
-        AltarRecipeBuilder.build(NVItems.SLATE_BLANK.get())
-                .from(Tags.Items.STONES)
+        AltarRecipeBuilder.build(NVItems.TABULA_RASA.get())
+                .from(NVTags.Items.VITAE_STONE)
                 .minTier(0)
                 .bloodNeeded(1000)
                 .consumption(5)
                 .drain(5)
                 .unlockedBy("has_altar", has(NVBlocks.ARA_VITAE.block().get()))
-                .save(output, NeoVitae.rl("blank_slate"));
+                .save(output, NeoVitae.rl("tabula_rasa"));
 
-        AltarRecipeBuilder.build(NVItems.SLATE_REINFORCED.get())
-                .from(NVItems.SLATE_BLANK.get())
+        AltarRecipeBuilder.build(NVItems.TABULA_ROBUR.get())
+                .from(NVItems.TABULA_RASA.get())
                 .minTier(1)
                 .bloodNeeded(2000)
                 .consumption(5)
                 .drain(5)
-                .unlockedBy("has_blank_slate", has(NVItems.SLATE_BLANK.get()))
-                .save(output, NeoVitae.rl("reinforced_slate"));
+                .unlockedBy("has_blank_slate", has(NVItems.TABULA_RASA.get()))
+                .save(output, NeoVitae.rl("tabula_robur"));
 
-        AltarRecipeBuilder.build(NVItems.SLATE_IMBUED.get())
-                .from(NVItems.SLATE_REINFORCED.get())
+        AltarRecipeBuilder.build(NVItems.TABULA_ANIMATA.get())
+                .from(NVItems.TABULA_ROBUR.get())
                 .minTier(2)
                 .bloodNeeded(5000)
                 .consumption(15)
                 .drain(10)
-                .unlockedBy("has_reinforced_slate", has(NVItems.SLATE_REINFORCED.get()))
-                .save(output, NeoVitae.rl("imbued_slate"));
+                .unlockedBy("has_reinforced_slate", has(NVItems.TABULA_ROBUR.get()))
+                .save(output, NeoVitae.rl("tabula_animata"));
 
-        AltarRecipeBuilder.build(NVItems.SLATE_DEMONIC.get())
-                .from(NVItems.SLATE_IMBUED.get())
+        AltarRecipeBuilder.build(NVItems.TABULA_SPIRITUS.get())
+                .from(NVItems.TABULA_ANIMATA.get())
                 .minTier(3)
                 .bloodNeeded(15000)
                 .consumption(20)
                 .drain(20)
-                .unlockedBy("has_imbued_slate", has(NVItems.SLATE_IMBUED.get()))
-                .save(output, NeoVitae.rl("demonic_slate"));
+                .unlockedBy("has_imbued_slate", has(NVItems.TABULA_ANIMATA.get()))
+                .save(output, NeoVitae.rl("tabula_spiritus"));
 
-        AltarRecipeBuilder.build(NVItems.SLATE_ETHEREAL.get())
-                .from(NVItems.SLATE_DEMONIC.get())
+        AltarRecipeBuilder.build(NVItems.TABULA_AETHEREA.get())
+                .from(NVItems.TABULA_SPIRITUS.get())
                 .minTier(4)
                 .bloodNeeded(30000)
                 .consumption(40)
                 .drain(100)
-                .unlockedBy("has_demonic_slate", has(NVItems.SLATE_DEMONIC.get()))
-                .save(output, NeoVitae.rl("ethereal_slate"));
-
-        // Additional Ara Vitae recipes
-        AltarRecipeBuilder.build(NVItems.SPIRITUS_SNARE.get())
-                .from(Tags.Items.STRINGS)
-                .minTier(0)
-                .bloodNeeded(500)
-                .consumption(5)
-                .drain(1)
-                .unlockedBy("has_altar", has(NVBlocks.ARA_VITAE.block().get()))
-                .save(output, NeoVitae.rl("spiritus_snare"));
-
-        AltarRecipeBuilder.build(NVItems.DAGGER_OF_SACRIFICE.get())
-                .from(Items.IRON_SWORD)
-                .minTier(1)
-                .bloodNeeded(3000)
-                .consumption(5)
-                .drain(5)
-                .unlockedBy("has_altar", has(NVBlocks.ARA_VITAE.block().get()))
-                .save(output, NeoVitae.rl("dagger_of_sacrifice"));
+                .unlockedBy("has_demonic_slate", has(NVItems.TABULA_SPIRITUS.get()))
+                .save(output, NeoVitae.rl("tabula_aetherea"));
 
         AltarRecipeBuilder.build(NVFluids.ESSENTIA_VITAE_BUCKET.get())
                 .from(Items.BUCKET)
@@ -782,7 +770,7 @@ public class NVRecipeProvider extends RecipeProvider {
                 .bloodNeeded(2000)
                 .consumption(10)
                 .drain(10)
-                .unlockedBy("has_demonic_slate", has(NVItems.SLATE_DEMONIC.get()))
+                .unlockedBy("has_demonic_slate", has(NVItems.TABULA_SPIRITUS.get()))
                 .save(output, NeoVitae.rl("teleposer_focus"));
 
         // Enhanced Teleposer Focus - from teleposer focus on tier 3 altar
@@ -802,7 +790,7 @@ public class NVRecipeProvider extends RecipeProvider {
                 .bloodNeeded(1000)
                 .consumption(5)
                 .drain(5)
-                .unlockedBy("has_reinforced_slate", has(NVItems.SLATE_REINFORCED.get()))
+                .unlockedBy("has_reinforced_slate", has(NVItems.TABULA_ROBUR.get()))
                 .save(output, NeoVitae.rl("air_tool"));
 
         AltarRecipeBuilder.build(NVItems.INSCRIPTION_TOOL_FIRE.get())
@@ -811,7 +799,7 @@ public class NVRecipeProvider extends RecipeProvider {
                 .bloodNeeded(1000)
                 .consumption(5)
                 .drain(5)
-                .unlockedBy("has_reinforced_slate", has(NVItems.SLATE_REINFORCED.get()))
+                .unlockedBy("has_reinforced_slate", has(NVItems.TABULA_ROBUR.get()))
                 .save(output, NeoVitae.rl("fire_tool"));
 
         AltarRecipeBuilder.build(NVItems.INSCRIPTION_TOOL_WATER.get())
@@ -820,7 +808,7 @@ public class NVRecipeProvider extends RecipeProvider {
                 .bloodNeeded(1000)
                 .consumption(5)
                 .drain(5)
-                .unlockedBy("has_reinforced_slate", has(NVItems.SLATE_REINFORCED.get()))
+                .unlockedBy("has_reinforced_slate", has(NVItems.TABULA_ROBUR.get()))
                 .save(output, NeoVitae.rl("water_tool"));
 
         AltarRecipeBuilder.build(NVItems.INSCRIPTION_TOOL_EARTH.get())
@@ -829,7 +817,7 @@ public class NVRecipeProvider extends RecipeProvider {
                 .bloodNeeded(1000)
                 .consumption(5)
                 .drain(5)
-                .unlockedBy("has_reinforced_slate", has(NVItems.SLATE_REINFORCED.get()))
+                .unlockedBy("has_reinforced_slate", has(NVItems.TABULA_ROBUR.get()))
                 .save(output, NeoVitae.rl("earth_tool"));
 
         AltarRecipeBuilder.build(NVItems.INSCRIPTION_TOOL_DUSK.get())
@@ -838,7 +826,7 @@ public class NVRecipeProvider extends RecipeProvider {
                 .bloodNeeded(2000)
                 .consumption(20)
                 .drain(10)
-                .unlockedBy("has_demonic_slate", has(NVItems.SLATE_DEMONIC.get()))
+                .unlockedBy("has_demonic_slate", has(NVItems.TABULA_SPIRITUS.get()))
                 .save(output, NeoVitae.rl("dusk_tool"));
 
         // Alchemy Flask - glass bottle on tier 1 altar
@@ -852,7 +840,7 @@ public class NVRecipeProvider extends RecipeProvider {
                 .save(output, NeoVitae.rl("alchemy_flask"));
 
         AltarRecipeBuilder.build(NVItems.BLOOD_SWEAT_AND_TEARS.get())
-                .from(net.minecraft.tags.ItemTags.CREEPER_DROP_MUSIC_DISCS)
+                .from(ItemTags.CREEPER_DROP_MUSIC_DISCS)
                 .minTier(5)
                 .bloodNeeded(2000)
                 .consumption(5)
@@ -869,6 +857,16 @@ public class NVRecipeProvider extends RecipeProvider {
                 .drain(1)
                 .unlockedBy("has_altar", has(NVBlocks.ARA_VITAE.block().get()))
                 .save(output, NeoVitae.rl("sands_of_vitae"));
+
+        // Revenant Plate infusion - turns revenant plate into an empowered form via tier 4 altar
+        AltarRecipeBuilder.build(NVItems.REVENANT_PLATE.get())
+                .from(NVItems.GORE_CLOTTED_FANG.get())
+                .minTier(3)
+                .bloodNeeded(20000)
+                .consumption(25)
+                .drain(30)
+                .unlockedBy("has_gore_fang", has(NVItems.GORE_CLOTTED_FANG.get()))
+                .save(output, NeoVitae.rl("revenant_plate_infusion"));
     }
 
     private void addHellfireForgeRecipes(RecipeOutput output) {
@@ -878,7 +876,7 @@ public class NVRecipeProvider extends RecipeProvider {
                 .requires(Tags.Items.INGOTS_GOLD)
                 .requires(Tags.Items.GLASS_BLOCKS)
                 .requires(Tags.Items.GEMS_LAPIS)
-                .minWill(1)
+                .minSpiritus(1)
                 .drain(1)
                 .unlockedBy("has_raw_will", has(NVItems.RAW_SPIRITUS.get()))
                 .save(output, NeoVitae.rl("spiritus_gem_petty"));
@@ -889,7 +887,7 @@ public class NVRecipeProvider extends RecipeProvider {
                 .requires(Tags.Items.GEMS_DIAMOND)
                 .requires(Tags.Items.STORAGE_BLOCKS_REDSTONE)
                 .requires(Tags.Items.STORAGE_BLOCKS_LAPIS)
-                .minWill(60)
+                .minSpiritus(60)
                 .drain(20)
                 .unlockedBy("has_petty_gem", has(NVItems.SPIRITUS_GEM_PETTY.get()))
                 .save(output, NeoVitae.rl("spiritus_gem_lesser"));
@@ -899,8 +897,8 @@ public class NVRecipeProvider extends RecipeProvider {
                 .requires(NVItems.SPIRITUS_GEM_LESSER.get())
                 .requires(Tags.Items.GEMS_DIAMOND)
                 .requires(Tags.Items.STORAGE_BLOCKS_GOLD)
-                .requires(NVItems.SLATE_IMBUED.get())
-                .minWill(240)
+                .requires(NVItems.TABULA_ANIMATA.get())
+                .minSpiritus(240)
                 .drain(50)
                 .unlockedBy("has_lesser_gem", has(NVItems.SPIRITUS_GEM_LESSER.get()))
                 .save(output, NeoVitae.rl("spiritus_gem_common"));
@@ -908,10 +906,10 @@ public class NVRecipeProvider extends RecipeProvider {
         // Greater Soul Gem - common gem, demonic slate, weak blood shard, demon crystal
         HellfireForgeRecipeBuilder.build(NVItems.SPIRITUS_GEM_GREATER.get())
                 .requires(NVItems.SPIRITUS_GEM_COMMON.get())
-                .requires(NVItems.SLATE_DEMONIC.get())
+                .requires(NVItems.TABULA_SPIRITUS.get())
                 .requires(NVItems.WEAK_BLOOD_SHARD.get())
                 .requires(NVTags.Items.SPIRITUS_CRYSTALS)
-                .minWill(1000)
+                .minSpiritus(1000)
                 .drain(100)
                 .unlockedBy("has_common_gem", has(NVItems.SPIRITUS_GEM_COMMON.get()))
                 .save(output, NeoVitae.rl("spiritus_gem_greater"));
@@ -923,8 +921,8 @@ public class NVRecipeProvider extends RecipeProvider {
                 .pattern("sss")
                 .pattern("SoS")
                 .pattern("IfI")
-                .define('s', Tags.Items.STONES)
-                .define('S', NVItems.SLATE_IMBUED.get())
+                .define('s', NVTags.Items.VITAE_STONE)
+                .define('S', NVItems.TABULA_ANIMATA.get())
                 .define('o', OrbTierIngredient.of(3))
                 .define('I', Items.IRON_BLOCK)
                 .define('f', Items.FURNACE)
@@ -936,7 +934,7 @@ public class NVRecipeProvider extends RecipeProvider {
                 .pattern("cBc")
                 .pattern("coc")
                 .define('c', Tags.Items.COBBLESTONES)
-                .define('s', NVItems.SLATE_BLANK.get())
+                .define('s', NVItems.TABULA_RASA.get())
                 .define('B', Items.WATER_BUCKET)
                 .define('o', OrbTierIngredient.of(3))
                 .unlockedBy("has_magician_orb", has(NVItems.ORB_MAGICIAN.get()))
@@ -947,7 +945,7 @@ public class NVRecipeProvider extends RecipeProvider {
                 .pattern("cfc")
                 .pattern("coc")
                 .define('c', Tags.Items.COBBLESTONES)
-                .define('s', NVItems.SLATE_BLANK.get())
+                .define('s', NVItems.TABULA_RASA.get())
                 .define('f', Tags.Items.STORAGE_BLOCKS_COAL)
                 .define('o', OrbTierIngredient.of(3))
                 .unlockedBy("has_magician_orb", has(NVItems.ORB_MAGICIAN.get()))
@@ -957,171 +955,175 @@ public class NVRecipeProvider extends RecipeProvider {
         HellfireForgeRecipeBuilder.build(NVBlocks.BLOOD_TANK.block().get())
                 .requires(Items.GLASS, 3)
                 .requires(NVBlocks.BLOODSTONE.block().get())
-                .minWill(30)
+                .minSpiritus(30)
                 .drain(5)
                 .unlockedBy("has_bloodstone", has(NVBlocks.BLOODSTONE.block().get()))
                 .save(output, NeoVitae.rl("blood_tank"));
 
-        // TODO: Living Station - block not yet implemented
-        // HellfireForgeRecipeBuilder.build(NVBlocks.LIVING_STATION.block().get())
+        // TODO: Sentient Station - block not yet implemented
+        // HellfireForgeRecipeBuilder.build(NVBlocks.SENTIENT_STATION.block().get())
         //         .requires(NVBlocks.BLOODSTONE.block().get(), 2)
         //         .requires(Items.STONE, 2)
-        //         .minWill(50)
+        //         .minSpiritus(50)
         //         .drain(10)
         //         .unlockedBy("has_bloodstone", has(NVBlocks.BLOODSTONE.block().get()))
-        //         .save(output, NeoVitae.rl("living_station"));
+        //         .save(output, NeoVitae.rl("sentient_station"));
 
         // Training Bracelet
         HellfireForgeRecipeBuilder.build(NVItems.TRAINING_BRACELET.get())
                 .requires(Items.GOLD_INGOT, 2)
                 .requires(Items.STRING)
                 .requires(NVItems.RAW_SPIRITUS.get())
-                .minWill(10)
+                .minSpiritus(10)
                 .drain(5)
                 .unlockedBy("has_raw_will", has(NVItems.RAW_SPIRITUS.get()))
                 .save(output, NeoVitae.rl("training_bracelet"));
 
-        // Sentient Tools
-        HellfireForgeRecipeBuilder.build(NVItems.SENTIENT_SWORD.get())
-                .requires(NVItems.SPIRITUS_GEM_PETTY.get())
-                .requires(Items.IRON_SWORD)
-                .minWill(0)
-                .drain(0)
+        ForgeTransformRecipeBuilder.build(NVItems.SENTIENT_SWORD.get())
+                .transformInput(Items.IRON_SWORD)
+                .catalyst(NVItems.SPIRITUS_GEM_PETTY.get())
+                .minSpiritus(0).drain(0)
                 .unlockedBy("has_petty_gem", has(NVItems.SPIRITUS_GEM_PETTY.get()))
                 .save(output, NeoVitae.rl("sentient_sword"));
 
-        HellfireForgeRecipeBuilder.build(NVItems.SENTIENT_AXE.get())
-                .requires(NVItems.SPIRITUS_GEM_PETTY.get())
-                .requires(Items.IRON_AXE)
-                .minWill(0)
-                .drain(0)
+        ForgeTransformRecipeBuilder.build(NVItems.SENTIENT_AXE.get())
+                .transformInput(Items.IRON_AXE)
+                .catalyst(NVItems.SPIRITUS_GEM_PETTY.get())
+                .minSpiritus(0).drain(0)
                 .unlockedBy("has_petty_gem", has(NVItems.SPIRITUS_GEM_PETTY.get()))
                 .save(output, NeoVitae.rl("sentient_axe"));
 
-        HellfireForgeRecipeBuilder.build(NVItems.SENTIENT_PICKAXE.get())
-                .requires(NVItems.SPIRITUS_GEM_PETTY.get())
-                .requires(Items.IRON_PICKAXE)
-                .minWill(0)
-                .drain(0)
+        ForgeTransformRecipeBuilder.build(NVItems.SENTIENT_PICKAXE.get())
+                .transformInput(Items.IRON_PICKAXE)
+                .catalyst(NVItems.SPIRITUS_GEM_PETTY.get())
+                .minSpiritus(0).drain(0)
                 .unlockedBy("has_petty_gem", has(NVItems.SPIRITUS_GEM_PETTY.get()))
                 .save(output, NeoVitae.rl("sentient_pickaxe"));
 
-        HellfireForgeRecipeBuilder.build(NVItems.SENTIENT_SHOVEL.get())
-                .requires(NVItems.SPIRITUS_GEM_PETTY.get())
-                .requires(Items.IRON_SHOVEL)
-                .minWill(0)
-                .drain(0)
+        ForgeTransformRecipeBuilder.build(NVItems.SENTIENT_SHOVEL.get())
+                .transformInput(Items.IRON_SHOVEL)
+                .catalyst(NVItems.SPIRITUS_GEM_PETTY.get())
+                .minSpiritus(0).drain(0)
                 .unlockedBy("has_petty_gem", has(NVItems.SPIRITUS_GEM_PETTY.get()))
                 .save(output, NeoVitae.rl("sentient_shovel"));
 
-        HellfireForgeRecipeBuilder.build(NVItems.SENTIENT_SCYTHE.get())
-                .requires(NVItems.SPIRITUS_GEM_PETTY.get())
-                .requires(Items.IRON_HOE)
-                .minWill(0)
-                .drain(0)
+        ForgeTransformRecipeBuilder.build(NVItems.SENTIENT_SCYTHE.get())
+                .transformInput(Items.IRON_HOE)
+                .catalyst(NVItems.SPIRITUS_GEM_PETTY.get())
+                .minSpiritus(0).drain(0)
                 .unlockedBy("has_petty_gem", has(NVItems.SPIRITUS_GEM_PETTY.get()))
                 .save(output, NeoVitae.rl("sentient_scythe"));
+
+        HellfireForgeRecipeBuilder.build(NVItems.LEX_VITAE.get())
+                .requires(NVItems.SENTIENT_SWORD.get())
+                .requires(Items.NETHERITE_INGOT)
+                .requires(NVItems.SPIRITUS_GEM_GREATER.get())
+                .requires(NVItems.HELLFORGED_INGOT.get())
+                .minSpiritus(2000)
+                .drain(50)
+                .unlockedBy("has_greater_gem", has(NVItems.SPIRITUS_GEM_GREATER.get()))
+                .save(output, NeoVitae.rl("lex_vitae"));
 
         // Spiritus Blocks
         HellfireForgeRecipeBuilder.build(NVBlocks.VAS_MALEFICUM.block().get())
                 .requires(Items.CAULDRON)
-                .requires(Tags.Items.STONES)
+                .requires(NVTags.Items.VITAE_STONE)
                 .requires(Tags.Items.GEMS_LAPIS)
                 .requires(Tags.Items.GEMS_DIAMOND)
-                .minWill(400)
+                .minSpiritus(400)
                 .drain(100)
                 .unlockedBy("has_common_gem", has(NVItems.SPIRITUS_GEM_COMMON.get()))
                 .save(output, NeoVitae.rl("vas_maleficum"));
 
         HellfireForgeRecipeBuilder.build(NVBlocks.CRYSTALLARIUM_MALEFICUM.block().get())
                 .requires(NVBlocks.HELLFIRE_FORGE.block().get())
-                .requires(Tags.Items.STONES)
+                .requires(NVTags.Items.VITAE_STONE)
                 .requires(Tags.Items.GEMS_LAPIS)
                 .requires(Tags.Items.GLASS_BLOCKS)
-                .minWill(500)
+                .minSpiritus(500)
                 .drain(100)
                 .unlockedBy("has_hellfire_forge", has(NVBlocks.HELLFIRE_FORGE.block().get()))
                 .save(output, NeoVitae.rl("crystallarium_maleficum"));
 
         HellfireForgeRecipeBuilder.build(NVBlocks.SPIRA_INFERNALIS.block().get())
                 .requires(NVTags.Items.SPIRITUS_CRYSTALS)
-                .requires(Tags.Items.STONES)
+                .requires(NVTags.Items.VITAE_STONE)
                 .requires(Tags.Items.GEMS_LAPIS)
                 .requires(Tags.Items.STORAGE_BLOCKS_IRON)
-                .minWill(400)
+                .minSpiritus(400)
                 .drain(50)
-                .unlockedBy("has_spiritus_crystal", has(NVItems.RAW_CRYSTAL.get()))
+                .unlockedBy("has_spiritus_crystal", has(NVItems.RAW_SPIRITUS_CRYSTAL_ITEM.get()))
                 .save(output, NeoVitae.rl("spira_infernalis"));
 
         // Crystal Blocks
         HellfireForgeRecipeBuilder.build(NVBlocks.RAW_SPIRITUS_CRYSTAL.block().get())
-                .requires(NVItems.RAW_CRYSTAL.get(), 4)
-                .minWill(1200)
+                .requires(NVItems.RAW_SPIRITUS_CRYSTAL_ITEM.get(), 4)
+                .minSpiritus(1200)
                 .drain(100)
-                .unlockedBy("has_raw_crystal", has(NVItems.RAW_CRYSTAL.get()))
+                .unlockedBy("has_raw_crystal", has(NVItems.RAW_SPIRITUS_CRYSTAL_ITEM.get()))
                 .save(output, NeoVitae.rl("raw_spiritus_crystal"));
 
-        HellfireForgeRecipeBuilder.build(NVBlocks.CORROSIVE_SPIRITUS_CRYSTAL.block().get())
-                .requires(NVItems.CORROSIVE_CRYSTAL.get(), 4)
-                .minWill(1200)
+        HellfireForgeRecipeBuilder.build(NVBlocks.SPIRITUS_RUINA_CRYSTAL.block().get())
+                .requires(NVItems.SPIRITUS_RUINA_CRYSTAL_ITEM.get(), 4)
+                .minSpiritus(1200)
                 .drain(100)
-                .unlockedBy("has_corrosive_crystal", has(NVItems.CORROSIVE_CRYSTAL.get()))
+                .unlockedBy("has_corrosive_crystal", has(NVItems.SPIRITUS_RUINA_CRYSTAL_ITEM.get()))
                 .save(output, NeoVitae.rl("corrosive_spiritus_crystal"));
 
-        HellfireForgeRecipeBuilder.build(NVBlocks.DESTRUCTIVE_SPIRITUS_CRYSTAL.block().get())
-                .requires(NVItems.DESTRUCTIVE_CRYSTAL.get(), 4)
-                .minWill(1200)
+        HellfireForgeRecipeBuilder.build(NVBlocks.SPIRITUS_NIHILUM_CRYSTAL.block().get())
+                .requires(NVItems.SPIRITUS_NIHILUM_CRYSTAL_ITEM.get(), 4)
+                .minSpiritus(1200)
                 .drain(100)
-                .unlockedBy("has_destructive_crystal", has(NVItems.DESTRUCTIVE_CRYSTAL.get()))
+                .unlockedBy("has_destructive_crystal", has(NVItems.SPIRITUS_NIHILUM_CRYSTAL_ITEM.get()))
                 .save(output, NeoVitae.rl("destructive_spiritus_crystal"));
 
-        HellfireForgeRecipeBuilder.build(NVBlocks.VENGEFUL_SPIRITUS_CRYSTAL.block().get())
-                .requires(NVItems.VENGEFUL_CRYSTAL.get(), 4)
-                .minWill(1200)
+        HellfireForgeRecipeBuilder.build(NVBlocks.SPIRITUS_VINDICTA_CRYSTAL.block().get())
+                .requires(NVItems.SPIRITUS_VINDICTA_CRYSTAL_ITEM.get(), 4)
+                .minSpiritus(1200)
                 .drain(100)
-                .unlockedBy("has_vengeful_crystal", has(NVItems.VENGEFUL_CRYSTAL.get()))
+                .unlockedBy("has_vengeful_crystal", has(NVItems.SPIRITUS_VINDICTA_CRYSTAL_ITEM.get()))
                 .save(output, NeoVitae.rl("vengeful_spiritus_crystal"));
 
-        HellfireForgeRecipeBuilder.build(NVBlocks.STEADFAST_SPIRITUS_CRYSTAL.block().get())
-                .requires(NVItems.STEADFAST_CRYSTAL.get(), 4)
-                .minWill(1200)
+        HellfireForgeRecipeBuilder.build(NVBlocks.SPIRITUS_INVICTUS_CRYSTAL.block().get())
+                .requires(NVItems.SPIRITUS_INVICTUS_CRYSTAL_ITEM.get(), 4)
+                .minSpiritus(1200)
                 .drain(100)
-                .unlockedBy("has_steadfast_crystal", has(NVItems.STEADFAST_CRYSTAL.get()))
+                .unlockedBy("has_steadfast_crystal", has(NVItems.SPIRITUS_INVICTUS_CRYSTAL_ITEM.get()))
                 .save(output, NeoVitae.rl("steadfast_spiritus_crystal"));
 
         // Routing Nodes
-        HellfireForgeRecipeBuilder.build(NVBlocks.ROUTING_NODE.block().get())
-                .requires(Ingredient.of(Tags.Items.STONES), 2)
+        HellfireForgeRecipeBuilder.build(NVBlocks.ROUTING_CONDUIT.block().get())
+                .requires(Ingredient.of(NVTags.Items.VITAE_STONE), 2)
                 .requires(Tags.Items.INGOTS_IRON)
                 .requires(Tags.Items.GLASS_BLOCKS)
-                .minWill(100)
+                .minSpiritus(100)
                 .drain(5)
                 .unlockedBy("has_lesser_gem", has(NVItems.SPIRITUS_GEM_LESSER.get()))
-                .save(output, NeoVitae.rl("routing_node"));
+                .save(output, NeoVitae.rl("routing_conduit"));
 
         HellfireForgeRecipeBuilder.build(NVBlocks.INPUT_ROUTING_NODE.block().get())
-                .requires(NVBlocks.ROUTING_NODE.block().get())
+                .requires(NVBlocks.ROUTING_CONDUIT.block().get())
                 .requires(Items.HOPPER)
-                .minWill(200)
+                .minSpiritus(200)
                 .drain(10)
-                .unlockedBy("has_routing_node", has(NVBlocks.ROUTING_NODE.block().get()))
+                .unlockedBy("has_routing_node", has(NVBlocks.ROUTING_CONDUIT.block().get()))
                 .save(output, NeoVitae.rl("input_routing_node"));
 
         HellfireForgeRecipeBuilder.build(NVBlocks.OUTPUT_ROUTING_NODE.block().get())
-                .requires(NVBlocks.ROUTING_NODE.block().get())
+                .requires(NVBlocks.ROUTING_CONDUIT.block().get())
                 .requires(Items.DISPENSER)
-                .minWill(200)
+                .minSpiritus(200)
                 .drain(10)
-                .unlockedBy("has_routing_node", has(NVBlocks.ROUTING_NODE.block().get()))
+                .unlockedBy("has_routing_node", has(NVBlocks.ROUTING_CONDUIT.block().get()))
                 .save(output, NeoVitae.rl("output_routing_node"));
 
         HellfireForgeRecipeBuilder.build(NVBlocks.MASTER_ROUTING_NODE.block().get())
-                .requires(NVBlocks.ROUTING_NODE.block().get())
+                .requires(NVBlocks.ROUTING_CONDUIT.block().get())
                 .requires(Tags.Items.GEMS_DIAMOND)
                 .requires(Tags.Items.STORAGE_BLOCKS_LAPIS)
-                .minWill(400)
+                .minSpiritus(400)
                 .drain(25)
-                .unlockedBy("has_routing_node", has(NVBlocks.ROUTING_NODE.block().get()))
+                .unlockedBy("has_routing_node", has(NVBlocks.ROUTING_CONDUIT.block().get()))
                 .save(output, NeoVitae.rl("master_routing_node"));
 
         // Node Upgrades
@@ -1129,7 +1131,7 @@ public class NVRecipeProvider extends RecipeProvider {
                 .requires(Ingredient.of(Tags.Items.INGOTS_IRON), 2)
                 .requires(Tags.Items.GLASS_BLOCKS)
                 .requires(Tags.Items.STORAGE_BLOCKS_LAPIS)
-                .minWill(400)
+                .minSpiritus(400)
                 .drain(50)
                 .unlockedBy("has_master_routing_node", has(NVBlocks.MASTER_ROUTING_NODE.block().get()))
                 .save(output, NeoVitae.rl("master_node_upgrade"));
@@ -1138,19 +1140,19 @@ public class NVRecipeProvider extends RecipeProvider {
                 .requires(Ingredient.of(Tags.Items.INGOTS_GOLD), 2)
                 .requires(Tags.Items.GLASS_BLOCKS)
                 .requires(Tags.Items.STORAGE_BLOCKS_REDSTONE)
-                .minWill(400)
+                .minSpiritus(400)
                 .drain(50)
                 .unlockedBy("has_master_routing_node", has(NVBlocks.MASTER_ROUTING_NODE.block().get()))
                 .save(output, NeoVitae.rl("master_node_upgrade_speed"));
 
         // Node Router
         HellfireForgeRecipeBuilder.build(NVItems.NODE_ROUTER.get())
-                .requires(Ingredient.of(Tags.Items.STONES), 2)
+                .requires(Ingredient.of(NVTags.Items.VITAE_STONE), 2)
                 .requires(Tags.Items.INGOTS_IRON)
                 .requires(Tags.Items.DUSTS_REDSTONE)
-                .minWill(50)
+                .minSpiritus(50)
                 .drain(5)
-                .unlockedBy("has_routing_node", has(NVBlocks.ROUTING_NODE.block().get()))
+                .unlockedBy("has_routing_node", has(NVBlocks.ROUTING_CONDUIT.block().get()))
                 .save(output, NeoVitae.rl("node_router"));
 
         // Spiritus Gauge
@@ -1159,39 +1161,39 @@ public class NVRecipeProvider extends RecipeProvider {
                 .requires(Tags.Items.DUSTS_REDSTONE)
                 .requires(Tags.Items.GLASS_BLOCKS)
                 .requires(NVTags.Items.SPIRITUS_CRYSTALS)
-                .minWill(400)
+                .minSpiritus(400)
                 .drain(50)
-                .unlockedBy("has_spiritus_crystal", has(NVItems.RAW_CRYSTAL.get()))
+                .unlockedBy("has_spiritus_crystal", has(NVItems.RAW_SPIRITUS_CRYSTAL_ITEM.get()))
                 .save(output, NeoVitae.rl("spiritus_gauge"));
 
         // Sanguine Reverter (soul forge recipe)
         HellfireForgeRecipeBuilder.build(NVItems.SANGUINE_REVERTER.get())
                 .requires(Items.SHEARS)
-                .requires(Tags.Items.STONES)
-                .requires(NVItems.SLATE_IMBUED.get())
+                .requires(NVTags.Items.VITAE_STONE)
+                .requires(NVItems.TABULA_ANIMATA.get())
                 .requires(Tags.Items.INGOTS_IRON)
-                .minWill(350)
+                .minSpiritus(350)
                 .drain(30)
-                .unlockedBy("has_imbued_slate", has(NVItems.SLATE_IMBUED.get()))
+                .unlockedBy("has_imbued_slate", has(NVItems.TABULA_ANIMATA.get()))
                 .save(output, NeoVitae.rl("sanguine_reverter"));
 
         // Resonator (soul forge recipe)
         HellfireForgeRecipeBuilder.build(NVItems.RESONATOR.get())
-                .requires(Tags.Items.STONES)
+                .requires(NVTags.Items.VITAE_STONE)
                 .requires(Tags.Items.INGOTS_COPPER)
-                .requires(NVItems.RAW_CRYSTAL.get())
-                .minWill(1200)
+                .requires(NVItems.RAW_SPIRITUS_CRYSTAL_ITEM.get())
+                .minSpiritus(1200)
                 .drain(100)
-                .unlockedBy("has_raw_crystal", has(NVItems.RAW_CRYSTAL.get()))
+                .unlockedBy("has_raw_crystal", has(NVItems.RAW_SPIRITUS_CRYSTAL_ITEM.get()))
                 .save(output, NeoVitae.rl("resonator"));
 
         // Primitive Crystalline Resonator
         HellfireForgeRecipeBuilder.build(NVItems.PRIMITIVE_CRYSTALLINE_RESONATOR.get())
                 .requires(Tags.Items.GEMS_AMETHYST)
                 .requires(Tags.Items.INGOTS)
-                .requires(NVItems.RAW_CRYSTAL.get())
+                .requires(NVItems.RAW_SPIRITUS_CRYSTAL_ITEM.get())
                 .requires(NVItems.TAU_OIL.get())
-                .minWill(1200)
+                .minSpiritus(1200)
                 .drain(200)
                 .unlockedBy("has_tau_oil", has(NVItems.TAU_OIL.get()))
                 .save(output, NeoVitae.rl("primitive_resonator"));
@@ -1200,28 +1202,29 @@ public class NVRecipeProvider extends RecipeProvider {
         HellfireForgeRecipeBuilder.build(NVItems.HELLFORGED_RESONATOR.get())
                 .requires(Tags.Items.GEMS_AMETHYST)
                 .requires(Tags.Items.INGOTS_GOLD)
-                .requires(NVItems.RAW_CRYSTAL.get())
+                .requires(NVItems.RAW_SPIRITUS_CRYSTAL_ITEM.get())
                 .requires(NVItems.HELLFORGED_INGOT.get())
-                .minWill(1200)
+                .minSpiritus(1200)
                 .drain(400)
                 .unlockedBy("has_hellforged_ingot", has(NVItems.HELLFORGED_INGOT.get()))
                 .save(output, NeoVitae.rl("hellforged_resonator"));
 
         // Throwing Daggers
-        // Iron throwing dagger: 2 iron + 1 string, 32 will min, 5 drain, makes 16
-        HellfireForgeRecipeBuilder.build(NVItems.THROWING_DAGGER.get(), 16)
-                .requires(Ingredient.of(Tags.Items.INGOTS_IRON), 2)
-                .requires(Tags.Items.STRINGS)
-                .minWill(32)
-                .drain(5)
-                .unlockedBy("has_lesser_gem", has(NVItems.SPIRITUS_GEM_LESSER.get()))
-                .save(output, NeoVitae.rl("throwing_dagger"));
+        // Iron throwing dagger: 2 iron + 1 string, 500 EV, T1 orb, makes 16
+        TabulaVitaeRecipeBuilder.build(new ItemStack(NVItems.THROWING_DAGGER.get(), 16))
+                .input(Tags.Items.INGOTS_IRON)
+                .input(Tags.Items.INGOTS_IRON)
+                .input(Tags.Items.STRINGS)
+                .syphon(500)
+                .ticks(200)
+                .minimumTier(1)
+                .save(output, "throwing_dagger");
 
         // Amethyst throwing dagger: 2 copper + 1 amethyst, 32 will min, 2 drain, makes 16
         HellfireForgeRecipeBuilder.build(NVItems.THROWING_DAGGER_AMETHYST.get(), 16)
                 .requires(Ingredient.of(Tags.Items.INGOTS_COPPER), 2)
                 .requires(Tags.Items.GEMS_AMETHYST)
-                .minWill(32)
+                .minSpiritus(32)
                 .drain(2)
                 .unlockedBy("has_lesser_gem", has(NVItems.SPIRITUS_GEM_LESSER.get()))
                 .save(output, NeoVitae.rl("throwing_dagger_amethyst"));
@@ -1230,7 +1233,7 @@ public class NVRecipeProvider extends RecipeProvider {
         HellfireForgeRecipeBuilder.build(NVItems.THROWING_DAGGER_SYRINGE.get())
                 .requires(NVItems.THROWING_DAGGER_AMETHYST.get())
                 .requires(Items.GLASS_BOTTLE)
-                .minWill(200)
+                .minSpiritus(200)
                 .drain(10)
                 .unlockedBy("has_amethyst_dagger", has(NVItems.THROWING_DAGGER_AMETHYST.get()))
                 .save(output, NeoVitae.rl("throwing_dagger_syringe"));
@@ -1239,7 +1242,7 @@ public class NVRecipeProvider extends RecipeProvider {
         HellfireForgeRecipeBuilder.build(NVItems.SIMPLE_KEY.get())
                 .requires(Ingredient.of(Tags.Items.INGOTS_IRON), 2)
                 .requires(Tags.Items.NUGGETS_GOLD)
-                .minWill(100)
+                .minSpiritus(100)
                 .drain(10)
                 .unlockedBy("has_lesser_gem", has(NVItems.SPIRITUS_GEM_LESSER.get()))
                 .save(output, NeoVitae.rl("simple_key"));
@@ -1247,63 +1250,63 @@ public class NVRecipeProvider extends RecipeProvider {
         HellfireForgeRecipeBuilder.build(NVItems.MINE_KEY.get())
                 .requires(Ingredient.of(Tags.Items.INGOTS_GOLD), 2)
                 .requires(Tags.Items.GEMS_DIAMOND)
-                .minWill(200)
+                .minSpiritus(200)
                 .drain(25)
                 .unlockedBy("has_common_gem", has(NVItems.SPIRITUS_GEM_COMMON.get()))
                 .save(output, NeoVitae.rl("mine_key"));
 
         // Crystal Catalysts - nether_wart + tau_oil + sulfur + unique_seed
         // Raw catalyst uses potato
-        HellfireForgeRecipeBuilder.build(NVItems.RAW_CRYSTAL_CATALYST.get())
+        HellfireForgeRecipeBuilder.build(NVItems.RAW_SPIRITUS_CATALYST.get())
                 .requires(Tags.Items.CROPS_NETHER_WART)
                 .requires(NVItems.TAU_OIL.get())
                 .requires(NVTags.Items.DUSTS_SULFUR)
                 .requires(Items.POTATO)
-                .minWill(400)
+                .minSpiritus(400)
                 .drain(20)
                 .unlockedBy("has_tau_oil", has(NVItems.TAU_OIL.get()))
                 .save(output, NeoVitae.rl("raw_catalyst"));
 
         // Corrosive catalyst uses wheat_seeds
-        HellfireForgeRecipeBuilder.build(NVItems.CORROSIVE_CRYSTAL_CATALYST.get())
+        HellfireForgeRecipeBuilder.build(NVItems.SPIRITUS_RUINA_CATALYST.get())
                 .requires(Tags.Items.CROPS_NETHER_WART)
                 .requires(NVItems.TAU_OIL.get())
                 .requires(NVTags.Items.DUSTS_SULFUR)
                 .requires(Items.WHEAT_SEEDS)
-                .minWill(400)
+                .minSpiritus(400)
                 .drain(20)
                 .unlockedBy("has_tau_oil", has(NVItems.TAU_OIL.get()))
                 .save(output, NeoVitae.rl("corrosive_catalyst"));
 
         // Destructive catalyst uses beetroot
-        HellfireForgeRecipeBuilder.build(NVItems.DESTRUCTIVE_CRYSTAL_CATALYST.get())
+        HellfireForgeRecipeBuilder.build(NVItems.SPIRITUS_NIHILUM_CATALYST.get())
                 .requires(Tags.Items.CROPS_NETHER_WART)
                 .requires(NVItems.TAU_OIL.get())
                 .requires(NVTags.Items.DUSTS_SULFUR)
                 .requires(Items.BEETROOT)
-                .minWill(400)
+                .minSpiritus(400)
                 .drain(20)
                 .unlockedBy("has_tau_oil", has(NVItems.TAU_OIL.get()))
                 .save(output, NeoVitae.rl("destructive_catalyst"));
 
         // Vengeful catalyst uses melon_seeds
-        HellfireForgeRecipeBuilder.build(NVItems.VENGEFUL_CRYSTAL_CATALYST.get())
+        HellfireForgeRecipeBuilder.build(NVItems.SPIRITUS_VINDICTA_CATALYST.get())
                 .requires(Tags.Items.CROPS_NETHER_WART)
                 .requires(NVItems.TAU_OIL.get())
                 .requires(NVTags.Items.DUSTS_SULFUR)
                 .requires(Items.MELON_SEEDS)
-                .minWill(400)
+                .minSpiritus(400)
                 .drain(20)
                 .unlockedBy("has_tau_oil", has(NVItems.TAU_OIL.get()))
                 .save(output, NeoVitae.rl("vengeful_catalyst"));
 
         // Steadfast catalyst uses pumpkin_seeds
-        HellfireForgeRecipeBuilder.build(NVItems.STEADFAST_CRYSTAL_CATALYST.get())
+        HellfireForgeRecipeBuilder.build(NVItems.SPIRITUS_INVICTUS_CATALYST.get())
                 .requires(Tags.Items.CROPS_NETHER_WART)
                 .requires(NVItems.TAU_OIL.get())
                 .requires(NVTags.Items.DUSTS_SULFUR)
                 .requires(Items.PUMPKIN_SEEDS)
-                .minWill(400)
+                .minSpiritus(400)
                 .drain(20)
                 .unlockedBy("has_tau_oil", has(NVItems.TAU_OIL.get()))
                 .save(output, NeoVitae.rl("steadfast_catalyst"));
@@ -1313,8 +1316,8 @@ public class NVRecipeProvider extends RecipeProvider {
                 .requires(Tags.Items.COBBLESTONES)
                 .requires(Items.CHARCOAL)
                 .requires(Tags.Items.SANDS)
-                .requires(Tags.Items.STONES)
-                .minWill(10)
+                .requires(NVTags.Items.VITAE_STONE)
+                .minSpiritus(10)
                 .drain(0.5)
                 .unlockedBy("has_charcoal", has(Items.CHARCOAL))
                 .save(output, NeoVitae.rl("shaped_charge"));
@@ -1324,7 +1327,7 @@ public class NVRecipeProvider extends RecipeProvider {
                 .requires(Items.CHARCOAL)
                 .requires(ItemTags.LOGS)
                 .requires(ItemTags.PLANKS)
-                .minWill(10)
+                .minSpiritus(10)
                 .drain(0.5)
                 .unlockedBy("has_charcoal", has(Items.CHARCOAL))
                 .save(output, NeoVitae.rl("deforester_charge"));
@@ -1334,7 +1337,7 @@ public class NVRecipeProvider extends RecipeProvider {
                 .requires(Items.CHARCOAL)
                 .requires(Tags.Items.SANDSTONE_BLOCKS)
                 .requires(Tags.Items.SANDS)
-                .minWill(10)
+                .minSpiritus(10)
                 .drain(0.5)
                 .unlockedBy("has_charcoal", has(Items.CHARCOAL))
                 .save(output, NeoVitae.rl("veinmine_charge"));
@@ -1344,7 +1347,7 @@ public class NVRecipeProvider extends RecipeProvider {
                 .requires(Items.CHARCOAL)
                 .requires(ItemTags.CRIMSON_STEMS)
                 .requires(Tags.Items.MUSHROOMS)
-                .minWill(10)
+                .minSpiritus(10)
                 .drain(0.5)
                 .unlockedBy("has_charcoal", has(Items.CHARCOAL))
                 .save(output, NeoVitae.rl("fungal_charge"));
@@ -1355,7 +1358,7 @@ public class NVRecipeProvider extends RecipeProvider {
                 .requires(Items.CHARCOAL)
                 .requires(Tags.Items.SANDS)
                 .requires(Items.BRICK)
-                .minWill(80)
+                .minSpiritus(80)
                 .drain(2.5)
                 .unlockedBy("has_copper_block", has(Tags.Items.STORAGE_BLOCKS_COPPER))
                 .save(output, NeoVitae.rl("aug_shaped_charge"));
@@ -1365,7 +1368,7 @@ public class NVRecipeProvider extends RecipeProvider {
                 .requires(Items.CHARCOAL)
                 .requires(ItemTags.LOGS)
                 .requires(ItemTags.PLANKS)
-                .minWill(80)
+                .minSpiritus(80)
                 .drain(2.5)
                 .unlockedBy("has_copper_block", has(Tags.Items.STORAGE_BLOCKS_COPPER))
                 .save(output, NeoVitae.rl("deforester_charge_2"));
@@ -1375,7 +1378,7 @@ public class NVRecipeProvider extends RecipeProvider {
                 .requires(Items.CHARCOAL)
                 .requires(Tags.Items.SANDSTONE_BLOCKS)
                 .requires(Tags.Items.SANDS)
-                .minWill(80)
+                .minSpiritus(80)
                 .drain(2.5)
                 .unlockedBy("has_copper_block", has(Tags.Items.STORAGE_BLOCKS_COPPER))
                 .save(output, NeoVitae.rl("veinmine_charge_2"));
@@ -1385,7 +1388,7 @@ public class NVRecipeProvider extends RecipeProvider {
                 .requires(Items.CHARCOAL)
                 .requires(ItemTags.CRIMSON_STEMS)
                 .requires(Tags.Items.MUSHROOMS)
-                .minWill(80)
+                .minSpiritus(80)
                 .drain(2.5)
                 .unlockedBy("has_copper_block", has(Tags.Items.STORAGE_BLOCKS_COPPER))
                 .save(output, NeoVitae.rl("fungal_charge_2"));
@@ -1394,8 +1397,8 @@ public class NVRecipeProvider extends RecipeProvider {
                 .requires(Tags.Items.STORAGE_BLOCKS_COPPER)
                 .requires(Items.CHARCOAL)
                 .requires(Tags.Items.SANDS)
-                .requires(Tags.Items.STONES)
-                .minWill(80)
+                .requires(NVTags.Items.VITAE_STONE)
+                .minSpiritus(80)
                 .drain(2.5)
                 .unlockedBy("has_copper_block", has(Tags.Items.STORAGE_BLOCKS_COPPER))
                 .save(output, NeoVitae.rl("shaped_charge_deep"));
@@ -1407,7 +1410,7 @@ public class NVRecipeProvider extends RecipeProvider {
                 .requires(Ingredient.of(Tags.Items.CROPS_NETHER_WART))
                 .requires(Ingredient.of(Tags.Items.DUSTS_REDSTONE))
                 .requires(Ingredient.of(NVTags.Items.DUSTS_COAL))
-                .minWill(60).drain(1.0)
+                .minSpiritus(60).drain(1.0)
                 .withAnointment("neovitae:fortune", 1, 1)
                 .unlockedBy("has_shaped_charge", has(NVBlocks.SHAPED_CHARGE.item().get()))
                 .save(output, NeoVitae.rl("shaped_charge_fortune_1"));
@@ -1417,7 +1420,7 @@ public class NVRecipeProvider extends RecipeProvider {
                 .requires(Ingredient.of(Tags.Items.CROPS_NETHER_WART))
                 .requires(Items.COBWEB)
                 .requires(Ingredient.of(Tags.Items.NUGGETS_GOLD))
-                .minWill(60).drain(1.0)
+                .minSpiritus(60).drain(1.0)
                 .withAnointment("neovitae:silk_touch", 1, 1)
                 .unlockedBy("has_shaped_charge", has(NVBlocks.SHAPED_CHARGE.item().get()))
                 .save(output, NeoVitae.rl("shaped_charge_silk_touch"));
@@ -1427,7 +1430,7 @@ public class NVRecipeProvider extends RecipeProvider {
                 .requires(Ingredient.of(Tags.Items.CROPS_NETHER_WART))
                 .requires(Items.FURNACE)
                 .requires(Items.CHARCOAL)
-                .minWill(60).drain(1.0)
+                .minSpiritus(60).drain(1.0)
                 .withAnointment("neovitae:smelting", 1, 1)
                 .unlockedBy("has_shaped_charge", has(NVBlocks.SHAPED_CHARGE.item().get()))
                 .save(output, NeoVitae.rl("shaped_charge_smelting"));
@@ -1437,7 +1440,7 @@ public class NVRecipeProvider extends RecipeProvider {
                 .requires(Ingredient.of(Tags.Items.CROPS_NETHER_WART))
                 .requires(Items.NETHERRACK)
                 .requires(Items.COBBLED_DEEPSLATE)
-                .minWill(60).drain(1.0)
+                .minSpiritus(60).drain(1.0)
                 .withAnointment("neovitae:voiding", 1, 1)
                 .unlockedBy("has_shaped_charge", has(NVBlocks.SHAPED_CHARGE.item().get()))
                 .save(output, NeoVitae.rl("shaped_charge_voiding"));
@@ -1448,7 +1451,7 @@ public class NVRecipeProvider extends RecipeProvider {
                 .requires(Ingredient.of(Tags.Items.CROPS_NETHER_WART))
                 .requires(Ingredient.of(Tags.Items.DUSTS_REDSTONE))
                 .requires(Ingredient.of(NVTags.Items.DUSTS_COAL))
-                .minWill(60).drain(1.0)
+                .minSpiritus(60).drain(1.0)
                 .withAnointment("neovitae:fortune", 1, 1)
                 .unlockedBy("has_deforester_charge", has(NVBlocks.DEFORESTER_CHARGE.item().get()))
                 .save(output, NeoVitae.rl("deforester_charge_fortune_1"));
@@ -1458,7 +1461,7 @@ public class NVRecipeProvider extends RecipeProvider {
                 .requires(Ingredient.of(Tags.Items.CROPS_NETHER_WART))
                 .requires(Items.COBWEB)
                 .requires(Ingredient.of(Tags.Items.NUGGETS_GOLD))
-                .minWill(60).drain(1.0)
+                .minSpiritus(60).drain(1.0)
                 .withAnointment("neovitae:silk_touch", 1, 1)
                 .unlockedBy("has_deforester_charge", has(NVBlocks.DEFORESTER_CHARGE.item().get()))
                 .save(output, NeoVitae.rl("deforester_charge_silk_touch"));
@@ -1468,7 +1471,7 @@ public class NVRecipeProvider extends RecipeProvider {
                 .requires(Ingredient.of(Tags.Items.CROPS_NETHER_WART))
                 .requires(Items.FURNACE)
                 .requires(Items.CHARCOAL)
-                .minWill(60).drain(1.0)
+                .minSpiritus(60).drain(1.0)
                 .withAnointment("neovitae:smelting", 1, 1)
                 .unlockedBy("has_deforester_charge", has(NVBlocks.DEFORESTER_CHARGE.item().get()))
                 .save(output, NeoVitae.rl("deforester_charge_smelting"));
@@ -1478,7 +1481,7 @@ public class NVRecipeProvider extends RecipeProvider {
                 .requires(Ingredient.of(Tags.Items.CROPS_NETHER_WART))
                 .requires(Items.NETHERRACK)
                 .requires(Items.COBBLED_DEEPSLATE)
-                .minWill(60).drain(1.0)
+                .minSpiritus(60).drain(1.0)
                 .withAnointment("neovitae:voiding", 1, 1)
                 .unlockedBy("has_deforester_charge", has(NVBlocks.DEFORESTER_CHARGE.item().get()))
                 .save(output, NeoVitae.rl("deforester_charge_voiding"));
@@ -1489,7 +1492,7 @@ public class NVRecipeProvider extends RecipeProvider {
                 .requires(Ingredient.of(Tags.Items.CROPS_NETHER_WART))
                 .requires(Ingredient.of(Tags.Items.DUSTS_REDSTONE))
                 .requires(Ingredient.of(NVTags.Items.DUSTS_COAL))
-                .minWill(60).drain(1.0)
+                .minSpiritus(60).drain(1.0)
                 .withAnointment("neovitae:fortune", 1, 1)
                 .unlockedBy("has_veinmine_charge", has(NVBlocks.VEINMINE_CHARGE.item().get()))
                 .save(output, NeoVitae.rl("veinmine_charge_fortune_1"));
@@ -1499,7 +1502,7 @@ public class NVRecipeProvider extends RecipeProvider {
                 .requires(Ingredient.of(Tags.Items.CROPS_NETHER_WART))
                 .requires(Items.COBWEB)
                 .requires(Ingredient.of(Tags.Items.NUGGETS_GOLD))
-                .minWill(60).drain(1.0)
+                .minSpiritus(60).drain(1.0)
                 .withAnointment("neovitae:silk_touch", 1, 1)
                 .unlockedBy("has_veinmine_charge", has(NVBlocks.VEINMINE_CHARGE.item().get()))
                 .save(output, NeoVitae.rl("veinmine_charge_silk_touch"));
@@ -1509,7 +1512,7 @@ public class NVRecipeProvider extends RecipeProvider {
                 .requires(Ingredient.of(Tags.Items.CROPS_NETHER_WART))
                 .requires(Items.FURNACE)
                 .requires(Items.CHARCOAL)
-                .minWill(60).drain(1.0)
+                .minSpiritus(60).drain(1.0)
                 .withAnointment("neovitae:smelting", 1, 1)
                 .unlockedBy("has_veinmine_charge", has(NVBlocks.VEINMINE_CHARGE.item().get()))
                 .save(output, NeoVitae.rl("veinmine_charge_smelting"));
@@ -1519,7 +1522,7 @@ public class NVRecipeProvider extends RecipeProvider {
                 .requires(Ingredient.of(Tags.Items.CROPS_NETHER_WART))
                 .requires(Items.NETHERRACK)
                 .requires(Items.COBBLED_DEEPSLATE)
-                .minWill(60).drain(1.0)
+                .minSpiritus(60).drain(1.0)
                 .withAnointment("neovitae:voiding", 1, 1)
                 .unlockedBy("has_veinmine_charge", has(NVBlocks.VEINMINE_CHARGE.item().get()))
                 .save(output, NeoVitae.rl("veinmine_charge_voiding"));
@@ -1530,7 +1533,7 @@ public class NVRecipeProvider extends RecipeProvider {
                 .requires(Ingredient.of(Tags.Items.CROPS_NETHER_WART))
                 .requires(Ingredient.of(Tags.Items.DUSTS_REDSTONE))
                 .requires(Ingredient.of(NVTags.Items.DUSTS_COAL))
-                .minWill(60).drain(1.0)
+                .minSpiritus(60).drain(1.0)
                 .withAnointment("neovitae:fortune", 1, 1)
                 .unlockedBy("has_fungal_charge", has(NVBlocks.FUNGAL_CHARGE.item().get()))
                 .save(output, NeoVitae.rl("fungal_charge_fortune_1"));
@@ -1540,7 +1543,7 @@ public class NVRecipeProvider extends RecipeProvider {
                 .requires(Ingredient.of(Tags.Items.CROPS_NETHER_WART))
                 .requires(Items.COBWEB)
                 .requires(Ingredient.of(Tags.Items.NUGGETS_GOLD))
-                .minWill(60).drain(1.0)
+                .minSpiritus(60).drain(1.0)
                 .withAnointment("neovitae:silk_touch", 1, 1)
                 .unlockedBy("has_fungal_charge", has(NVBlocks.FUNGAL_CHARGE.item().get()))
                 .save(output, NeoVitae.rl("fungal_charge_silk_touch"));
@@ -1550,7 +1553,7 @@ public class NVRecipeProvider extends RecipeProvider {
                 .requires(Ingredient.of(Tags.Items.CROPS_NETHER_WART))
                 .requires(Items.FURNACE)
                 .requires(Items.CHARCOAL)
-                .minWill(60).drain(1.0)
+                .minSpiritus(60).drain(1.0)
                 .withAnointment("neovitae:smelting", 1, 1)
                 .unlockedBy("has_fungal_charge", has(NVBlocks.FUNGAL_CHARGE.item().get()))
                 .save(output, NeoVitae.rl("fungal_charge_smelting"));
@@ -1560,7 +1563,7 @@ public class NVRecipeProvider extends RecipeProvider {
                 .requires(Ingredient.of(Tags.Items.CROPS_NETHER_WART))
                 .requires(Items.NETHERRACK)
                 .requires(Items.COBBLED_DEEPSLATE)
-                .minWill(60).drain(1.0)
+                .minSpiritus(60).drain(1.0)
                 .withAnointment("neovitae:voiding", 1, 1)
                 .unlockedBy("has_fungal_charge", has(NVBlocks.FUNGAL_CHARGE.item().get()))
                 .save(output, NeoVitae.rl("fungal_charge_voiding"));
@@ -1570,7 +1573,7 @@ public class NVRecipeProvider extends RecipeProvider {
         HellfireForgeRecipeBuilder.build(NVBlocks.AUG_SHAPED_CHARGE.item().get())
                 .requires(NVBlocks.AUG_SHAPED_CHARGE.item().get())
                 .requires(NVItems.FORTUNE_ANOINTMENT_L.get())
-                .minWill(300).drain(4.0)
+                .minSpiritus(300).drain(4.0)
                 .withAnointment("neovitae:fortune", 1, 1)
                 .unlockedBy("has_aug_shaped_charge", has(NVBlocks.AUG_SHAPED_CHARGE.item().get()))
                 .save(output, NeoVitae.rl("aug_shaped_charge_fortune_1_l"));
@@ -1578,7 +1581,7 @@ public class NVRecipeProvider extends RecipeProvider {
         HellfireForgeRecipeBuilder.build(NVBlocks.AUG_SHAPED_CHARGE.item().get())
                 .requires(NVBlocks.AUG_SHAPED_CHARGE.item().get())
                 .requires(NVItems.FORTUNE_ANOINTMENT_2.get())
-                .minWill(300).drain(4.0)
+                .minSpiritus(300).drain(4.0)
                 .withAnointment("neovitae:fortune", 2, 1)
                 .unlockedBy("has_aug_shaped_charge", has(NVBlocks.AUG_SHAPED_CHARGE.item().get()))
                 .save(output, NeoVitae.rl("aug_shaped_charge_fortune_2_l"));
@@ -1586,7 +1589,7 @@ public class NVRecipeProvider extends RecipeProvider {
         HellfireForgeRecipeBuilder.build(NVBlocks.AUG_SHAPED_CHARGE.item().get())
                 .requires(NVBlocks.AUG_SHAPED_CHARGE.item().get())
                 .requires(NVItems.SILK_TOUCH_ANOINTMENT_L.get())
-                .minWill(300).drain(4.0)
+                .minSpiritus(300).drain(4.0)
                 .withAnointment("neovitae:silk_touch", 1, 1)
                 .unlockedBy("has_aug_shaped_charge", has(NVBlocks.AUG_SHAPED_CHARGE.item().get()))
                 .save(output, NeoVitae.rl("aug_shaped_charge_silk_touch_l"));
@@ -1594,7 +1597,7 @@ public class NVRecipeProvider extends RecipeProvider {
         HellfireForgeRecipeBuilder.build(NVBlocks.AUG_SHAPED_CHARGE.item().get())
                 .requires(NVBlocks.AUG_SHAPED_CHARGE.item().get())
                 .requires(NVItems.SMELTING_ANOINTMENT_L.get())
-                .minWill(300).drain(4.0)
+                .minSpiritus(300).drain(4.0)
                 .withAnointment("neovitae:smelting", 1, 1)
                 .unlockedBy("has_aug_shaped_charge", has(NVBlocks.AUG_SHAPED_CHARGE.item().get()))
                 .save(output, NeoVitae.rl("aug_shaped_charge_smelting_l"));
@@ -1602,7 +1605,7 @@ public class NVRecipeProvider extends RecipeProvider {
         HellfireForgeRecipeBuilder.build(NVBlocks.AUG_SHAPED_CHARGE.item().get())
                 .requires(NVBlocks.AUG_SHAPED_CHARGE.item().get())
                 .requires(NVItems.VOIDING_ANOINTMENT.get())
-                .minWill(300).drain(4.0)
+                .minSpiritus(300).drain(4.0)
                 .withAnointment("neovitae:voiding", 1, 1)
                 .unlockedBy("has_aug_shaped_charge", has(NVBlocks.AUG_SHAPED_CHARGE.item().get()))
                 .save(output, NeoVitae.rl("aug_shaped_charge_voiding"));
@@ -1611,7 +1614,7 @@ public class NVRecipeProvider extends RecipeProvider {
         HellfireForgeRecipeBuilder.build(NVBlocks.SHAPED_CHARGE_DEEP.item().get())
                 .requires(NVBlocks.SHAPED_CHARGE_DEEP.item().get())
                 .requires(NVItems.FORTUNE_ANOINTMENT_L.get())
-                .minWill(300).drain(4.0)
+                .minSpiritus(300).drain(4.0)
                 .withAnointment("neovitae:fortune", 1, 1)
                 .unlockedBy("has_shaped_charge_deep", has(NVBlocks.SHAPED_CHARGE_DEEP.item().get()))
                 .save(output, NeoVitae.rl("shaped_charge_deep_fortune_1_l"));
@@ -1619,7 +1622,7 @@ public class NVRecipeProvider extends RecipeProvider {
         HellfireForgeRecipeBuilder.build(NVBlocks.SHAPED_CHARGE_DEEP.item().get())
                 .requires(NVBlocks.SHAPED_CHARGE_DEEP.item().get())
                 .requires(NVItems.FORTUNE_ANOINTMENT_2.get())
-                .minWill(300).drain(4.0)
+                .minSpiritus(300).drain(4.0)
                 .withAnointment("neovitae:fortune", 2, 1)
                 .unlockedBy("has_shaped_charge_deep", has(NVBlocks.SHAPED_CHARGE_DEEP.item().get()))
                 .save(output, NeoVitae.rl("shaped_charge_deep_fortune_2_l"));
@@ -1627,7 +1630,7 @@ public class NVRecipeProvider extends RecipeProvider {
         HellfireForgeRecipeBuilder.build(NVBlocks.SHAPED_CHARGE_DEEP.item().get())
                 .requires(NVBlocks.SHAPED_CHARGE_DEEP.item().get())
                 .requires(NVItems.SILK_TOUCH_ANOINTMENT_L.get())
-                .minWill(300).drain(4.0)
+                .minSpiritus(300).drain(4.0)
                 .withAnointment("neovitae:silk_touch", 1, 1)
                 .unlockedBy("has_shaped_charge_deep", has(NVBlocks.SHAPED_CHARGE_DEEP.item().get()))
                 .save(output, NeoVitae.rl("shaped_charge_deep_silk_touch_l"));
@@ -1635,7 +1638,7 @@ public class NVRecipeProvider extends RecipeProvider {
         HellfireForgeRecipeBuilder.build(NVBlocks.SHAPED_CHARGE_DEEP.item().get())
                 .requires(NVBlocks.SHAPED_CHARGE_DEEP.item().get())
                 .requires(NVItems.SMELTING_ANOINTMENT_L.get())
-                .minWill(300).drain(4.0)
+                .minSpiritus(300).drain(4.0)
                 .withAnointment("neovitae:smelting", 1, 1)
                 .unlockedBy("has_shaped_charge_deep", has(NVBlocks.SHAPED_CHARGE_DEEP.item().get()))
                 .save(output, NeoVitae.rl("shaped_charge_deep_smelting_l"));
@@ -1643,7 +1646,7 @@ public class NVRecipeProvider extends RecipeProvider {
         HellfireForgeRecipeBuilder.build(NVBlocks.SHAPED_CHARGE_DEEP.item().get())
                 .requires(NVBlocks.SHAPED_CHARGE_DEEP.item().get())
                 .requires(NVItems.VOIDING_ANOINTMENT.get())
-                .minWill(300).drain(4.0)
+                .minSpiritus(300).drain(4.0)
                 .withAnointment("neovitae:voiding", 1, 1)
                 .unlockedBy("has_shaped_charge_deep", has(NVBlocks.SHAPED_CHARGE_DEEP.item().get()))
                 .save(output, NeoVitae.rl("shaped_charge_deep_voiding"));
@@ -1652,7 +1655,7 @@ public class NVRecipeProvider extends RecipeProvider {
         HellfireForgeRecipeBuilder.build(NVBlocks.DEFORESTER_CHARGE_2.item().get())
                 .requires(NVBlocks.DEFORESTER_CHARGE_2.item().get())
                 .requires(NVItems.FORTUNE_ANOINTMENT_L.get())
-                .minWill(300).drain(4.0)
+                .minSpiritus(300).drain(4.0)
                 .withAnointment("neovitae:fortune", 1, 1)
                 .unlockedBy("has_deforester_charge_2", has(NVBlocks.DEFORESTER_CHARGE_2.item().get()))
                 .save(output, NeoVitae.rl("deforester_charge_2_fortune_1_l"));
@@ -1660,7 +1663,7 @@ public class NVRecipeProvider extends RecipeProvider {
         HellfireForgeRecipeBuilder.build(NVBlocks.DEFORESTER_CHARGE_2.item().get())
                 .requires(NVBlocks.DEFORESTER_CHARGE_2.item().get())
                 .requires(NVItems.FORTUNE_ANOINTMENT_2.get())
-                .minWill(300).drain(4.0)
+                .minSpiritus(300).drain(4.0)
                 .withAnointment("neovitae:fortune", 2, 1)
                 .unlockedBy("has_deforester_charge_2", has(NVBlocks.DEFORESTER_CHARGE_2.item().get()))
                 .save(output, NeoVitae.rl("deforester_charge_2_fortune_2_l"));
@@ -1668,7 +1671,7 @@ public class NVRecipeProvider extends RecipeProvider {
         HellfireForgeRecipeBuilder.build(NVBlocks.DEFORESTER_CHARGE_2.item().get())
                 .requires(NVBlocks.DEFORESTER_CHARGE_2.item().get())
                 .requires(NVItems.SILK_TOUCH_ANOINTMENT_L.get())
-                .minWill(300).drain(4.0)
+                .minSpiritus(300).drain(4.0)
                 .withAnointment("neovitae:silk_touch", 1, 1)
                 .unlockedBy("has_deforester_charge_2", has(NVBlocks.DEFORESTER_CHARGE_2.item().get()))
                 .save(output, NeoVitae.rl("deforester_charge_2_silk_touch_l"));
@@ -1676,7 +1679,7 @@ public class NVRecipeProvider extends RecipeProvider {
         HellfireForgeRecipeBuilder.build(NVBlocks.DEFORESTER_CHARGE_2.item().get())
                 .requires(NVBlocks.DEFORESTER_CHARGE_2.item().get())
                 .requires(NVItems.SMELTING_ANOINTMENT_L.get())
-                .minWill(300).drain(4.0)
+                .minSpiritus(300).drain(4.0)
                 .withAnointment("neovitae:smelting", 1, 1)
                 .unlockedBy("has_deforester_charge_2", has(NVBlocks.DEFORESTER_CHARGE_2.item().get()))
                 .save(output, NeoVitae.rl("deforester_charge_2_smelting_l"));
@@ -1684,7 +1687,7 @@ public class NVRecipeProvider extends RecipeProvider {
         HellfireForgeRecipeBuilder.build(NVBlocks.DEFORESTER_CHARGE_2.item().get())
                 .requires(NVBlocks.DEFORESTER_CHARGE_2.item().get())
                 .requires(NVItems.VOIDING_ANOINTMENT.get())
-                .minWill(300).drain(4.0)
+                .minSpiritus(300).drain(4.0)
                 .withAnointment("neovitae:voiding", 1, 1)
                 .unlockedBy("has_deforester_charge_2", has(NVBlocks.DEFORESTER_CHARGE_2.item().get()))
                 .save(output, NeoVitae.rl("deforester_charge_2_voiding"));
@@ -1693,7 +1696,7 @@ public class NVRecipeProvider extends RecipeProvider {
         HellfireForgeRecipeBuilder.build(NVBlocks.VEINMINE_CHARGE_2.item().get())
                 .requires(NVBlocks.VEINMINE_CHARGE_2.item().get())
                 .requires(NVItems.FORTUNE_ANOINTMENT_L.get())
-                .minWill(300).drain(4.0)
+                .minSpiritus(300).drain(4.0)
                 .withAnointment("neovitae:fortune", 1, 1)
                 .unlockedBy("has_veinmine_charge_2", has(NVBlocks.VEINMINE_CHARGE_2.item().get()))
                 .save(output, NeoVitae.rl("veinmine_charge_2_fortune_1_l"));
@@ -1701,7 +1704,7 @@ public class NVRecipeProvider extends RecipeProvider {
         HellfireForgeRecipeBuilder.build(NVBlocks.VEINMINE_CHARGE_2.item().get())
                 .requires(NVBlocks.VEINMINE_CHARGE_2.item().get())
                 .requires(NVItems.FORTUNE_ANOINTMENT_2.get())
-                .minWill(300).drain(4.0)
+                .minSpiritus(300).drain(4.0)
                 .withAnointment("neovitae:fortune", 2, 1)
                 .unlockedBy("has_veinmine_charge_2", has(NVBlocks.VEINMINE_CHARGE_2.item().get()))
                 .save(output, NeoVitae.rl("veinmine_charge_2_fortune_2_l"));
@@ -1709,7 +1712,7 @@ public class NVRecipeProvider extends RecipeProvider {
         HellfireForgeRecipeBuilder.build(NVBlocks.VEINMINE_CHARGE_2.item().get())
                 .requires(NVBlocks.VEINMINE_CHARGE_2.item().get())
                 .requires(NVItems.SILK_TOUCH_ANOINTMENT_L.get())
-                .minWill(300).drain(4.0)
+                .minSpiritus(300).drain(4.0)
                 .withAnointment("neovitae:silk_touch", 1, 1)
                 .unlockedBy("has_veinmine_charge_2", has(NVBlocks.VEINMINE_CHARGE_2.item().get()))
                 .save(output, NeoVitae.rl("veinmine_charge_2_silk_touch_l"));
@@ -1717,7 +1720,7 @@ public class NVRecipeProvider extends RecipeProvider {
         HellfireForgeRecipeBuilder.build(NVBlocks.VEINMINE_CHARGE_2.item().get())
                 .requires(NVBlocks.VEINMINE_CHARGE_2.item().get())
                 .requires(NVItems.SMELTING_ANOINTMENT_L.get())
-                .minWill(300).drain(4.0)
+                .minSpiritus(300).drain(4.0)
                 .withAnointment("neovitae:smelting", 1, 1)
                 .unlockedBy("has_veinmine_charge_2", has(NVBlocks.VEINMINE_CHARGE_2.item().get()))
                 .save(output, NeoVitae.rl("veinmine_charge_2_smelting_l"));
@@ -1725,7 +1728,7 @@ public class NVRecipeProvider extends RecipeProvider {
         HellfireForgeRecipeBuilder.build(NVBlocks.VEINMINE_CHARGE_2.item().get())
                 .requires(NVBlocks.VEINMINE_CHARGE_2.item().get())
                 .requires(NVItems.VOIDING_ANOINTMENT.get())
-                .minWill(300).drain(4.0)
+                .minSpiritus(300).drain(4.0)
                 .withAnointment("neovitae:voiding", 1, 1)
                 .unlockedBy("has_veinmine_charge_2", has(NVBlocks.VEINMINE_CHARGE_2.item().get()))
                 .save(output, NeoVitae.rl("veinmine_charge_2_voiding"));
@@ -1734,7 +1737,7 @@ public class NVRecipeProvider extends RecipeProvider {
         HellfireForgeRecipeBuilder.build(NVBlocks.FUNGAL_CHARGE_2.item().get())
                 .requires(NVBlocks.FUNGAL_CHARGE_2.item().get())
                 .requires(NVItems.FORTUNE_ANOINTMENT_L.get())
-                .minWill(300).drain(4.0)
+                .minSpiritus(300).drain(4.0)
                 .withAnointment("neovitae:fortune", 1, 1)
                 .unlockedBy("has_fungal_charge_2", has(NVBlocks.FUNGAL_CHARGE_2.item().get()))
                 .save(output, NeoVitae.rl("fungal_charge_2_fortune_1_l"));
@@ -1742,7 +1745,7 @@ public class NVRecipeProvider extends RecipeProvider {
         HellfireForgeRecipeBuilder.build(NVBlocks.FUNGAL_CHARGE_2.item().get())
                 .requires(NVBlocks.FUNGAL_CHARGE_2.item().get())
                 .requires(NVItems.FORTUNE_ANOINTMENT_2.get())
-                .minWill(300).drain(4.0)
+                .minSpiritus(300).drain(4.0)
                 .withAnointment("neovitae:fortune", 2, 1)
                 .unlockedBy("has_fungal_charge_2", has(NVBlocks.FUNGAL_CHARGE_2.item().get()))
                 .save(output, NeoVitae.rl("fungal_charge_2_fortune_2_l"));
@@ -1750,7 +1753,7 @@ public class NVRecipeProvider extends RecipeProvider {
         HellfireForgeRecipeBuilder.build(NVBlocks.FUNGAL_CHARGE_2.item().get())
                 .requires(NVBlocks.FUNGAL_CHARGE_2.item().get())
                 .requires(NVItems.SILK_TOUCH_ANOINTMENT_L.get())
-                .minWill(300).drain(4.0)
+                .minSpiritus(300).drain(4.0)
                 .withAnointment("neovitae:silk_touch", 1, 1)
                 .unlockedBy("has_fungal_charge_2", has(NVBlocks.FUNGAL_CHARGE_2.item().get()))
                 .save(output, NeoVitae.rl("fungal_charge_2_silk_touch_l"));
@@ -1758,7 +1761,7 @@ public class NVRecipeProvider extends RecipeProvider {
         HellfireForgeRecipeBuilder.build(NVBlocks.FUNGAL_CHARGE_2.item().get())
                 .requires(NVBlocks.FUNGAL_CHARGE_2.item().get())
                 .requires(NVItems.SMELTING_ANOINTMENT_L.get())
-                .minWill(300).drain(4.0)
+                .minSpiritus(300).drain(4.0)
                 .withAnointment("neovitae:smelting", 1, 1)
                 .unlockedBy("has_fungal_charge_2", has(NVBlocks.FUNGAL_CHARGE_2.item().get()))
                 .save(output, NeoVitae.rl("fungal_charge_2_smelting_l"));
@@ -1766,10 +1769,79 @@ public class NVRecipeProvider extends RecipeProvider {
         HellfireForgeRecipeBuilder.build(NVBlocks.FUNGAL_CHARGE_2.item().get())
                 .requires(NVBlocks.FUNGAL_CHARGE_2.item().get())
                 .requires(NVItems.VOIDING_ANOINTMENT.get())
-                .minWill(300).drain(4.0)
+                .minSpiritus(300).drain(4.0)
                 .withAnointment("neovitae:voiding", 1, 1)
                 .unlockedBy("has_fungal_charge_2", has(NVBlocks.FUNGAL_CHARGE_2.item().get()))
                 .save(output, NeoVitae.rl("fungal_charge_2_voiding"));
+
+        // === Demon drop crafted items ===
+
+        // Vitae Morsel - Tainted Flesh + Weak Blood Shard in forge
+        HellfireForgeRecipeBuilder.build(NVItems.VITAE_MORSEL.get(), 4)
+                .requires(NVItems.TAINTED_FLESH.get())
+                .requires(NVItems.TAINTED_FLESH.get())
+                .requires(NVItems.WEAK_BLOOD_SHARD.get())
+                .requires(NVItems.GORE_CLOTTED_FANG.get())
+                .minSpiritus(200)
+                .drain(20)
+                .unlockedBy("has_tainted_flesh", has(NVItems.TAINTED_FLESH.get()))
+                .save(output, NeoVitae.rl("vitae_morsel"));
+
+        // Bottled Spite - Ectoplasmic Residue + Glass Bottle + Venomgland Sac
+        HellfireForgeRecipeBuilder.build(NVItems.BOTTLED_SPITE.get(), 2)
+                .requires(NVItems.ECTOPLASMIC_RESIDUE.get())
+                .requires(NVItems.VENOMGLAND_SAC.get())
+                .requires(Items.GLASS_BOTTLE)
+                .requires(NVItems.HOLLOW_GUT.get())
+                .minSpiritus(300)
+                .drain(30)
+                .unlockedBy("has_ectoplasmic_residue", has(NVItems.ECTOPLASMIC_RESIDUE.get()))
+                .save(output, NeoVitae.rl("bottled_spite"));
+
+        // Demonite Trim Ingot - Demonite Fragment + Animus Mote
+        HellfireForgeRecipeBuilder.build(NVItems.DEMONITE_TRIM_INGOT.get())
+                .requires(NVItems.DEMONITE_FRAGMENT.get())
+                .requires(NVItems.DEMONITE_FRAGMENT.get())
+                .requires(NVItems.ANIMUS_MOTE.get())
+                .requires(NVItems.WEAK_BLOOD_SHARD.get())
+                .minSpiritus(500)
+                .drain(50)
+                .unlockedBy("has_animus_mote", has(NVItems.ANIMUS_MOTE.get()))
+                .save(output, NeoVitae.rl("demonite_trim_ingot"));
+
+        // Blight Whetstone - Blight Marrow + Corrosive Crystal Catalyst
+        HellfireForgeRecipeBuilder.build(NVItems.BLIGHT_WHETSTONE.get())
+                .requires(NVItems.BLIGHT_MARROW.get())
+                .requires(NVItems.BLIGHT_MARROW.get())
+                .requires(NVItems.SPIRITUS_RUINA_CATALYST.get())
+                .requires(NVItems.TABULA_SPIRITUS.get())
+                .minSpiritus(800)
+                .drain(80)
+                .requiredWillType(SpiritusType.RUINA)
+                .unlockedBy("has_blight_marrow", has(NVItems.BLIGHT_MARROW.get()))
+                .save(output, NeoVitae.rl("blight_whetstone"));
+
+        // Sigil of the Damned - Cinder Heart Fragment + Permafrost Core + Greater Spiritus Gem + Demonic Slate
+        HellfireForgeRecipeBuilder.build(NVItems.SIGIL_DAMNED.get())
+                .requires(NVItems.CINDER_HEART_FRAGMENT.get())
+                .requires(NVItems.PERMAFROST_CORE.get())
+                .requires(NVItems.SPIRITUS_GEM_GREATER.get())
+                .requires(NVItems.TABULA_SPIRITUS.get())
+                .minSpiritus(2000)
+                .drain(200)
+                .unlockedBy("has_cinder_heart", has(NVItems.CINDER_HEART_FRAGMENT.get()))
+                .save(output, NeoVitae.rl("sigil_damned"));
+
+        // Grand Soul Gem - now requires Animus Mote as a demon dungeon ingredient
+        HellfireForgeRecipeBuilder.build(NVItems.SPIRITUS_GEM_GRAND.get())
+                .requires(NVItems.SPIRITUS_GEM_GREATER.get())
+                .requires(NVItems.ANIMUS_MOTE.get())
+                .requires(NVItems.TABULA_AETHEREA.get())
+                .requires(NVItems.PERMAFROST_CORE.get())
+                .minSpiritus(4000)
+                .drain(400)
+                .unlockedBy("has_greater_gem", has(NVItems.SPIRITUS_GEM_GREATER.get()))
+                .save(output, NeoVitae.rl("spiritus_gem_grand"));
     }
 
     // Helper methods
@@ -1782,148 +1854,181 @@ public class NVRecipeProvider extends RecipeProvider {
                 .define('n', Items.NETHERITE_SCRAP)
                 .define('h', NVItems.HELLFORGED_PARTS.get())
                 .define('r', tier1Rune)
-                .define('s', net.minecraft.tags.ItemTags.STONE_CRAFTING_MATERIALS)
+                .define('s', ItemTags.STONE_CRAFTING_MATERIALS)
                 .unlockedBy("has_tier1_rune", has(tier1Rune))
                 .save(output);
+    }
+
+    private void addForgeUpgradeRecipes(RecipeOutput output) {
+        ForgeUpgradeRecipeBuilder.build()
+                .catalyst(NVItems.TABULA_ROBUR.get())
+                .catalyst(Items.LAPIS_LAZULI)
+                .catalyst(Items.NETHER_WART)
+                .minSpiritus(200)
+                .drain(400)
+                .unlockedBy("has_reinforced_slate", has(NVItems.TABULA_ROBUR.get()))
+                .save(output, NeoVitae.rl("blood_mending"));
+
+        AthanorRecipeBuilder.build(NVTags.Items.RESONATOR)
+                .input(NVItems.TABULA_ROBUR.get())
+                .input(Ingredient.of(Items.ROTTEN_FLESH))
+                .input(Ingredient.of(Items.BONE))
+                .fluidInput(new FluidStack(NVFluids.ESSENTIA_VITAE_SOURCE.get(), 1000))
+                .spiritusCost(SpiritusType.RAW, 20.0)
+                .guaranteedOutput(new ItemStack(NVItems.SIGIL_NECROMANCY.get()))
+                .save(output, NeoVitae.rl("sigil_necromancy"));
+
+        ForgeSpiritusInfusionRecipeBuilder.build()
+                .gemInput(NVTags.Items.SPIRITUS_GEM)
+                .minSpiritus(1)
+                .drain(0)
+                .unlockedBy("has_spiritus_gem", has(NVTags.Items.SPIRITUS_GEM))
+                .save(output, NeoVitae.rl("spiritus_infusion"));
     }
 
     private void addAlchemyArrayRecipes(RecipeOutput output) {
         // Divination Sigil - base: redstone, added: blank slate
         AlchemyArrayRecipeBuilder.build(NVItems.SIGIL_DIVINATION.get())
                 .base(Items.REDSTONE)
-                .added(NVItems.SLATE_BLANK.get())
+                .added(NVItems.TABULA_RASA.get())
                 .texture("textures/models/alchemyarrays/divinationsigil.png")
                 .save(output, "divination_sigil");
 
         // Seer Sigil - base: reagent_sight, added: reinforced slate
         AlchemyArrayRecipeBuilder.build(NVItems.SIGIL_SEER.get())
                 .base(NVItems.REAGENT_SIGHT.get())
-                .added(NVItems.SLATE_REINFORCED.get())
+                .added(NVItems.TABULA_ROBUR.get())
                 .texture("textures/models/alchemyarrays/sightsigil.png")
                 .save(output, "seer_sigil");
 
         // Water Sigil - base: reagent_water, added: blank slate
         AlchemyArrayRecipeBuilder.build(NVItems.SIGIL_WATER.get())
                 .base(NVItems.REAGENT_WATER.get())
-                .added(NVItems.SLATE_BLANK.get())
+                .added(NVItems.TABULA_RASA.get())
                 .texture("textures/models/alchemyarrays/watersigil.png")
                 .save(output, "water_sigil");
 
         // Lava Sigil - base: reagent_lava, added: blank slate
         AlchemyArrayRecipeBuilder.build(NVItems.SIGIL_LAVA.get())
                 .base(NVItems.REAGENT_LAVA.get())
-                .added(NVItems.SLATE_BLANK.get())
+                .added(NVItems.TABULA_RASA.get())
                 .texture("textures/models/alchemyarrays/lavasigil.png")
                 .save(output, "lava_sigil");
 
         // Void Sigil - base: reagent_void, added: reinforced slate
         AlchemyArrayRecipeBuilder.build(NVItems.SIGIL_VOID.get())
                 .base(NVItems.REAGENT_VOID.get())
-                .added(NVItems.SLATE_REINFORCED.get())
+                .added(NVItems.TABULA_ROBUR.get())
                 .texture("textures/models/alchemyarrays/voidsigil.png")
                 .save(output, "void_sigil");
 
         // Green Grove Sigil - base: reagent_growth, added: reinforced slate
         AlchemyArrayRecipeBuilder.build(NVItems.SIGIL_GREEN_GROVE.get())
                 .base(NVItems.REAGENT_GROWTH.get())
-                .added(NVItems.SLATE_REINFORCED.get())
+                .added(NVItems.TABULA_ROBUR.get())
                 .texture("textures/models/alchemyarrays/growthsigil.png")
                 .save(output, "green_grove_sigil");
 
         // Fast Miner Sigil - base: reagent_fast_miner, added: reinforced slate
         AlchemyArrayRecipeBuilder.build(NVItems.SIGIL_FAST_MINER.get())
                 .base(NVItems.REAGENT_FAST_MINER.get())
-                .added(NVItems.SLATE_REINFORCED.get())
+                .added(NVItems.TABULA_ROBUR.get())
                 .texture("textures/models/alchemyarrays/fastminersigil.png")
                 .save(output, "fast_miner_sigil");
 
         // Air Sigil - base: reagent_air, added: reinforced slate
         AlchemyArrayRecipeBuilder.build(NVItems.SIGIL_AIR.get())
                 .base(NVItems.REAGENT_AIR.get())
-                .added(NVItems.SLATE_REINFORCED.get())
+                .added(NVItems.TABULA_ROBUR.get())
                 .texture("textures/models/alchemyarrays/airsigil.png")
                 .save(output, "air_sigil");
 
         // Blood Light Sigil - base: reagent_blood_light, added: imbued slate
         AlchemyArrayRecipeBuilder.build(NVItems.SIGIL_BLOOD_LIGHT.get())
                 .base(NVItems.REAGENT_BLOOD_LIGHT.get())
-                .added(NVItems.SLATE_IMBUED.get())
+                .added(NVItems.TABULA_ANIMATA.get())
                 .texture("textures/models/alchemyarrays/bloodlightsigil.png")
                 .save(output, "blood_light_sigil");
 
         // Magnetism Sigil - base: reagent_magnetism, added: imbued slate
         AlchemyArrayRecipeBuilder.build(NVItems.SIGIL_MAGNETISM.get())
                 .base(NVItems.REAGENT_MAGNETISM.get())
-                .added(NVItems.SLATE_IMBUED.get())
+                .added(NVItems.TABULA_ANIMATA.get())
                 .texture("textures/models/alchemyarrays/magnetismsigil.png")
                 .save(output, "magnetism_sigil");
 
         // Holding Sigil - base: reagent_holding, added: imbued slate
         AlchemyArrayRecipeBuilder.build(NVItems.SIGIL_HOLDING.get())
                 .base(NVItems.REAGENT_HOLDING.get())
-                .added(NVItems.SLATE_IMBUED.get())
+                .added(NVItems.TABULA_ANIMATA.get())
                 .texture("textures/models/alchemyarrays/holdingsigil.png")
                 .save(output, "holding_sigil");
 
         // Suppression Sigil - base: reagent_suppression, added: demonic slate
         AlchemyArrayRecipeBuilder.build(NVItems.SIGIL_SUPPRESSION.get())
                 .base(NVItems.REAGENT_SUPPRESSION.get())
-                .added(NVItems.SLATE_DEMONIC.get())
+                .added(NVItems.TABULA_SPIRITUS.get())
                 .texture("textures/models/alchemyarrays/suppressionsigil.png")
                 .save(output, "suppression_sigil");
 
         // Teleposition Sigil - base: reagent_teleposition, added: demonic slate
         AlchemyArrayRecipeBuilder.build(NVItems.SIGIL_TELEPOSITION.get())
                 .base(NVItems.REAGENT_TELEPOSITION.get())
-                .added(NVItems.SLATE_DEMONIC.get())
+                .added(NVItems.TABULA_SPIRITUS.get())
                 .texture("textures/models/alchemyarrays/telepositionsigil.png")
                 .save(output, "teleposition_sigil");
 
         // Phantom Bridge Sigil - base: reagent_phantom_bridge, added: imbued slate
         AlchemyArrayRecipeBuilder.build(NVItems.SIGIL_PHANTOM_BRIDGE.get())
                 .base(NVItems.REAGENT_PHANTOM_BRIDGE.get())
-                .added(NVItems.SLATE_IMBUED.get())
+                .added(NVItems.TABULA_ANIMATA.get())
                 .texture("textures/models/alchemyarrays/phantombridgesigil.png")
                 .save(output, "phantom_bridge_sigil");
 
         // Frost Sigil - base: reagent_frost, added: reinforced slate
         AlchemyArrayRecipeBuilder.build(NVItems.SIGIL_FROST.get())
                 .base(NVItems.REAGENT_FROST.get())
-                .added(NVItems.SLATE_REINFORCED.get())
+                .added(NVItems.TABULA_ROBUR.get())
                 .texture("textures/models/alchemyarrays/watersigil.png")
                 .save(output, "frost_sigil");
 
-        // Living Armor - reagent_binding + iron armor pieces
-        AlchemyArrayRecipeBuilder.build(NVItems.LIVING_HELMET.get())
+        AlchemyArrayRecipeBuilder.build(NVItems.SIGIL_BOUND_TREASURES.get())
+                .base(Items.ENDER_EYE)
+                .added(NVItems.TABULA_ANIMATA.get())
+                .texture("textures/models/alchemyarrays/defaultarray.png")
+                .save(output, "bound_treasures_sigil");
+
+        // Sentient Armor - reagent_binding + iron armor pieces
+        AlchemyArrayRecipeBuilder.build(NVItems.SENTIENT_HELMET.get())
                 .base(NVItems.REAGENT_BINDING.get())
                 .added(Items.IRON_HELMET)
                 .texture("textures/models/alchemyarrays/bindingarray.png")
-                .save(output, "living_helmet");
+                .save(output, "sentient_helmet");
 
-        AlchemyArrayRecipeBuilder.build(NVItems.LIVING_PLATE.get())
+        AlchemyArrayRecipeBuilder.build(NVItems.SENTIENT_PLATE.get())
                 .base(NVItems.REAGENT_BINDING.get())
                 .added(Items.IRON_CHESTPLATE)
                 .texture("textures/models/alchemyarrays/bindingarray.png")
-                .save(output, "living_plate");
+                .save(output, "sentient_plate");
 
-        AlchemyArrayRecipeBuilder.build(NVItems.LIVING_LEGGINGS.get())
+        AlchemyArrayRecipeBuilder.build(NVItems.SENTIENT_LEGGINGS.get())
                 .base(NVItems.REAGENT_BINDING.get())
                 .added(Items.IRON_LEGGINGS)
                 .texture("textures/models/alchemyarrays/bindingarray.png")
-                .save(output, "living_leggings");
+                .save(output, "sentient_leggings");
 
-        AlchemyArrayRecipeBuilder.build(NVItems.LIVING_BOOTS.get())
+        AlchemyArrayRecipeBuilder.build(NVItems.SENTIENT_BOOTS.get())
                 .base(NVItems.REAGENT_BINDING.get())
                 .added(Items.IRON_BOOTS)
                 .texture("textures/models/alchemyarrays/bindingarray.png")
-                .save(output, "living_boots");
+                .save(output, "sentient_boots");
 
         // Training Bracelet
         AlchemyArrayRecipeBuilder.build(NVItems.TRAINING_BRACELET.get())
                 .base(NVItems.REAGENT_BINDING.get())
                 .added(Items.DIAMOND)
                 .texture("textures/models/alchemyarrays/bindingarray.png")
-                .save(output, "living_trainer");
+                .save(output, "sentient_trainer");
 
         // Effect Arrays - create environmental effects, not items
         // Bounce Array - slimeball + redstone
@@ -1974,6 +2079,102 @@ public class NVRecipeProvider extends RecipeProvider {
                 .added(Ingredient.of(Tags.Items.DUSTS_REDSTONE))
                 .texture("textures/models/alchemyarrays/elevatorarray.png")
                 .save(output, "elevator");
+
+        // Repulsion Array - iron ingot + lapis
+        AlchemyArrayEffectRecipeBuilder.effect(AlchemyArrayEffectType.REPULSION)
+                .base(Ingredient.of(Tags.Items.INGOTS_IRON))
+                .added(Ingredient.of(Tags.Items.GEMS_LAPIS))
+                .texture("textures/models/alchemyarrays/repulsionarray.png")
+                .save(output, "repulsion");
+
+        // Collection Array - hopper + redstone
+        AlchemyArrayEffectRecipeBuilder.effect(AlchemyArrayEffectType.COLLECTION)
+                .base(Items.HOPPER)
+                .added(Ingredient.of(Tags.Items.DUSTS_REDSTONE))
+                .texture("textures/models/alchemyarrays/collectionarray.png")
+                .save(output, "collection");
+
+        // Light Array - glowstone dust + gold ingot
+        AlchemyArrayEffectRecipeBuilder.effect(AlchemyArrayEffectType.LIGHT)
+                .base(Ingredient.of(Tags.Items.DUSTS_GLOWSTONE))
+                .added(Ingredient.of(Tags.Items.INGOTS_GOLD))
+                .texture("textures/models/alchemyarrays/lightarray.png")
+                .save(output, "light");
+
+        // Furnace Array - coal + iron block
+        AlchemyArrayEffectRecipeBuilder.effect(AlchemyArrayEffectType.FURNACE)
+                .base(Items.COAL)
+                .added(Ingredient.of(Tags.Items.STORAGE_BLOCKS_IRON))
+                .texture("textures/models/alchemyarrays/furnacearray.png")
+                .save(output, "furnace");
+
+        // Rain Array - water bucket + lapis
+        AlchemyArrayEffectRecipeBuilder.effect(AlchemyArrayEffectType.RAIN)
+                .base(Items.WATER_BUCKET)
+                .added(Ingredient.of(Tags.Items.GEMS_LAPIS))
+                .texture("textures/models/alchemyarrays/rainarray.png")
+                .save(output, "rain");
+
+        // Growth Array - bone meal + torchflower
+        AlchemyArrayEffectRecipeBuilder.effect(AlchemyArrayEffectType.GROWTH)
+                .base(Items.BONE_MEAL)
+                .added(Items.TORCHFLOWER)
+                .texture("textures/models/alchemyarrays/growtharray.png")
+                .save(output, "growth");
+
+        // Freeze Array - snowball + lapis
+        AlchemyArrayEffectRecipeBuilder.effect(AlchemyArrayEffectType.FREEZE)
+                .base(Items.SNOWBALL)
+                .added(Ingredient.of(Tags.Items.GEMS_LAPIS))
+                .texture("textures/models/alchemyarrays/freezearray.png")
+                .save(output, "freeze");
+
+        // Signal Array - redstone + gold ingot
+        AlchemyArrayEffectRecipeBuilder.effect(AlchemyArrayEffectType.SIGNAL)
+                .base(Ingredient.of(Tags.Items.DUSTS_REDSTONE))
+                .added(Ingredient.of(Tags.Items.INGOTS_GOLD))
+                .texture("textures/models/alchemyarrays/signalarray.png")
+                .save(output, "signal");
+
+        // Trigger Array - redstone + iron ingot
+        AlchemyArrayEffectRecipeBuilder.effect(AlchemyArrayEffectType.TRIGGER)
+                .base(Ingredient.of(Tags.Items.DUSTS_REDSTONE))
+                .added(Ingredient.of(Tags.Items.INGOTS_IRON))
+                .texture("textures/models/alchemyarrays/triggerarray.png")
+                .save(output, "trigger");
+
+        // Spirit Siphon Array - imbued slate + redstone
+        AlchemyArrayEffectRecipeBuilder.effect(AlchemyArrayEffectType.SPIRIT_SIPHON)
+                .base(NVItems.TABULA_ANIMATA.get())
+                .added(Ingredient.of(Tags.Items.DUSTS_REDSTONE))
+                .texture("textures/models/alchemyarrays/spiritsiphonarray.png")
+                .save(output, "spirit_siphon");
+
+        // Deflection Array - imbued slate + diamond
+        AlchemyArrayEffectRecipeBuilder.effect(AlchemyArrayEffectType.DEFLECTION)
+                .base(NVItems.TABULA_ANIMATA.get())
+                .added(Ingredient.of(Tags.Items.GEMS_DIAMOND))
+                .texture("textures/models/alchemyarrays/deflectionarray.png")
+                .save(output, "deflection");
+
+        // Endless Fountain Array - block of lapis + sea pickle
+        AlchemyArrayEffectRecipeBuilder.effect(AlchemyArrayEffectType.ENDLESS_FOUNTAIN)
+                .base(Items.LAPIS_BLOCK)
+                .added(Items.SEA_PICKLE)
+                .texture("textures/models/alchemyarrays/fountainarray.png")
+                .save(output, "endless_fountain");
+
+        // Undertow Array - kelp + redstone
+        AlchemyArrayEffectRecipeBuilder.effect(AlchemyArrayEffectType.UNDERTOW)
+                .base(Items.KELP)
+                .added(Ingredient.of(Tags.Items.DUSTS_REDSTONE))
+                .texture("textures/models/alchemyarrays/undertowarray.png")
+                .save(output, "undertow");
+
+        AlchemyArrayEffectRecipeBuilder.effect(AlchemyArrayEffectType.LOYAL_FRIENDS)
+                .base(Items.LEAD)
+                .added(NVItems.TABULA_ROBUR.get())
+                .save(output, "loyal_friends");
     }
 
     private void addTabulaVitaeRecipes(RecipeOutput output) {
@@ -2139,8 +2340,8 @@ public class NVRecipeProvider extends RecipeProvider {
                 .minimumTier(3)
                 .save(output, "reagent_phantom_bridge");
 
-        // Arcane Ash - redstone, white dye (bone meal), gunpowder, coal
-        TabulaVitaeRecipeBuilder.build(NVItems.ARCANE_ASHES.get())
+        // Arcane Scribe Tool - redstone, white dye (bone meal), gunpowder, coal
+        TabulaVitaeRecipeBuilder.build(NVItems.ARCANE_SCRIBE_TOOL.get())
                 .input(Ingredient.of(Tags.Items.DUSTS_REDSTONE))
                 .input(Ingredient.of(Tags.Items.DYES_WHITE))
                 .input(Ingredient.of(Tags.Items.GUNPOWDERS))
@@ -2148,7 +2349,7 @@ public class NVRecipeProvider extends RecipeProvider {
                 .syphon(500)
                 .ticks(200)
                 .minimumTier(1)
-                .save(output, "arcane_ash");
+                .save(output, "arcane_scribe_tool");
 
         // Tau Oil - 3x weak tau + bone meal
         TabulaVitaeRecipeBuilder.build(NVItems.TAU_OIL.get())
@@ -2294,8 +2495,8 @@ public class NVRecipeProvider extends RecipeProvider {
                 .save(output, "basic_cutting_fluid");
 
         // Slate Vial - blank slate + 5 glass
-        TabulaVitaeRecipeBuilder.build(new ItemStack(NVItems.SLATE_VIAL.get(), 8))
-                .input(NVItems.SLATE_BLANK.get())
+        TabulaVitaeRecipeBuilder.build(new ItemStack(NVItems.TABULA_VIAL.get(), 8))
+                .input(NVItems.TABULA_RASA.get())
                 .input(Ingredient.of(Tags.Items.GLASS_BLOCKS))
                 .input(Ingredient.of(Tags.Items.GLASS_BLOCKS))
                 .input(Ingredient.of(Tags.Items.GLASS_BLOCKS))
@@ -2304,11 +2505,11 @@ public class NVRecipeProvider extends RecipeProvider {
                 .syphon(500)
                 .ticks(200)
                 .minimumTier(1)
-                .save(output, "slate_vial");
+                .save(output, "tabula_vial");
 
         // Anointment Recipes
         TabulaVitaeRecipeBuilder.build(NVItems.FORTUNE_ANOINTMENT.get())
-                .input(NVItems.SLATE_VIAL.get())
+                .input(NVItems.TABULA_VIAL.get())
                 .input(Ingredient.of(Tags.Items.CROPS_NETHER_WART))
                 .input(Ingredient.of(Tags.Items.DUSTS_REDSTONE))
                 .input(Ingredient.of(NVTags.Items.DUSTS_COAL))
@@ -2318,7 +2519,7 @@ public class NVRecipeProvider extends RecipeProvider {
                 .save(output, "fortune_anointment");
 
         TabulaVitaeRecipeBuilder.build(NVItems.SILK_TOUCH_ANOINTMENT.get())
-                .input(NVItems.SLATE_VIAL.get())
+                .input(NVItems.TABULA_VIAL.get())
                 .input(Ingredient.of(Tags.Items.CROPS_NETHER_WART))
                 .input(Items.COBWEB)
                 .input(Ingredient.of(Tags.Items.NUGGETS_GOLD))
@@ -2328,7 +2529,7 @@ public class NVRecipeProvider extends RecipeProvider {
                 .save(output, "silk_touch_anointment");
 
         TabulaVitaeRecipeBuilder.build(NVItems.MELEE_DAMAGE_ANOINTMENT.get())
-                .input(NVItems.SLATE_VIAL.get())
+                .input(NVItems.TABULA_VIAL.get())
                 .input(Ingredient.of(Tags.Items.CROPS_NETHER_WART))
                 .input(Items.BLAZE_POWDER)
                 .input(Ingredient.of(Tags.Items.GEMS_QUARTZ))
@@ -2338,7 +2539,7 @@ public class NVRecipeProvider extends RecipeProvider {
                 .save(output, "melee_damage_anointment");
 
         TabulaVitaeRecipeBuilder.build(NVItems.HOLY_WATER_ANOINTMENT.get())
-                .input(NVItems.SLATE_VIAL.get())
+                .input(NVItems.TABULA_VIAL.get())
                 .input(Ingredient.of(Tags.Items.CROPS_NETHER_WART))
                 .input(Items.GLISTERING_MELON_SLICE)
                 .input(Ingredient.of(Tags.Items.GEMS_QUARTZ))
@@ -2348,7 +2549,7 @@ public class NVRecipeProvider extends RecipeProvider {
                 .save(output, "holy_water_anointment");
 
         TabulaVitaeRecipeBuilder.build(NVItems.HIDDEN_KNOWLEDGE_ANOINTMENT.get())
-                .input(NVItems.SLATE_VIAL.get())
+                .input(NVItems.TABULA_VIAL.get())
                 .input(Ingredient.of(Tags.Items.CROPS_NETHER_WART))
                 .input(Items.GLASS_BOTTLE)
                 .input(Items.ENCHANTED_BOOK)
@@ -2358,7 +2559,7 @@ public class NVRecipeProvider extends RecipeProvider {
                 .save(output, "hidden_knowledge_anointment");
 
         TabulaVitaeRecipeBuilder.build(NVItems.QUICK_DRAW_ANOINTMENT.get())
-                .input(NVItems.SLATE_VIAL.get())
+                .input(NVItems.TABULA_VIAL.get())
                 .input(Ingredient.of(Tags.Items.CROPS_NETHER_WART))
                 .input(Ingredient.of(Tags.Items.STRINGS))
                 .input(Items.SPECTRAL_ARROW)
@@ -2368,7 +2569,7 @@ public class NVRecipeProvider extends RecipeProvider {
                 .save(output, "quick_draw_anointment");
 
         TabulaVitaeRecipeBuilder.build(NVItems.LOOTING_ANOINTMENT.get())
-                .input(NVItems.SLATE_VIAL.get())
+                .input(NVItems.TABULA_VIAL.get())
                 .input(Ingredient.of(Tags.Items.CROPS_NETHER_WART))
                 .input(Ingredient.of(Tags.Items.GEMS_LAPIS))
                 .input(Ingredient.of(Tags.Items.BONES))
@@ -2378,7 +2579,7 @@ public class NVRecipeProvider extends RecipeProvider {
                 .save(output, "looting_anointment");
 
         TabulaVitaeRecipeBuilder.build(NVItems.BOW_POWER_ANOINTMENT.get())
-                .input(NVItems.SLATE_VIAL.get())
+                .input(NVItems.TABULA_VIAL.get())
                 .input(Ingredient.of(Tags.Items.CROPS_NETHER_WART))
                 .input(Ingredient.of(Tags.Items.INGOTS_IRON))
                 .input(Items.BOW)
@@ -2388,7 +2589,7 @@ public class NVRecipeProvider extends RecipeProvider {
                 .save(output, "bow_power_anointment");
 
         TabulaVitaeRecipeBuilder.build(NVItems.SMELTING_ANOINTMENT.get())
-                .input(NVItems.SLATE_VIAL.get())
+                .input(NVItems.TABULA_VIAL.get())
                 .input(Ingredient.of(Tags.Items.CROPS_NETHER_WART))
                 .input(Items.FURNACE)
                 .input(Ingredient.of(ItemTags.COALS))
@@ -2398,7 +2599,7 @@ public class NVRecipeProvider extends RecipeProvider {
                 .save(output, "smelting_anointment");
 
         TabulaVitaeRecipeBuilder.build(NVItems.VOIDING_ANOINTMENT.get())
-                .input(NVItems.SLATE_VIAL.get())
+                .input(NVItems.TABULA_VIAL.get())
                 .input(Ingredient.of(Tags.Items.CROPS_NETHER_WART))
                 .input(Items.NETHERRACK)
                 .input(Items.COBBLED_DEEPSLATE)
@@ -2408,7 +2609,7 @@ public class NVRecipeProvider extends RecipeProvider {
                 .save(output, "voiding_anointment");
 
         TabulaVitaeRecipeBuilder.build(NVItems.BOW_VELOCITY_ANOINTMENT.get())
-                .input(NVItems.SLATE_VIAL.get())
+                .input(NVItems.TABULA_VIAL.get())
                 .input(Ingredient.of(Tags.Items.CROPS_NETHER_WART))
                 .input(Ingredient.of(Tags.Items.NUGGETS_GOLD))
                 .input(Items.BOW)
@@ -2418,7 +2619,7 @@ public class NVRecipeProvider extends RecipeProvider {
                 .save(output, "bow_velocity_anointment");
 
         TabulaVitaeRecipeBuilder.build(NVItems.WEAPON_REPAIR_ANOINTMENT.get())
-                .input(NVItems.SLATE_VIAL.get())
+                .input(NVItems.TABULA_VIAL.get())
                 .input(Ingredient.of(Tags.Items.CROPS_NETHER_WART))
                 .input(Ingredient.of(Tags.Items.INGOTS_COPPER))
                 .input(Ingredient.of(NVTags.Items.DUSTS_GOLD))
@@ -2430,62 +2631,12 @@ public class NVRecipeProvider extends RecipeProvider {
         // Frame Parts and Filter Recipes
         TabulaVitaeRecipeBuilder.build(new ItemStack(NVItems.FRAME_PARTS.get(), 2))
                 .input(Ingredient.of(Tags.Items.GLASS_BLOCKS))
-                .input(Ingredient.of(Tags.Items.STONES))
-                .input(NVItems.SLATE_BLANK.get())
+                .input(Ingredient.of(NVTags.Items.VITAE_STONE))
+                .input(NVItems.TABULA_RASA.get())
                 .syphon(1000)
                 .ticks(100)
                 .minimumTier(3)
                 .save(output, "component_frame_parts");
-
-        TabulaVitaeRecipeBuilder.build(NVItems.ITEM_ROUTER_FILTER.get())
-                .input(NVItems.FRAME_PARTS.get())
-                .input(Ingredient.of(Tags.Items.LEATHERS))
-                .input(Ingredient.of(Tags.Items.DUSTS_REDSTONE))
-                .input(Ingredient.of(Tags.Items.DYES_RED))
-                .syphon(500)
-                .ticks(100)
-                .minimumTier(3)
-                .save(output, "router_filter");
-
-        TabulaVitaeRecipeBuilder.build(NVItems.ITEM_TAG_FILTER.get())
-                .input(NVItems.FRAME_PARTS.get())
-                .input(Ingredient.of(Tags.Items.INGOTS))
-                .input(Ingredient.of(Tags.Items.DUSTS_REDSTONE))
-                .input(Items.CLAY_BALL)
-                .syphon(500)
-                .ticks(100)
-                .minimumTier(3)
-                .save(output, "tag_router_filter");
-
-        TabulaVitaeRecipeBuilder.build(NVItems.ITEM_MOD_FILTER.get())
-                .input(NVItems.FRAME_PARTS.get())
-                .input(NVItems.SLATE_REINFORCED.get())
-                .input(Ingredient.of(Tags.Items.DUSTS_REDSTONE))
-                .input(Ingredient.of(Tags.Items.DYES_YELLOW))
-                .syphon(500)
-                .ticks(100)
-                .minimumTier(3)
-                .save(output, "mod_router_filter");
-
-        TabulaVitaeRecipeBuilder.build(NVItems.ITEM_ENCHANT_FILTER.get())
-                .input(NVItems.FRAME_PARTS.get())
-                .input(Items.ENCHANTED_BOOK)
-                .input(Ingredient.of(Tags.Items.DUSTS_REDSTONE))
-                .input(Items.PAPER)
-                .syphon(500)
-                .ticks(100)
-                .minimumTier(3)
-                .save(output, "enchant_router_filter");
-
-        TabulaVitaeRecipeBuilder.build(NVItems.ITEM_COMPOSITE_FILTER.get())
-                .input(NVItems.FRAME_PARTS.get())
-                .input(Ingredient.of(Tags.Items.DUSTS_GLOWSTONE))
-                .input(Ingredient.of(Tags.Items.DUSTS_REDSTONE))
-                .input(NVItems.SLATE_IMBUED.get())
-                .syphon(1000)
-                .ticks(200)
-                .minimumTier(3)
-                .save(output, "composite_router_filter");
 
         // Intermediate Cutting Fluid - tau oil + glowstone + gunpowder + sugar + sulfur + water bottle
         TabulaVitaeRecipeBuilder.build(NVItems.INTERMEDIATE_CUTTING_FLUID.get())
@@ -3231,12 +3382,12 @@ public class NVRecipeProvider extends RecipeProvider {
                 .pattern("sss")
                 .pattern("wbw")
                 .pattern("gog")
-                .define('s', Tags.Items.STONES)
+                .define('s', NVTags.Items.VITAE_STONE)
                 .define('w', ItemTags.PLANKS)
                 .define('b', Tags.Items.INGOTS_IRON)
                 .define('g', Tags.Items.INGOTS_GOLD)
-                .define('o', NVItems.SLATE_BLANK.get())
-                .unlockedBy("has_blank_slate", has(NVItems.SLATE_BLANK.get()))
+                .define('o', NVItems.TABULA_RASA.get())
+                .unlockedBy("has_blank_slate", has(NVItems.TABULA_RASA.get()))
                 .save(output, NeoVitae.rl("tabula_vitae"));
     }
 
@@ -3845,11 +3996,142 @@ public class NVRecipeProvider extends RecipeProvider {
                 .input(Ingredient.of(NVItems.THROWING_DAGGER_AMETHYST.get()))
                 .guaranteedOutput(new ItemStack(NVItems.THROWING_DAGGER_TIPPED.get(), 8))
                 .save(output, NeoVitae.rl("tipped_throwing_dagger"));
+
+        // === SPIRITUS INFUSION RECIPES ===
+        AthanorRecipeBuilder.build(NVTags.Items.RESONATOR)
+                .input(Ingredient.of(Items.DIAMOND))
+                .input(NVItems.HELLFORGED_INGOT.get())
+                .guaranteedOutput(new ItemStack(Items.NETHER_STAR))
+                .fluidInput(new FluidStack(NVFluids.ESSENTIA_VITAE_SOURCE.get(), 4000))
+                .spiritusCost(SpiritusType.RAW, 50.0)
+                .save(output, NeoVitae.rl("nether_star_from_diamond"));
+    }
+
+    private void addDungeonRecipes(RecipeOutput output) {
+        for (DungeonVariant variant : DungeonVariant.values()) {
+            String suffix = variant.getSuffix();
+            ItemLike spiritus = switch (variant) {
+                case RAW -> NVItems.MONSTER_SOUL_RAW.get();
+                case RUINA -> NVItems.MONSTER_SOUL_RUINA.get();
+                case NIHILUM -> NVItems.MONSTER_SOUL_NIHILUM.get();
+                case INVICTUS -> NVItems.MONSTER_SOUL_INVICTUS.get();
+                case VINDICTA -> NVItems.MONSTER_SOUL_VINDICTA.get();
+            };
+
+            ItemLike stone = DungeonBlocks.DUNGEON_STONE.get(variant);
+            ItemLike brick1 = DungeonBlocks.DUNGEON_BRICK_1.get(variant);
+            ItemLike brick2 = DungeonBlocks.DUNGEON_BRICK_2.get(variant);
+            ItemLike brick3 = DungeonBlocks.DUNGEON_BRICK_3.get(variant);
+            ItemLike polished = DungeonBlocks.DUNGEON_POLISHED.get(variant);
+            ItemLike tile = DungeonBlocks.DUNGEON_TILE.get(variant);
+            ItemLike smallbrick = DungeonBlocks.DUNGEON_SMALLBRICK.get(variant);
+            ItemLike tilespecial = DungeonBlocks.DUNGEON_TILESPECIAL.get(variant);
+
+            ItemLike stoneSlab = DungeonBlocks.DUNGEON_STONE_SLAB.get(variant);
+            ItemLike brickSlab = DungeonBlocks.DUNGEON_BRICK_SLAB.get(variant);
+            ItemLike polishedSlab = DungeonBlocks.DUNGEON_POLISHED_SLAB.get(variant);
+            ItemLike tileSlab = DungeonBlocks.DUNGEON_TILE_SLAB.get(variant);
+
+            ItemLike stoneStairs = DungeonBlocks.DUNGEON_STONE_STAIRS.get(variant);
+            ItemLike brickStairs = DungeonBlocks.DUNGEON_BRICK_STAIRS.get(variant);
+            ItemLike polishedStairs = DungeonBlocks.DUNGEON_POLISHED_STAIRS.get(variant);
+
+            ItemLike stoneWall = DungeonBlocks.DUNGEON_STONE_WALL.get(variant);
+            ItemLike brickWall = DungeonBlocks.DUNGEON_BRICK_WALL.get(variant);
+            ItemLike polishedWall = DungeonBlocks.DUNGEON_POLISHED_WALL.get(variant);
+            ItemLike tileWall = DungeonBlocks.DUNGEON_TILE_WALL.get(variant);
+
+            // === ATHANOR: smooth stone + spiritus → dungeon stone ===
+            AthanorRecipeBuilder.build(NVTags.Items.RESONATOR)
+                    .input(Items.SMOOTH_STONE)
+                    .input(spiritus)
+                    .guaranteedOutput(new ItemStack(stone.asItem()))
+                    .save(output, NeoVitae.rl("dungeon/dungeon_stone" + suffix));
+
+            // === CRAFTING: stone → brick (2x2 = 4, vanilla stone → stone bricks) ===
+            ShapedRecipeBuilder.shaped(RecipeCategory.BUILDING_BLOCKS, brick1, 4)
+                    .pattern("ss")
+                    .pattern("ss")
+                    .define('s', stone)
+                    .unlockedBy("has_dungeon_stone", has(stone))
+                    .save(output, NeoVitae.rl("dungeon/dungeon_brick1" + suffix));
+
+            // === SLAB CRAFTING: 3 blocks → 6 slabs ===
+            ShapedRecipeBuilder.shaped(RecipeCategory.BUILDING_BLOCKS, stoneSlab, 6)
+                    .pattern("sss")
+                    .define('s', stone)
+                    .unlockedBy("has_dungeon_stone", has(stone))
+                    .save(output, NeoVitae.rl("dungeon/dungeon_stone_slab" + suffix));
+
+            ShapedRecipeBuilder.shaped(RecipeCategory.BUILDING_BLOCKS, brickSlab, 6)
+                    .pattern("sss")
+                    .define('s', brick1)
+                    .unlockedBy("has_dungeon_brick", has(brick1))
+                    .save(output, NeoVitae.rl("dungeon/dungeon_brick_slab" + suffix));
+
+            ShapedRecipeBuilder.shaped(RecipeCategory.BUILDING_BLOCKS, polishedSlab, 6)
+                    .pattern("sss")
+                    .define('s', polished)
+                    .unlockedBy("has_dungeon_polished", has(polished))
+                    .save(output, NeoVitae.rl("dungeon/dungeon_polished_slab" + suffix));
+
+            ShapedRecipeBuilder.shaped(RecipeCategory.BUILDING_BLOCKS, tileSlab, 6)
+                    .pattern("sss")
+                    .define('s', tile)
+                    .unlockedBy("has_dungeon_tile", has(tile))
+                    .save(output, NeoVitae.rl("dungeon/dungeon_tile_slab" + suffix));
+
+            // === STONECUTTER: stone → block variants ===
+            dungeonStonecutting(output, stone, brick1, "sc_brick1_from_stone" + suffix);
+            dungeonStonecutting(output, stone, brick2, "sc_brick2_from_stone" + suffix);
+            dungeonStonecutting(output, stone, brick3, "sc_brick3_from_stone" + suffix);
+            dungeonStonecutting(output, stone, polished, "sc_polished_from_stone" + suffix);
+            dungeonStonecutting(output, stone, tile, "sc_tile_from_stone" + suffix);
+            dungeonStonecutting(output, stone, smallbrick, "sc_smallbrick_from_stone" + suffix);
+            dungeonStonecutting(output, stone, tilespecial, "sc_tilespecial_from_stone" + suffix);
+
+            // stone → shape derivatives
+            dungeonStonecutting(output, stone, stoneSlab, 2, "sc_stone_slab_from_stone" + suffix);
+            dungeonStonecutting(output, stone, stoneStairs, "sc_stone_stairs_from_stone" + suffix);
+            dungeonStonecutting(output, stone, stoneWall, "sc_stone_wall_from_stone" + suffix);
+            dungeonStonecutting(output, stone, brickSlab, 2, "sc_brick_slab_from_stone" + suffix);
+            dungeonStonecutting(output, stone, brickStairs, "sc_brick_stairs_from_stone" + suffix);
+            dungeonStonecutting(output, stone, brickWall, "sc_brick_wall_from_stone" + suffix);
+            dungeonStonecutting(output, stone, polishedSlab, 2, "sc_polished_slab_from_stone" + suffix);
+            dungeonStonecutting(output, stone, polishedStairs, "sc_polished_stairs_from_stone" + suffix);
+            dungeonStonecutting(output, stone, polishedWall, "sc_polished_wall_from_stone" + suffix);
+            dungeonStonecutting(output, stone, tileSlab, 2, "sc_tile_slab_from_stone" + suffix);
+            dungeonStonecutting(output, stone, tileWall, "sc_tile_wall_from_stone" + suffix);
+
+            // brick1 → shape derivatives
+            dungeonStonecutting(output, brick1, brickSlab, 2, "sc_brick_slab_from_brick" + suffix);
+            dungeonStonecutting(output, brick1, brickStairs, "sc_brick_stairs_from_brick" + suffix);
+            dungeonStonecutting(output, brick1, brickWall, "sc_brick_wall_from_brick" + suffix);
+
+            // polished → shape derivatives
+            dungeonStonecutting(output, polished, polishedSlab, 2, "sc_polished_slab_from_polished" + suffix);
+            dungeonStonecutting(output, polished, polishedStairs, "sc_polished_stairs_from_polished" + suffix);
+            dungeonStonecutting(output, polished, polishedWall, "sc_polished_wall_from_polished" + suffix);
+
+            // tile → shape derivatives
+            dungeonStonecutting(output, tile, tileSlab, 2, "sc_tile_slab_from_tile" + suffix);
+            dungeonStonecutting(output, tile, tileWall, "sc_tile_wall_from_tile" + suffix);
+        }
+    }
+
+    private void dungeonStonecutting(RecipeOutput output, ItemLike input, ItemLike result, String id) {
+        dungeonStonecutting(output, input, result, 1, id);
+    }
+
+    private void dungeonStonecutting(RecipeOutput output, ItemLike input, ItemLike result, int count, String id) {
+        SingleItemRecipeBuilder.stonecutting(Ingredient.of(input), RecipeCategory.BUILDING_BLOCKS, result, count)
+                .unlockedBy("has_input", has(input))
+                .save(output, NeoVitae.rl("dungeon/" + id));
     }
 
     /**
      * Meteor recipes for the Meteor Ritual.
-     * Each recipe defines a catalyst item, LP cost, explosion radius, and layers of blocks.
+     * Each recipe defines a catalyst item, EV cost, explosion radius, and layers of blocks.
      */
     private void addMeteorRecipes(RecipeOutput output) {
         String basePath = "meteor/";
@@ -3872,7 +4154,7 @@ public class NVRecipeProvider extends RecipeProvider {
                 .save(output, NeoVitae.rl(basePath + "iron"));
 
         // Stone Meteor - large but mostly stone/coal
-        MeteorRecipeBuilder.meteor(Ingredient.of(Tags.Items.STONES), 1000000, 30)
+        MeteorRecipeBuilder.meteor(Ingredient.of(NVTags.Items.VITAE_STONE), 1000000, 30)
                 .addLayer(new MeteorLayer(16, 0, Blocks.STONE)
                         .setMinWeight(400)
                         .addShellBlock(Blocks.COBBLESTONE)
@@ -4263,64 +4545,77 @@ public class NVRecipeProvider extends RecipeProvider {
                 .save(output, NeoVitae.rl("length_average_" + name));
     }
 
-    // ==================== Living Downgrade Recipes ====================
+    // ==================== Sentient Downgrade Recipes ====================
 
-    private void addLivingDowngradeRecipes(RecipeOutput output) {
+    private void addSentientDowngradeRecipes(RecipeOutput output) {
         String basePath = "downgrade/";
 
         // Battle Hungry - increases hunger drain
-        LivingDowngradeRecipeBuilder.downgrade(
+        SentientDowngradeRecipeBuilder.downgrade(
                 Ingredient.of(Items.ROTTEN_FLESH),
                 NeoVitae.rl("battle_hungry"))
                 .save(output, NeoVitae.rl(basePath + "battle_hungry"));
 
         // Melee Decrease - reduces melee damage
-        LivingDowngradeRecipeBuilder.downgrade(
+        SentientDowngradeRecipeBuilder.downgrade(
                 Ingredient.of(Items.STONE_SWORD),
                 NeoVitae.rl("melee_decrease"))
                 .save(output, NeoVitae.rl(basePath + "melee_decrease"));
 
         // Quenched - reduces saturation
-        LivingDowngradeRecipeBuilder.downgrade(
+        SentientDowngradeRecipeBuilder.downgrade(
                 Ingredient.of(Items.GLASS_BOTTLE),
                 NeoVitae.rl("quenched"))
                 .save(output, NeoVitae.rl(basePath + "quenched"));
 
         // Storm Trooper - reduces arrow accuracy
-        LivingDowngradeRecipeBuilder.downgrade(
+        SentientDowngradeRecipeBuilder.downgrade(
                 Ingredient.of(Items.ARROW),
                 NeoVitae.rl("storm_trooper"))
                 .save(output, NeoVitae.rl(basePath + "storm_trooper"));
 
         // Dig Slowdown - reduces mining speed
-        LivingDowngradeRecipeBuilder.downgrade(
+        SentientDowngradeRecipeBuilder.downgrade(
                 Ingredient.of(Items.STONE_PICKAXE),
                 NeoVitae.rl("dig_slowdown"))
                 .save(output, NeoVitae.rl(basePath + "dig_slowdown"));
 
         // Slow Heal - reduces healing effectiveness
-        LivingDowngradeRecipeBuilder.downgrade(
+        SentientDowngradeRecipeBuilder.downgrade(
                 Ingredient.of(Items.GHAST_TEAR),
                 NeoVitae.rl("slow_heal"))
                 .save(output, NeoVitae.rl(basePath + "slow_heal"));
 
         // Swim Decrease - reduces swim speed
-        LivingDowngradeRecipeBuilder.downgrade(
+        SentientDowngradeRecipeBuilder.downgrade(
                 Ingredient.of(Items.WATER_BUCKET),
                 NeoVitae.rl("swim_decrease"))
                 .save(output, NeoVitae.rl(basePath + "swim_decrease"));
 
         // Speed Decrease - reduces movement speed
-        LivingDowngradeRecipeBuilder.downgrade(
+        SentientDowngradeRecipeBuilder.downgrade(
                 Ingredient.of(Items.SOUL_SAND),
                 NeoVitae.rl("speed_decrease"))
                 .save(output, NeoVitae.rl(basePath + "speed_decrease"));
 
         // Crippled Arm - reduces blocking effectiveness
-        LivingDowngradeRecipeBuilder.downgrade(
+        SentientDowngradeRecipeBuilder.downgrade(
                 Ingredient.of(Items.SHIELD),
                 NeoVitae.rl("crippled_arm"))
                 .save(output, NeoVitae.rl(basePath + "crippled_arm"));
+
+        // Demon-drop based downgrades
+        // Poisoned Blood - periodic poison ticks (from venomgland sac)
+        SentientDowngradeRecipeBuilder.downgrade(
+                Ingredient.of(NVItems.VENOMGLAND_SAC.get()),
+                NeoVitae.rl("poisoned_blood"))
+                .save(output, NeoVitae.rl(basePath + "poisoned_blood"));
+
+        // Hollow Hunger - increased hunger drain (from hollow gut, thematic upgrade over rotten flesh)
+        SentientDowngradeRecipeBuilder.downgrade(
+                Ingredient.of(NVItems.HOLLOW_GUT.get()),
+                NeoVitae.rl("hollow_hunger"))
+                .save(output, NeoVitae.rl(basePath + "hollow_hunger"));
     }
 
 }

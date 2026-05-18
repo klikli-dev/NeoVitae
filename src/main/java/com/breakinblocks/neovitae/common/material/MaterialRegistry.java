@@ -4,14 +4,16 @@ import com.breakinblocks.neovitae.NeoVitae;
 import com.breakinblocks.neovitae.common.item.MaterialItem;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import com.google.gson.reflect.TypeToken;
+import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.packs.PackResources;
 import net.minecraft.server.packs.PackLocationInfo;
 import net.neoforged.neoforge.common.NeoForge;
-import net.neoforged.neoforge.event.server.ServerStartedEvent;
+import net.neoforged.neoforge.event.entity.player.PlayerEvent;
 import com.breakinblocks.neovitae.util.helper.OreDiscoveryHelper;
 import net.minecraft.server.packs.PackSelectionConfig;
 import net.minecraft.server.packs.PackType;
@@ -67,7 +69,7 @@ public class MaterialRegistry {
     private static void populatePack() {
         var locationInfo = new PackLocationInfo(
                 "neovitae_materials",
-                net.minecraft.network.chat.Component.literal("NeoVitae Materials"),
+                Component.literal("NeoVitae Materials"),
                 PackSource.BUILT_IN,
                 Optional.empty()
         );
@@ -124,7 +126,7 @@ public class MaterialRegistry {
         JsonObject condition = new JsonObject();
         condition.addProperty("type", "neoforge:item_exists");
         condition.addProperty("item", result);
-        com.google.gson.JsonArray conditions = new com.google.gson.JsonArray();
+        JsonArray conditions = new JsonArray();
         conditions.add(condition);
         root.add("neoforge:conditions", conditions);
 
@@ -162,7 +164,7 @@ public class MaterialRegistry {
             String itemId = NeoVitae.MODID + ":" + mat.getItemId(stage);
 
             JsonObject tag = new JsonObject();
-            com.google.gson.JsonArray values = new com.google.gson.JsonArray();
+            JsonArray values = new JsonArray();
             values.add(itemId);
             tag.add("values", values);
 
@@ -195,7 +197,7 @@ public class MaterialRegistry {
         JsonObject recipe = new JsonObject();
         recipe.addProperty("type", "neovitae:alchemytable");
 
-        com.google.gson.JsonArray inputArray = new com.google.gson.JsonArray();
+        JsonArray inputArray = new JsonArray();
         for (String input : inputs) {
             JsonObject entry = new JsonObject();
             if (input.startsWith("tag:")) {
@@ -285,20 +287,22 @@ public class MaterialRegistry {
 
         JsonObject input = new JsonObject();
         input.addProperty("tag", inputTag);
-        recipe.add("input", input);
+        JsonArray inputs = new JsonArray();
+        inputs.add(input);
+        recipe.add("inputs", inputs);
 
         JsonObject tool = new JsonObject();
         tool.addProperty("tag", toolTag);
         recipe.add("tool", tool);
 
-        com.google.gson.JsonArray guaranteed = new com.google.gson.JsonArray();
+        JsonArray guaranteed = new JsonArray();
         JsonObject mainOutput = new JsonObject();
         mainOutput.addProperty("count", outputCount);
         mainOutput.addProperty("id", outputItem);
         guaranteed.add(mainOutput);
         recipe.add("guaranteed_outputs", guaranteed);
 
-        com.google.gson.JsonArray chanced = new com.google.gson.JsonArray();
+        JsonArray chanced = new JsonArray();
         if (chanceItem != null && chance > 0) {
             JsonObject chanceEntry = new JsonObject();
             chanceEntry.addProperty("chance", chance);
@@ -318,14 +322,15 @@ public class MaterialRegistry {
     public static void register(IEventBus modBus) {
         ITEMS.register(modBus);
         modBus.addListener(MaterialRegistry::onAddPackFinders);
-        NeoForge.EVENT_BUS.addListener(MaterialRegistry::onServerStarted);
+        NeoForge.EVENT_BUS.addListener(MaterialRegistry::onPlayerLoggedIn);
     }
 
-    private static void onServerStarted(ServerStartedEvent event) {
+    private static void onPlayerLoggedIn(PlayerEvent.PlayerLoggedInEvent event) {
         if (!firstRun) return;
+        if (event.getEntity().getServer() == null || event.getEntity().getServer().isDedicatedServer()) return;
         firstRun = false;
 
-        ServerLevel level = event.getServer().overworld();
+        ServerLevel level = event.getEntity().getServer().overworld();
 
         List<MaterialDefinition> newMaterials = OreDiscoveryHelper.discoverNewMaterials(level);
 
@@ -356,7 +361,7 @@ public class MaterialRegistry {
         event.addRepositorySource(consumer -> {
             var locationInfo = new PackLocationInfo(
                     "neovitae_materials",
-                    net.minecraft.network.chat.Component.literal("NeoVitae Materials"),
+                    Component.literal("NeoVitae Materials"),
                     PackSource.BUILT_IN,
                     Optional.empty()
             );
@@ -505,7 +510,7 @@ public class MaterialRegistry {
                 null, 0f,
                 null, "c:raw_materials/hellforged", null,
                 null, null));
-        defaults.add(new MaterialDefinition("hellforged", "#B02020",
+        defaults.add(new MaterialDefinition("hellforged", "#99D6CB",
                 List.of("dust"),
                 "neovitae:ingot_hellforged", 1.0f,
                 null, null, "c:ingots/hellforged",

@@ -11,11 +11,15 @@ import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.BonemealableBlock;
 import net.minecraft.world.level.block.FarmBlock;
+import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import com.breakinblocks.neovitae.NeoVitae;
 import com.breakinblocks.neovitae.api.ritual.AreaDescriptor;
-import com.breakinblocks.neovitae.common.datacomponent.SpiritusType;
+import com.breakinblocks.neovitae.api.stream.StreamPresets;
+import com.breakinblocks.neovitae.common.block.BlockSpiritusCrystal;
+import com.breakinblocks.neovitae.common.blockentity.SpiritusCrystalBlockEntity;
 import com.breakinblocks.neovitae.common.effect.NVMobEffects;
+import com.breakinblocks.neovitae.common.tag.NVTags;
 import com.breakinblocks.neovitae.ritual.*;
 import com.breakinblocks.neovitae.ritual.RitualHelper.RitualContext;
 import com.breakinblocks.neovitae.api.will.SpiritusState;
@@ -54,7 +58,7 @@ public class RitualGreenGrove extends Ritual {
 
     public RitualGreenGrove() {
         super("green_grove", 0, 1000, "ritual." + NeoVitae.MODID + ".green_grove");
-        addBlockRange(GROWTH_RANGE, new AreaDescriptor.Rectangle(new BlockPos(-3, 1, -3), 7, 5, 7));
+        addBlockRange(GROWTH_RANGE, new AreaDescriptor.Rectangle(new BlockPos(-4, 1, -4), 9, 9, 9));
         addBlockRange(LEECH_RANGE, new AreaDescriptor.Rectangle(new BlockPos(-5, 0, -5), 11, 3, 11));
         addBlockRange(HYDRATE_RANGE, new AreaDescriptor.Rectangle(new BlockPos(-3, 0, -3), 7, 1, 7));
 
@@ -68,20 +72,18 @@ public class RitualGreenGrove extends Ritual {
         RitualContext ctx = RitualHelper.createContext(masterRitualStone, getRefreshCost());
         if (ctx == null) return;
 
-        if (!(ctx.level() instanceof ServerLevel serverLevel)) return;
+        ServerLevel serverLevel = ctx.serverLevel();
 
         BlockPos masterPos = ctx.masterPos();
 
         SpiritusState will = RitualHelper.queryWill(ctx.level(), masterPos, MIN_DEFAULT);
 
-        boolean hasRaw = will.hasDefault();
         boolean doHydrate = will.hasSteadfast();
         boolean doLeech = will.hasCorrosive();
         boolean doVengeful = will.hasVengeful();
 
-        refreshTime = hasRaw ? scaleRefreshTime(will.getDefault(), 20, 10, 10) : 20;
+        refreshTime = scaleByRawWill(will, 20, 10, 10);
 
-        double rawSpiritusUsed = 0;
         double steadfastWillUsed = 0;
         double corrosiveWillUsed = 0;
         double vengefulWillUsed = 0;
@@ -123,11 +125,27 @@ public class RitualGreenGrove extends Ritual {
                 grew = true;
             }
 
+            if (!grew && state.is(NVTags.Blocks.GEODE_ACCELERATABLE)) {
+                state.randomTick(serverLevel, pos, ctx.level().getRandom());
+                grew = true;
+            }
+
+            if (!grew && block instanceof BlockSpiritusCrystal) {
+                BlockEntity be = ctx.level().getBlockEntity(pos);
+                if (be instanceof SpiritusCrystalBlockEntity crystal) {
+                    double applied = crystal.growCrystalWithWillAmount(0, 0.05);
+                    if (applied > 0) grew = true;
+                }
+            }
+
             if (grew) {
                 totalGrowths++;
                 if (doVengeful && (will.getVengeful() - vengefulWillUsed) >= WILL_PER_VENGEFUL_GROWTH) {
                     vengefulWillUsed += WILL_PER_VENGEFUL_GROWTH;
                 }
+                RitualHelper.chanceStream(ctx.level(), 12, () ->
+                        StreamPresets.lifePulse(masterPos, pos).color(0x44CC33).build()
+                                .sendToNearby(ctx.serverLevel(), masterPos, 32));
             }
         }
 
@@ -162,11 +180,8 @@ public class RitualGreenGrove extends Ritual {
             }
         }
 
-        will.use(SpiritusType.DEFAULT, rawSpiritusUsed);
-        will.use(SpiritusType.STEADFAST, steadfastWillUsed);
-        will.use(SpiritusType.CORROSIVE, corrosiveWillUsed);
-        will.use(SpiritusType.VENGEFUL, vengefulWillUsed);
-        will.drain(ctx.level(), masterPos);
+        RitualHelper.drainSpiritus(will, ctx.level(), masterPos,
+                0, corrosiveWillUsed, 0, vengefulWillUsed, steadfastWillUsed);
 
         ctx.syphon(getRefreshCost() * totalGrowths);
     }

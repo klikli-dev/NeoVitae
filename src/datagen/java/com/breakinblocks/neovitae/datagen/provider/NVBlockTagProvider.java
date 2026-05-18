@@ -47,10 +47,24 @@ public class NVBlockTagProvider extends BlockTagsProvider {
         this.tag(NVTags.Blocks.PILLARS); // means all solid blocks are viable, has to be added otherwise the tag isnt generated
 
         this.tag(NVTags.Blocks.ANIMA_COMPARATOR)
-                .addAll(BlockGroups.BLOODSTONE);
+                .add(NVBlocks.BLOOD_STAINED_GLASS.block().getKey());
 
         this.tag(NVTags.Blocks.PULSE_ON_CRAFTING)
                 .add(Blocks.REDSTONE_LAMP, Blocks.NOTE_BLOCK);
+
+        this.tag(NVTags.Blocks.TELEPOSE_BLACKLIST)
+                .add(Blocks.BEDROCK,
+                        Blocks.BARRIER,
+                        Blocks.COMMAND_BLOCK,
+                        Blocks.CHAIN_COMMAND_BLOCK,
+                        Blocks.REPEATING_COMMAND_BLOCK,
+                        Blocks.STRUCTURE_BLOCK,
+                        Blocks.STRUCTURE_VOID,
+                        Blocks.JIGSAW,
+                        Blocks.END_PORTAL,
+                        Blocks.END_PORTAL_FRAME,
+                        Blocks.END_GATEWAY,
+                        Blocks.NETHER_PORTAL);
 
         this.tag(NVTags.Blocks.STORAGE_BLOCKS_HELLFORGED)
                 .addAll(BlockGroups.HELLFORGED_BLOCK);
@@ -79,12 +93,12 @@ public class NVBlockTagProvider extends BlockTagsProvider {
                 .add(NVBlocks.SPIRA_INFERNALIS.block().getKey())
                 // Demon crystals
                 .add(NVBlocks.RAW_SPIRITUS_CRYSTAL.block().getKey())
-                .add(NVBlocks.CORROSIVE_SPIRITUS_CRYSTAL.block().getKey())
-                .add(NVBlocks.DESTRUCTIVE_SPIRITUS_CRYSTAL.block().getKey())
-                .add(NVBlocks.VENGEFUL_SPIRITUS_CRYSTAL.block().getKey())
-                .add(NVBlocks.STEADFAST_SPIRITUS_CRYSTAL.block().getKey())
+                .add(NVBlocks.SPIRITUS_RUINA_CRYSTAL.block().getKey())
+                .add(NVBlocks.SPIRITUS_NIHILUM_CRYSTAL.block().getKey())
+                .add(NVBlocks.SPIRITUS_VINDICTA_CRYSTAL.block().getKey())
+                .add(NVBlocks.SPIRITUS_INVICTUS_CRYSTAL.block().getKey())
                 // Routing nodes
-                .add(NVBlocks.ROUTING_NODE.block().getKey())
+                .add(NVBlocks.ROUTING_CONDUIT.block().getKey())
                 .add(NVBlocks.INPUT_ROUTING_NODE.block().getKey())
                 .add(NVBlocks.OUTPUT_ROUTING_NODE.block().getKey())
                 .add(NVBlocks.MASTER_ROUTING_NODE.block().getKey())
@@ -120,12 +134,12 @@ public class NVBlockTagProvider extends BlockTagsProvider {
                 .add(NVBlocks.SPIRA_INFERNALIS.block().getKey())
                 // Demon crystals
                 .add(NVBlocks.RAW_SPIRITUS_CRYSTAL.block().getKey())
-                .add(NVBlocks.CORROSIVE_SPIRITUS_CRYSTAL.block().getKey())
-                .add(NVBlocks.DESTRUCTIVE_SPIRITUS_CRYSTAL.block().getKey())
-                .add(NVBlocks.VENGEFUL_SPIRITUS_CRYSTAL.block().getKey())
-                .add(NVBlocks.STEADFAST_SPIRITUS_CRYSTAL.block().getKey())
+                .add(NVBlocks.SPIRITUS_RUINA_CRYSTAL.block().getKey())
+                .add(NVBlocks.SPIRITUS_NIHILUM_CRYSTAL.block().getKey())
+                .add(NVBlocks.SPIRITUS_VINDICTA_CRYSTAL.block().getKey())
+                .add(NVBlocks.SPIRITUS_INVICTUS_CRYSTAL.block().getKey())
                 // Routing nodes
-                .add(NVBlocks.ROUTING_NODE.block().getKey())
+                .add(NVBlocks.ROUTING_CONDUIT.block().getKey())
                 .add(NVBlocks.INPUT_ROUTING_NODE.block().getKey())
                 .add(NVBlocks.OUTPUT_ROUTING_NODE.block().getKey())
                 .add(NVBlocks.MASTER_ROUTING_NODE.block().getKey())
@@ -275,6 +289,7 @@ public class NVBlockTagProvider extends BlockTagsProvider {
         // Add all dungeon blocks to MINEABLE_WITH_PICKAXE
         var pickaxeTag = this.tag(BlockTags.MINEABLE_WITH_PICKAXE);
         pickaxeTag.add(DungeonBlocks.DUNGEON_ORE.block().getKey());
+        pickaxeTag.add(DungeonBlocks.PRISMATIC_DEMONITE.block().getKey());
         pickaxeTag.add(DungeonBlocks.DUNGEON_BRICK_ASSORTED.block().getKey());
 
         // Path blocks
@@ -323,6 +338,7 @@ public class NVBlockTagProvider extends BlockTagsProvider {
         // Add stone tool requirement for dungeon blocks
         var stoneToolTag = this.tag(BlockTags.NEEDS_STONE_TOOL);
         stoneToolTag.add(DungeonBlocks.DUNGEON_ORE.block().getKey());
+        stoneToolTag.add(DungeonBlocks.PRISMATIC_DEMONITE.block().getKey());
         stoneToolTag.add(DungeonBlocks.DUNGEON_BRICK_ASSORTED.block().getKey());
         for (DungeonVariant variant : DungeonVariant.values()) {
             stoneToolTag.add(DungeonBlocks.DUNGEON_BRICK_1.get(variant).block().getKey());

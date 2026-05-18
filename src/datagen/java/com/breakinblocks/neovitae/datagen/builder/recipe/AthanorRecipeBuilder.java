@@ -9,21 +9,28 @@ import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.crafting.Ingredient;
 import net.minecraft.world.level.ItemLike;
+import net.minecraft.world.level.material.Fluid;
 import net.neoforged.neoforge.fluids.FluidStack;
+import net.neoforged.neoforge.fluids.crafting.SizedFluidIngredient;
 import com.breakinblocks.neovitae.common.recipe.athanor.AthanorRecipe;
 
+import com.breakinblocks.neovitae.common.datacomponent.SpiritusType;
+
 import java.util.ArrayList;
+import java.util.EnumMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 public class AthanorRecipeBuilder extends BaseRecipeBuilder {
 
     private final TagKey<Item> toolTag;
-    private Ingredient input;
+    private final List<Ingredient> inputs = new ArrayList<>();
     private List<ItemStack> guaranteed = new ArrayList<>();
     private List<Pair<ItemStack, Double>> chanced = new ArrayList<>();
-    private FluidStack inputFluid = null;
+    private SizedFluidIngredient inputFluid = null;
     private FluidStack outputFluid = null;
+    private final EnumMap<SpiritusType, Double> spiritusCosts = new EnumMap<>(SpiritusType.class);
 
     protected AthanorRecipeBuilder(TagKey<Item> tag) {
         super(ItemStack.EMPTY);
@@ -46,7 +53,10 @@ public class AthanorRecipeBuilder extends BaseRecipeBuilder {
     }
 
     public AthanorRecipeBuilder input(Ingredient ingredient) {
-        this.input = ingredient;
+        if (inputs.size() >= AthanorRecipe.MAX_INPUTS) {
+            throw new IllegalStateException("AthanorRecipe supports at most " + AthanorRecipe.MAX_INPUTS + " inputs");
+        }
+        this.inputs.add(ingredient);
         return this;
     }
 
@@ -63,8 +73,23 @@ public class AthanorRecipeBuilder extends BaseRecipeBuilder {
         return this;
     }
 
-    public AthanorRecipeBuilder fluidInput(FluidStack fluidInput) {
+    public AthanorRecipeBuilder fluidInput(SizedFluidIngredient fluidInput) {
         this.inputFluid = fluidInput;
+        return this;
+    }
+
+    public AthanorRecipeBuilder fluidInput(FluidStack fluidInput) {
+        this.inputFluid = SizedFluidIngredient.of(fluidInput);
+        return this;
+    }
+
+    public AthanorRecipeBuilder fluidInput(Fluid fluid, int amount) {
+        this.inputFluid = SizedFluidIngredient.of(fluid, amount);
+        return this;
+    }
+
+    public AthanorRecipeBuilder fluidInput(TagKey<Fluid> tag, int amount) {
+        this.inputFluid = SizedFluidIngredient.of(tag, amount);
         return this;
     }
 
@@ -73,16 +98,21 @@ public class AthanorRecipeBuilder extends BaseRecipeBuilder {
         return this;
     }
 
+    public AthanorRecipeBuilder spiritusCost(SpiritusType type, double amount) {
+        spiritusCosts.put(type, amount);
+        return this;
+    }
+
     @Override
     public void save(RecipeOutput output, ResourceLocation id) {
-        if (input == null) {
-            throw new IllegalStateException("AthanorRecipe requires an input ingredient");
+        if (inputs.isEmpty()) {
+            throw new IllegalStateException("AthanorRecipe requires at least one input ingredient");
         }
         if (guaranteed.isEmpty() && chanced.isEmpty() && outputFluid == null) {
             throw new IllegalStateException("AthanorRecipe must have at least one output (guaranteed, chanced, or fluid)");
         }
         Advancement.Builder advBuilder = getBuilder(output, id);
-        AthanorRecipe recipe = new AthanorRecipe(Ingredient.of(toolTag), input, guaranteed, chanced, Optional.ofNullable(inputFluid), Optional.ofNullable(outputFluid));
+        AthanorRecipe recipe = new AthanorRecipe(Ingredient.of(toolTag), inputs, guaranteed, chanced, Optional.ofNullable(inputFluid), Optional.ofNullable(outputFluid), Map.copyOf(spiritusCosts));
         output.accept(makeId(id, toolTag.location()), recipe, advBuilder.build(advancementId(id, "athanor")));
     }
 

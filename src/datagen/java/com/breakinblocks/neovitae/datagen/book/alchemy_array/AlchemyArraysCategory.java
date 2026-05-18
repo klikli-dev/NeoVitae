@@ -22,11 +22,12 @@ public class AlchemyArraysCategory extends CategoryProvider {
                 "__f_g_h_i_j_k_l_m__",
                 "____n_o_p_q_r_s_W__",
                 "____________________",
-                "__t_u_v_w___________",
+                "__t_u_v_w_1_2_3_4_5_",
                 "____________________",
                 "x_y_z_A_B_C_D_E_F__",
                 "_G_H_I_J_K_L_M_N_O_",
-                "P_Q_R_S_T_U_V_X_Y_Z"
+                "P_Q_R_S_T_U_V_X_Y_Z",
+                "6_7_8___________________"
         };
     }
 
@@ -131,162 +132,202 @@ public class AlchemyArraysCategory extends CategoryProvider {
         ice.withCondition(BookEntryReadConditionModel.create().withEntry("neovitae:alchemy_arrays/sigil_divination"));
         ice.hideWhileLocked(false);
 
-        var livingEquipment = this.add(new LivingEquipmentEntry(this).generate('t'));
+        var sentientEquipment = this.add(new SentientEquipmentEntry(this).generate('t'));
 
-        var livingUpgrades = this.add(new LivingUpgradesEntry(this).generate('u'));
-        livingUpgrades.withParent(this.parent(livingEquipment));
-        livingUpgrades.withCondition(BookEntryReadConditionModel.create().withEntry("neovitae:alchemy_arrays/living_equipment"));
-        livingUpgrades.hideWhileLocked(false);
+        var sentientUpgrades = this.add(new SentientUpgradesEntry(this).generate('u'));
+        sentientUpgrades.withParent(this.parent(sentientEquipment));
+        sentientUpgrades.withCondition(BookEntryReadConditionModel.create().withEntry("neovitae:alchemy_arrays/sentient_equipment"));
+        sentientUpgrades.hideWhileLocked(false);
 
         var upgradeTomes = this.add(new UpgradeTomesEntry(this).generate('v'));
-        upgradeTomes.withParent(this.parent(livingEquipment));
-        upgradeTomes.withCondition(BookEntryReadConditionModel.create().withEntry("neovitae:alchemy_arrays/living_equipment"));
+        upgradeTomes.withParent(this.parent(sentientEquipment));
+        upgradeTomes.withCondition(BookEntryReadConditionModel.create().withEntry("neovitae:alchemy_arrays/sentient_equipment"));
         upgradeTomes.hideWhileLocked(false);
 
         var trainingBracelet = this.add(new TrainingBraceletEntry(this).generate('w'));
-        trainingBracelet.withParent(this.parent(livingEquipment));
-        trainingBracelet.withCondition(BookEntryReadConditionModel.create().withEntry("neovitae:alchemy_arrays/living_equipment"));
+        trainingBracelet.withParent(this.parent(sentientEquipment));
+        trainingBracelet.withCondition(BookEntryReadConditionModel.create().withEntry("neovitae:alchemy_arrays/sentient_equipment"));
         trainingBracelet.hideWhileLocked(false);
 
         var bodyBuilder = this.add(new BodyBuilderUpgradeEntry(this).generate('x'));
-        bodyBuilder.withParent(this.parent(livingUpgrades));
-        bodyBuilder.withCondition(BookEntryReadConditionModel.create().withEntry("neovitae:alchemy_arrays/living_upgrades"));
+        bodyBuilder.withParent(this.parent(sentientUpgrades));
+        bodyBuilder.withCondition(BookEntryReadConditionModel.create().withEntry("neovitae:alchemy_arrays/sentient_upgrades"));
         bodyBuilder.hideWhileLocked(false);
 
         var brilliance = this.add(new BrillianceUpgradeEntry(this).generate('y'));
-        brilliance.withParent(this.parent(livingUpgrades));
-        brilliance.withCondition(BookEntryReadConditionModel.create().withEntry("neovitae:alchemy_arrays/living_upgrades"));
+        brilliance.withParent(this.parent(sentientUpgrades));
+        brilliance.withCondition(BookEntryReadConditionModel.create().withEntry("neovitae:alchemy_arrays/sentient_upgrades"));
         brilliance.hideWhileLocked(false);
 
         var chargingStrike = this.add(new ChargingStrikeUpgradeEntry(this).generate('z'));
-        chargingStrike.withParent(this.parent(livingUpgrades));
-        chargingStrike.withCondition(BookEntryReadConditionModel.create().withEntry("neovitae:alchemy_arrays/living_upgrades"));
+        chargingStrike.withParent(this.parent(sentientUpgrades));
+        chargingStrike.withCondition(BookEntryReadConditionModel.create().withEntry("neovitae:alchemy_arrays/sentient_upgrades"));
         chargingStrike.hideWhileLocked(false);
 
         var curiosSockets = this.add(new CuriosSocketsUpgradeEntry(this).generate('A'));
-        curiosSockets.withParent(this.parent(livingUpgrades));
-        curiosSockets.withCondition(BookEntryReadConditionModel.create().withEntry("neovitae:alchemy_arrays/living_upgrades"));
+        curiosSockets.withParent(this.parent(sentientUpgrades));
+        curiosSockets.withCondition(BookEntryReadConditionModel.create().withEntry("neovitae:alchemy_arrays/sentient_upgrades"));
         curiosSockets.hideWhileLocked(false);
 
         var dwarvenMight = this.add(new DwarvenMightUpgradeEntry(this).generate('B'));
-        dwarvenMight.withParent(this.parent(livingUpgrades));
-        dwarvenMight.withCondition(BookEntryReadConditionModel.create().withEntry("neovitae:alchemy_arrays/living_upgrades"));
+        dwarvenMight.withParent(this.parent(sentientUpgrades));
+        dwarvenMight.withCondition(BookEntryReadConditionModel.create().withEntry("neovitae:alchemy_arrays/sentient_upgrades"));
         dwarvenMight.hideWhileLocked(false);
 
         var elytra = this.add(new ElytraUpgradeEntry(this).generate('C'));
-        elytra.withParent(this.parent(livingUpgrades));
-        elytra.withCondition(BookEntryReadConditionModel.create().withEntry("neovitae:alchemy_arrays/living_upgrades"));
+        elytra.withParent(this.parent(sentientUpgrades));
+        elytra.withCondition(BookEntryReadConditionModel.create().withEntry("neovitae:alchemy_arrays/sentient_upgrades"));
         elytra.hideWhileLocked(false);
 
         var experienced = this.add(new ExperiencedUpgradeEntry(this).generate('D'));
-        experienced.withParent(this.parent(livingUpgrades));
-        experienced.withCondition(BookEntryReadConditionModel.create().withEntry("neovitae:alchemy_arrays/living_upgrades"));
+        experienced.withParent(this.parent(sentientUpgrades));
+        experienced.withCondition(BookEntryReadConditionModel.create().withEntry("neovitae:alchemy_arrays/sentient_upgrades"));
         experienced.hideWhileLocked(false);
 
         var fierceStrike = this.add(new FierceStrikeUpgradeEntry(this).generate('E'));
-        fierceStrike.withParent(this.parent(livingUpgrades));
-        fierceStrike.withCondition(BookEntryReadConditionModel.create().withEntry("neovitae:alchemy_arrays/living_upgrades"));
+        fierceStrike.withParent(this.parent(sentientUpgrades));
+        fierceStrike.withCondition(BookEntryReadConditionModel.create().withEntry("neovitae:alchemy_arrays/sentient_upgrades"));
         fierceStrike.hideWhileLocked(false);
 
         var giftOfIgnis = this.add(new GiftOfIgnisUpgradeEntry(this).generate('F'));
-        giftOfIgnis.withParent(this.parent(livingUpgrades));
-        giftOfIgnis.withCondition(BookEntryReadConditionModel.create().withEntry("neovitae:alchemy_arrays/living_upgrades"));
+        giftOfIgnis.withParent(this.parent(sentientUpgrades));
+        giftOfIgnis.withCondition(BookEntryReadConditionModel.create().withEntry("neovitae:alchemy_arrays/sentient_upgrades"));
         giftOfIgnis.hideWhileLocked(false);
 
         var gilded = this.add(new GildedUpgradeEntry(this).generate('G'));
-        gilded.withParent(this.parent(livingUpgrades));
-        gilded.withCondition(BookEntryReadConditionModel.create().withEntry("neovitae:alchemy_arrays/living_upgrades"));
+        gilded.withParent(this.parent(sentientUpgrades));
+        gilded.withCondition(BookEntryReadConditionModel.create().withEntry("neovitae:alchemy_arrays/sentient_upgrades"));
         gilded.hideWhileLocked(false);
 
         var healthy = this.add(new HealthyUpgradeEntry(this).generate('H'));
-        healthy.withParent(this.parent(livingUpgrades));
-        healthy.withCondition(BookEntryReadConditionModel.create().withEntry("neovitae:alchemy_arrays/living_upgrades"));
+        healthy.withParent(this.parent(sentientUpgrades));
+        healthy.withCondition(BookEntryReadConditionModel.create().withEntry("neovitae:alchemy_arrays/sentient_upgrades"));
         healthy.hideWhileLocked(false);
 
         var pinCushion = this.add(new PinCushionUpgradeEntry(this).generate('I'));
-        pinCushion.withParent(this.parent(livingUpgrades));
-        pinCushion.withCondition(BookEntryReadConditionModel.create().withEntry("neovitae:alchemy_arrays/living_upgrades"));
+        pinCushion.withParent(this.parent(sentientUpgrades));
+        pinCushion.withCondition(BookEntryReadConditionModel.create().withEntry("neovitae:alchemy_arrays/sentient_upgrades"));
         pinCushion.hideWhileLocked(false);
 
         var poisonResistance = this.add(new PoisonResistanceUpgradeEntry(this).generate('J'));
-        poisonResistance.withParent(this.parent(livingUpgrades));
-        poisonResistance.withCondition(BookEntryReadConditionModel.create().withEntry("neovitae:alchemy_arrays/living_upgrades"));
+        poisonResistance.withParent(this.parent(sentientUpgrades));
+        poisonResistance.withCondition(BookEntryReadConditionModel.create().withEntry("neovitae:alchemy_arrays/sentient_upgrades"));
         poisonResistance.hideWhileLocked(false);
 
         var quickFeet = this.add(new QuickFeetUpgradeEntry(this).generate('K'));
-        quickFeet.withParent(this.parent(livingUpgrades));
-        quickFeet.withCondition(BookEntryReadConditionModel.create().withEntry("neovitae:alchemy_arrays/living_upgrades"));
+        quickFeet.withParent(this.parent(sentientUpgrades));
+        quickFeet.withCondition(BookEntryReadConditionModel.create().withEntry("neovitae:alchemy_arrays/sentient_upgrades"));
         quickFeet.hideWhileLocked(false);
 
         var repair = this.add(new RepairUpgradeEntry(this).generate('L'));
-        repair.withParent(this.parent(livingUpgrades));
-        repair.withCondition(BookEntryReadConditionModel.create().withEntry("neovitae:alchemy_arrays/living_upgrades"));
+        repair.withParent(this.parent(sentientUpgrades));
+        repair.withCondition(BookEntryReadConditionModel.create().withEntry("neovitae:alchemy_arrays/sentient_upgrades"));
         repair.hideWhileLocked(false);
 
         var softFall = this.add(new SoftFallUpgradeEntry(this).generate('M'));
-        softFall.withParent(this.parent(livingUpgrades));
-        softFall.withCondition(BookEntryReadConditionModel.create().withEntry("neovitae:alchemy_arrays/living_upgrades"));
+        softFall.withParent(this.parent(sentientUpgrades));
+        softFall.withCondition(BookEntryReadConditionModel.create().withEntry("neovitae:alchemy_arrays/sentient_upgrades"));
         softFall.hideWhileLocked(false);
 
         var strongLegs = this.add(new StrongLegsUpgradeEntry(this).generate('N'));
-        strongLegs.withParent(this.parent(livingUpgrades));
-        strongLegs.withCondition(BookEntryReadConditionModel.create().withEntry("neovitae:alchemy_arrays/living_upgrades"));
+        strongLegs.withParent(this.parent(sentientUpgrades));
+        strongLegs.withCondition(BookEntryReadConditionModel.create().withEntry("neovitae:alchemy_arrays/sentient_upgrades"));
         strongLegs.hideWhileLocked(false);
 
         var tough = this.add(new ToughUpgradeEntry(this).generate('O'));
-        tough.withParent(this.parent(livingUpgrades));
-        tough.withCondition(BookEntryReadConditionModel.create().withEntry("neovitae:alchemy_arrays/living_upgrades"));
+        tough.withParent(this.parent(sentientUpgrades));
+        tough.withCondition(BookEntryReadConditionModel.create().withEntry("neovitae:alchemy_arrays/sentient_upgrades"));
         tough.hideWhileLocked(false);
 
         var toughPalms = this.add(new ToughPalmsUpgradeEntry(this).generate('P'));
-        toughPalms.withParent(this.parent(livingUpgrades));
-        toughPalms.withCondition(BookEntryReadConditionModel.create().withEntry("neovitae:alchemy_arrays/living_upgrades"));
+        toughPalms.withParent(this.parent(sentientUpgrades));
+        toughPalms.withCondition(BookEntryReadConditionModel.create().withEntry("neovitae:alchemy_arrays/sentient_upgrades"));
         toughPalms.hideWhileLocked(false);
 
         var battleHungry = this.add(new BattleHungryDowngradeEntry(this).generate('Q'));
-        battleHungry.withParent(this.parent(livingUpgrades));
-        battleHungry.withCondition(BookEntryReadConditionModel.create().withEntry("neovitae:alchemy_arrays/living_upgrades"));
+        battleHungry.withParent(this.parent(sentientUpgrades));
+        battleHungry.withCondition(BookEntryReadConditionModel.create().withEntry("neovitae:alchemy_arrays/sentient_upgrades"));
         battleHungry.hideWhileLocked(false);
 
         var crippledArm = this.add(new CrippledArmDowngradeEntry(this).generate('R'));
-        crippledArm.withParent(this.parent(livingUpgrades));
-        crippledArm.withCondition(BookEntryReadConditionModel.create().withEntry("neovitae:alchemy_arrays/living_upgrades"));
+        crippledArm.withParent(this.parent(sentientUpgrades));
+        crippledArm.withCondition(BookEntryReadConditionModel.create().withEntry("neovitae:alchemy_arrays/sentient_upgrades"));
         crippledArm.hideWhileLocked(false);
 
         var leadenedPick = this.add(new LeadenedPickDowngradeEntry(this).generate('S'));
-        leadenedPick.withParent(this.parent(livingUpgrades));
-        leadenedPick.withCondition(BookEntryReadConditionModel.create().withEntry("neovitae:alchemy_arrays/living_upgrades"));
+        leadenedPick.withParent(this.parent(sentientUpgrades));
+        leadenedPick.withCondition(BookEntryReadConditionModel.create().withEntry("neovitae:alchemy_arrays/sentient_upgrades"));
         leadenedPick.hideWhileLocked(false);
 
         var dulledBlade = this.add(new DulledBladeDowngradeEntry(this).generate('T'));
-        dulledBlade.withParent(this.parent(livingUpgrades));
-        dulledBlade.withCondition(BookEntryReadConditionModel.create().withEntry("neovitae:alchemy_arrays/living_upgrades"));
+        dulledBlade.withParent(this.parent(sentientUpgrades));
+        dulledBlade.withCondition(BookEntryReadConditionModel.create().withEntry("neovitae:alchemy_arrays/sentient_upgrades"));
         dulledBlade.hideWhileLocked(false);
 
         var quenched = this.add(new QuenchedDowngradeEntry(this).generate('U'));
-        quenched.withParent(this.parent(livingUpgrades));
-        quenched.withCondition(BookEntryReadConditionModel.create().withEntry("neovitae:alchemy_arrays/living_upgrades"));
+        quenched.withParent(this.parent(sentientUpgrades));
+        quenched.withCondition(BookEntryReadConditionModel.create().withEntry("neovitae:alchemy_arrays/sentient_upgrades"));
         quenched.hideWhileLocked(false);
 
         var diseased = this.add(new DiseasedDowngradeEntry(this).generate('V'));
-        diseased.withParent(this.parent(livingUpgrades));
-        diseased.withCondition(BookEntryReadConditionModel.create().withEntry("neovitae:alchemy_arrays/living_upgrades"));
+        diseased.withParent(this.parent(sentientUpgrades));
+        diseased.withCondition(BookEntryReadConditionModel.create().withEntry("neovitae:alchemy_arrays/sentient_upgrades"));
         diseased.hideWhileLocked(false);
 
         var limpLeg = this.add(new LimpLegDowngradeEntry(this).generate('X'));
-        limpLeg.withParent(this.parent(livingUpgrades));
-        limpLeg.withCondition(BookEntryReadConditionModel.create().withEntry("neovitae:alchemy_arrays/living_upgrades"));
+        limpLeg.withParent(this.parent(sentientUpgrades));
+        limpLeg.withCondition(BookEntryReadConditionModel.create().withEntry("neovitae:alchemy_arrays/sentient_upgrades"));
         limpLeg.hideWhileLocked(false);
 
         var stormTrooper = this.add(new StormTrooperDowngradeEntry(this).generate('Y'));
-        stormTrooper.withParent(this.parent(livingUpgrades));
-        stormTrooper.withCondition(BookEntryReadConditionModel.create().withEntry("neovitae:alchemy_arrays/living_upgrades"));
+        stormTrooper.withParent(this.parent(sentientUpgrades));
+        stormTrooper.withCondition(BookEntryReadConditionModel.create().withEntry("neovitae:alchemy_arrays/sentient_upgrades"));
         stormTrooper.hideWhileLocked(false);
 
         var concreteShoes = this.add(new ConcreteShoesDowngradeEntry(this).generate('Z'));
-        concreteShoes.withParent(this.parent(livingUpgrades));
-        concreteShoes.withCondition(BookEntryReadConditionModel.create().withEntry("neovitae:alchemy_arrays/living_upgrades"));
+        concreteShoes.withParent(this.parent(sentientUpgrades));
+        concreteShoes.withCondition(BookEntryReadConditionModel.create().withEntry("neovitae:alchemy_arrays/sentient_upgrades"));
         concreteShoes.hideWhileLocked(false);
+
+        var defenseArrays = this.add(new DefenseArraysEntry(this).generate('1'));
+        defenseArrays.withParent(this.parent(arcaneAsh));
+        defenseArrays.withCondition(BookEntryReadConditionModel.create().withEntry("neovitae:alchemy_arrays/arcane_ash"));
+        defenseArrays.hideWhileLocked(false);
+
+        var utilityArrays = this.add(new UtilityArraysEntry(this).generate('2'));
+        utilityArrays.withParent(this.parent(arcaneAsh));
+        utilityArrays.withCondition(BookEntryReadConditionModel.create().withEntry("neovitae:alchemy_arrays/arcane_ash"));
+        utilityArrays.hideWhileLocked(false);
+
+        var environmentArrays = this.add(new EnvironmentArraysEntry(this).generate('3'));
+        environmentArrays.withParent(this.parent(arcaneAsh));
+        environmentArrays.withCondition(BookEntryReadConditionModel.create().withEntry("neovitae:alchemy_arrays/arcane_ash"));
+        environmentArrays.hideWhileLocked(false);
+
+        var redstoneArrays = this.add(new RedstoneArraysEntry(this).generate('4'));
+        redstoneArrays.withParent(this.parent(arcaneAsh));
+        redstoneArrays.withCondition(BookEntryReadConditionModel.create().withEntry("neovitae:alchemy_arrays/arcane_ash"));
+        redstoneArrays.hideWhileLocked(false);
+
+        var spiritSiphonArray = this.add(new SpiritSiphonArrayEntry(this).generate('5'));
+        spiritSiphonArray.withParent(this.parent(arcaneAsh));
+        spiritSiphonArray.withCondition(BookEntryReadConditionModel.create().withEntry("neovitae:alchemy_arrays/arcane_ash"));
+        spiritSiphonArray.hideWhileLocked(false);
+
+        var necromancy = this.add(new NecromancySigilEntry(this).generate('6'));
+        necromancy.withParent(this.parent(divination));
+        necromancy.withCondition(BookEntryReadConditionModel.create().withEntry("neovitae:alchemy_arrays/sigil_divination"));
+        necromancy.hideWhileLocked(false);
+
+        var loyalFriends = this.add(new LoyalFriendsArrayEntry(this).generate('7'));
+        loyalFriends.withParent(this.parent(arcaneAsh));
+        loyalFriends.withCondition(BookEntryReadConditionModel.create().withEntry("neovitae:alchemy_arrays/arcane_ash"));
+        loyalFriends.hideWhileLocked(false);
+
+        var boundTreasures = this.add(new BoundTreasuresSigilEntry(this).generate('8'));
+        boundTreasures.withParent(this.parent(divination));
+        boundTreasures.withCondition(BookEntryReadConditionModel.create().withEntry("neovitae:alchemy_arrays/sigil_divination"));
+        boundTreasures.hideWhileLocked(false);
     }
 
     @Override
@@ -304,7 +345,7 @@ public class AlchemyArraysCategory extends CategoryProvider {
 
     @Override
     protected BookIconModel categoryIcon() {
-        return BookIconModel.create(NVItems.ARCANE_ASHES.get());
+        return BookIconModel.create(NVItems.ARCANE_SCRIBE_TOOL.get());
     }
 
     @Override

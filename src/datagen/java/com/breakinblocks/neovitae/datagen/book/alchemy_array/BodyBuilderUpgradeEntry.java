@@ -4,7 +4,7 @@ import com.klikli_dev.modonomicon.api.datagen.CategoryProviderBase;
 import com.klikli_dev.modonomicon.api.datagen.EntryBackground;
 import com.klikli_dev.modonomicon.api.datagen.EntryProvider;
 import com.klikli_dev.modonomicon.api.datagen.book.BookIconModel;
-import com.breakinblocks.neovitae.datagen.book.page.BookLivingUpgradeTablePageModel;
+import com.breakinblocks.neovitae.datagen.book.page.BookSentientUpgradeTablePageModel;
 import com.mojang.datafixers.util.Pair;
 import net.minecraft.world.item.Items;
 
@@ -16,13 +16,13 @@ public class BodyBuilderUpgradeEntry extends EntryProvider {
 
     @Override
     protected void generatePages() {
-        this.page("intro", () -> BookLivingUpgradeTablePageModel.create()
+        this.page("intro", () -> BookSentientUpgradeTablePageModel.create()
                 .withTitle(this.context().pageTitle())
                 .withText(this.context().pageText()));
         this.pageTitle("Body Builder");
         this.pageText("The armour observes your habits of nourishment and responds in kind, hardening your "
-                + "frame against impact. Grants [#](4A0080)Knockback Resistance[#]() up to 100%% and bonus "
-                + "health up to 10 half-hearts.\\\n\\\n"
+                + "frame against impact. Grants an [#](4A0080)anchored stance[#]() that resists being thrown and "
+                + "bolsters your vitality considerably.\\\n\\\n"
                 + "[#](B8860B)Trained by[#](): Eating food.\\\n\\\n"
                 + "[#](B8860B)Maximum level[#](): 5");
     }

@@ -5,9 +5,16 @@ import net.minecraft.core.Direction;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.util.RandomSource;
+import net.minecraft.world.item.DyeColor;
+import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.levelgen.structure.templatesystem.StructurePlaceSettings;
 import org.apache.commons.lang3.tuple.Pair;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import com.breakinblocks.neovitae.common.block.BlockDungeonSeal;
 import com.breakinblocks.neovitae.common.block.NVBlocks;
+import com.breakinblocks.neovitae.common.block.dungeon.DungeonBlocks;
+import com.breakinblocks.neovitae.common.blockentity.BloodLightBlockEntity;
 import com.breakinblocks.neovitae.common.blockentity.DungeonSealBlockEntity;
 import com.breakinblocks.neovitae.api.ritual.AreaDescriptor;
 import com.breakinblocks.neovitae.structures.DungeonDoor;
@@ -15,6 +22,7 @@ import com.breakinblocks.neovitae.structures.DungeonRoom;
 import com.breakinblocks.neovitae.structures.DungeonSynthesizer;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -124,7 +132,7 @@ public class DungeonRoomPlacement {
                 }
 
                 if (!filteredDoors.isEmpty()) {
-                    doorMasterMap.computeIfAbsent(doorType, k -> new java.util.HashMap<>())
+                    doorMasterMap.computeIfAbsent(doorType, k -> new HashMap<>())
                             .computeIfAbsent(facing, k -> new ArrayList<>())
                             .addAll(filteredDoors);
                 }
@@ -137,42 +145,84 @@ public class DungeonRoomPlacement {
      * Checks for intersection with existing rooms before placing - if a door
      * would lead into an existing room, it becomes a solid wall instead of a seal.
      */
+    private static final Logger LOGGER = LoggerFactory.getLogger(DungeonRoomPlacement.class);
+
     public void placeNewDoorSeals(ServerLevel world, BlockPos controllerPos, DungeonSynthesizer synthesizer) {
+        LOGGER.info("Placing seals for room {} at {}. Doors: {}, entrance: {}",
+                room.getKey(), roomLocation, containedDoorList.size(),
+                entrance != null ? entrance.getRight() : "none");
+
         for (DungeonDoor door : containedDoorList) {
-            // Skip the entrance door
             if (entrance != null && entrance.getRight().equals(door.doorPos())) {
+                LOGGER.info("  Skip entrance door at {}", door.doorPos());
                 continue;
             }
 
-            // Check if this door would intersect with existing rooms
-            // If so, just fill with wall - no seal (it can never lead anywhere)
             AreaDescriptor doorDesc = door.descriptor();
             boolean wouldIntersect = doorDesc != null && synthesizer.doesDescriptorIntersect(doorDesc);
 
-            // Fill the doorway with blocks to prevent seeing void
+            LOGGER.info("  Door at {} dir={} type={} desc={} intersect={}",
+                    door.doorPos(), door.doorDir(), door.doorType(),
+                    doorDesc != null ? "yes" : "NULL", wouldIntersect);
+
             fillDoorway(world, door);
 
             if (wouldIntersect) {
-                // Door would intersect existing room - just leave as solid wall, no seal
                 continue;
             }
 
-            // Place seal block above the door
+            // Build pool list, filtering out special pools that haven't been unlocked
             BlockPos sealPos = door.doorPos().relative(door.doorDir()).above(2);
-            world.setBlockAndUpdate(sealPos, NVBlocks.DUNGEON_SEAL.block().get().defaultBlockState());
-
-            // Configure the seal
-            if (world.getBlockEntity(sealPos) instanceof DungeonSealBlockEntity seal) {
-                List<ResourceLocation> potentialRooms = new ArrayList<>();
-                for (String roomType : door.getPotentialRoomTypes()) {
-                    // Strip prefix characters (# for special, $ for deadend) before parsing
-                    String cleanRoomType = roomType;
-                    if (roomType.startsWith("#") || roomType.startsWith("$")) {
-                        cleanRoomType = roomType.substring(1);
+            List<ResourceLocation> unlockedSpecials = synthesizer.getSpecialRoomBuffer();
+            List<ResourceLocation> potentialRooms = new ArrayList<>();
+            boolean hasUnlockedSpecial = false;
+            for (String roomType : door.getPotentialRoomTypes()) {
+                if (roomType.startsWith("#")) {
+                    ResourceLocation parsed = ResourceLocation.parse(roomType.substring(1));
+                    if (unlockedSpecials.contains(parsed)) {
+                        potentialRooms.add(parsed);
+                        hasUnlockedSpecial = true;
                     }
+                } else {
+                    String cleanRoomType = roomType.startsWith("$") ? roomType.substring(1) : roomType;
                     potentialRooms.add(ResourceLocation.parse(cleanRoomType));
                 }
+            }
+
+            if (potentialRooms.isEmpty()) {
+                // All pools were locked special pools; wall it off
+                LOGGER.info("  Walled off door at {} - all special pools locked", door.doorPos());
+                continue;
+            }
+
+            world.setBlockAndUpdate(sealPos, NVBlocks.DUNGEON_SEAL.block().get().defaultBlockState()
+                    .setValue(BlockDungeonSeal.SPECIAL, hasUnlockedSpecial));
+            synthesizer.incrementSealCount();
+
+            if (world.getBlockEntity(sealPos) instanceof DungeonSealBlockEntity seal) {
                 seal.initialize(controllerPos, door.doorPos(), door.doorDir(), door.doorType(), potentialRooms);
+            }
+
+            if (hasUnlockedSpecial) {
+                spawnSpecialSealLights(world, sealPos);
+            }
+        }
+    }
+
+    private void spawnSpecialSealLights(ServerLevel world, BlockPos sealPos) {
+        RandomSource rand = world.getRandom();
+        BlockState lightState = NVBlocks.BLOOD_LIGHT.get().defaultBlockState();
+        int count = 3 + rand.nextInt(4);
+        for (int i = 0; i < count; i++) {
+            for (int attempt = 0; attempt < 10; attempt++) {
+                BlockPos lightPos = sealPos.offset(rand.nextInt(7) - 3, rand.nextInt(5) - 2, rand.nextInt(7) - 3);
+                if (world.isEmptyBlock(lightPos)) {
+                    world.setBlockAndUpdate(lightPos, lightState);
+                    if (world.getBlockEntity(lightPos) instanceof BloodLightBlockEntity lightBE) {
+                        lightBE.setColor(DyeColor.CYAN);
+                    }
+                    break;
+                }
             }
         }
     }
@@ -183,16 +233,23 @@ public class DungeonRoomPlacement {
      */
     private void fillDoorway(ServerLevel world, DungeonDoor door) {
         AreaDescriptor desc = door.descriptor();
-        // Calculate seal position (same as where seal will be placed)
         BlockPos sealPos = door.doorPos().relative(door.doorDir()).above(2);
 
-        // Get all positions that need to be filled using the descriptor
-        List<BlockPos> fillerList = desc.getContainedPositions(sealPos);
-
-        // Fill each position with dungeon brick
-        for (BlockPos fillerPos : fillerList) {
-            world.setBlockAndUpdate(fillerPos,
-                    com.breakinblocks.neovitae.common.block.dungeon.DungeonBlocks.DUNGEON_BRICK_ASSORTED.block().get().defaultBlockState());
+        if (desc != null) {
+            List<BlockPos> fillerList = desc.getContainedPositions(sealPos);
+            for (BlockPos fillerPos : fillerList) {
+                world.setBlockAndUpdate(fillerPos,
+                        DungeonBlocks.DUNGEON_BRICK_ASSORTED.block().get().defaultBlockState());
+            }
+        } else {
+            Direction rightDir = door.doorDir().getClockWise();
+            for (int i = -1; i <= 1; i++) {
+                for (int j = -1; j <= 1; j++) {
+                    BlockPos fillerPos = sealPos.relative(rightDir, i).relative(Direction.UP, j);
+                    world.setBlockAndUpdate(fillerPos,
+                            DungeonBlocks.DUNGEON_BRICK_ASSORTED.block().get().defaultBlockState());
+                }
+            }
         }
     }
 }

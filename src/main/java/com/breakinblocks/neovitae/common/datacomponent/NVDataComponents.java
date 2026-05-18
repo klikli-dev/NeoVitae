@@ -17,7 +17,7 @@ import net.neoforged.neoforge.registries.DeferredRegister;
 import com.breakinblocks.neovitae.NeoVitae;
 import com.breakinblocks.neovitae.api.sigil.SigilType;
 import net.minecraft.world.item.DyeColor;
-import com.breakinblocks.neovitae.common.living.LivingUpgrade;
+import com.breakinblocks.neovitae.common.sentient.SentientUpgrade;
 import com.breakinblocks.neovitae.common.registry.NVRegistries;
 import com.breakinblocks.neovitae.registry.SigilTypeRegistry;
 
@@ -29,6 +29,9 @@ public class NVDataComponents {
     public static final DeferredHolder<DataComponentType<?>, DataComponentType<Binding>> BINDING = DATA_COMPONENTS.registerComponentType("binding", builder -> builder.persistent(Binding.BASIC_CODEC).networkSynchronized(Binding.STREAM_CODEC));
 
     public static final DeferredHolder<DataComponentType<?>, DataComponentType<Boolean>> INCENSE = DATA_COMPONENTS.registerComponentType("incense", builder -> builder.persistent(Codec.BOOL).networkSynchronized(ByteBufCodecs.BOOL));
+
+    public static final DeferredHolder<DataComponentType<?>, DataComponentType<Boolean>> LEX_ACTIVE = DATA_COMPONENTS.registerComponentType("lex_active", builder -> builder.persistent(Codec.BOOL).networkSynchronized(ByteBufCodecs.BOOL));
+    public static final DeferredHolder<DataComponentType<?>, DataComponentType<Integer>> LEX_RADIUS = DATA_COMPONENTS.registerComponentType("lex_radius", builder -> builder.persistent(Codec.INT).networkSynchronized(ByteBufCodecs.INT));
 
     public static final DeferredHolder<DataComponentType<?>, DataComponentType<Double>> SPIRITUS_AMOUNT = DATA_COMPONENTS.registerComponentType("will_amount", builder -> builder.persistent(Codec.DOUBLE).networkSynchronized(ByteBufCodecs.DOUBLE));
     public static final DeferredHolder<DataComponentType<?>, DataComponentType<SpiritusType>> SPIRITUS_TYPE = DATA_COMPONENTS.registerComponentType("will_type", builder -> builder.persistent(SpiritusType.CODEC).networkSynchronized(SpiritusType.STREAM_CODEC));
@@ -42,14 +45,14 @@ public class NVDataComponents {
 
     public static final DeferredHolder<DataComponentType<?>, DataComponentType<TagKey<Item>>> REQUIRED_SET = DATA_COMPONENTS.registerComponentType("required_set", builder -> builder.persistent(TagKey.codec(Registries.ITEM)));
 
-    public static final Codec<Object2FloatOpenHashMap<Holder<LivingUpgrade>>> UPGRADE_HOLDER_CODEC = Codec.unboundedMap(RegistryFixedCodec.create(NVRegistries.Keys.LIVING_UPGRADES), Codec.FLOAT).xmap(Object2FloatOpenHashMap::new, Function.identity());
+    public static final Codec<Object2FloatOpenHashMap<Holder<SentientUpgrade>>> UPGRADE_HOLDER_CODEC = Codec.unboundedMap(RegistryFixedCodec.create(NVRegistries.Keys.SENTIENT_UPGRADES), Codec.FLOAT).xmap(Object2FloatOpenHashMap::new, Function.identity());
     public static final DeferredHolder<DataComponentType<?>, DataComponentType<UpgradeLimits>> LIMITS = DATA_COMPONENTS.registerComponentType("limits", builder -> builder.persistent(UpgradeLimits.CODEC));
-    public static final DeferredHolder<DataComponentType<?>, DataComponentType<LivingStats>> UPGRADES = DATA_COMPONENTS.registerComponentType("upgrades", builder -> builder.persistent(LivingStats.CODEC));
+    public static final DeferredHolder<DataComponentType<?>, DataComponentType<SentientStats>> UPGRADES = DATA_COMPONENTS.registerComponentType("upgrades", builder -> builder.persistent(SentientStats.CODEC));
     public static final DeferredHolder<DataComponentType<?>, DataComponentType<Integer>> CURRENT_MAX_UPGRADE_POINTS = DATA_COMPONENTS.registerComponentType("max_upgrade_points", builder -> builder.persistent(Codec.INT).networkSynchronized(ByteBufCodecs.INT));
     public static final DeferredHolder<DataComponentType<?>, DataComponentType<Integer>> CURRENT_UPGRADE_POINTS = DATA_COMPONENTS.registerComponentType("current_upgrade_points", builder -> builder.persistent(Codec.INT).networkSynchronized(ByteBufCodecs.INT));
     public static final DeferredHolder<DataComponentType<?>, DataComponentType<Boolean>> FULL_SET_MARKER = DATA_COMPONENTS.registerComponentType("full_set_marker", builder -> builder.persistent(Codec.BOOL).networkSynchronized(ByteBufCodecs.BOOL));
     public static final DeferredHolder<DataComponentType<?>, DataComponentType<UpgradeTome>> UPGRADE_TOME_DATA = DATA_COMPONENTS.registerComponentType("upgrade_tome_data", builder -> builder.persistent(UpgradeTome.CODEC).networkSynchronized(UpgradeTome.STREAM_CODEC));
-    public static final DeferredHolder<DataComponentType<?>, DataComponentType<Object2FloatOpenHashMap<Holder<LivingUpgrade>>>> STORED_UPGRADES = DATA_COMPONENTS.registerComponentType("stored_upgrades", builder -> builder.persistent(UPGRADE_HOLDER_CODEC));
+    public static final DeferredHolder<DataComponentType<?>, DataComponentType<Object2FloatOpenHashMap<Holder<SentientUpgrade>>>> STORED_UPGRADES = DATA_COMPONENTS.registerComponentType("stored_upgrades", builder -> builder.persistent(UPGRADE_HOLDER_CODEC));
     public static final DeferredHolder<DataComponentType<?>, DataComponentType<Integer>> UPGRADE_SCRAP = DATA_COMPONENTS.registerComponentType("upgrade_scrap", builder -> builder.persistent(Codec.INT).networkSynchronized(ByteBufCodecs.INT));
 
     public static final DeferredHolder<DataComponentType<?>, DataComponentType<Integer>> PREVIOUS_DAMAGE = DATA_COMPONENTS.registerComponentType("previous_damage", builder -> builder.persistent(Codec.INT).networkSynchronized(ByteBufCodecs.INT));
@@ -68,6 +71,9 @@ public class NVDataComponents {
     public static final DeferredHolder<DataComponentType<?>, DataComponentType<String>> READER_RANGE_KEY = DATA_COMPONENTS.registerComponentType("reader_range_key", builder -> builder.persistent(Codec.STRING).networkSynchronized(ByteBufCodecs.STRING_UTF8));
     public static final DeferredHolder<DataComponentType<?>, DataComponentType<BlockPos>> READER_CORNER1 = DATA_COMPONENTS.registerComponentType("reader_corner1", builder -> builder.persistent(BlockPos.CODEC).networkSynchronized(BlockPos.STREAM_CODEC));
 
+    public static final DeferredHolder<DataComponentType<?>, DataComponentType<BlockPos>> RITUAL_CORNER1 = DATA_COMPONENTS.registerComponentType("ritual_corner1", builder -> builder.persistent(BlockPos.CODEC).networkSynchronized(BlockPos.STREAM_CODEC));
+    public static final DeferredHolder<DataComponentType<?>, DataComponentType<BlockPos>> RITUAL_CORNER2 = DATA_COMPONENTS.registerComponentType("ritual_corner2", builder -> builder.persistent(BlockPos.CODEC).networkSynchronized(BlockPos.STREAM_CODEC));
+
     public static final DeferredHolder<DataComponentType<?>, DataComponentType<Boolean>> SIGIL_ACTIVATED = DATA_COMPONENTS.registerComponentType("sigil_activated", builder -> builder.persistent(Codec.BOOL).networkSynchronized(ByteBufCodecs.BOOL));
     public static final DeferredHolder<DataComponentType<?>, DataComponentType<Boolean>> SIGIL_UNUSABLE = DATA_COMPONENTS.registerComponentType("sigil_unusable", builder -> builder.persistent(Codec.BOOL).networkSynchronized(ByteBufCodecs.BOOL));
     public static final DeferredHolder<DataComponentType<?>, DataComponentType<Holder<SigilType>>> SIGIL_TYPE = DATA_COMPONENTS.registerComponentType("sigil_type", builder -> builder.persistent(SigilType.HOLDER_CODEC).networkSynchronized(SigilType.HOLDER_STREAM_CODEC));
@@ -83,16 +89,18 @@ public class NVDataComponents {
     public static final DeferredHolder<DataComponentType<?>, DataComponentType<FlaskEffects>> FLASK_EFFECTS = DATA_COMPONENTS.registerComponentType("flask_effects", builder -> builder.persistent(FlaskEffects.CODEC).networkSynchronized(FlaskEffects.STREAM_CODEC));
 
     public static final DeferredHolder<DataComponentType<?>, DataComponentType<Integer>> GHOST_STACK_SIZE = DATA_COMPONENTS.registerComponentType("ghost_stack_size", builder -> builder.persistent(Codec.INT).networkSynchronized(ByteBufCodecs.INT));
-    public static final DeferredHolder<DataComponentType<?>, DataComponentType<FilterInventory>> FILTER_INVENTORY = DATA_COMPONENTS.registerComponentType("filter_inventory", builder -> builder.persistent(FilterInventory.CODEC).networkSynchronized(FilterInventory.STREAM_CODEC));
-    public static final DeferredHolder<DataComponentType<?>, DataComponentType<Integer>> FILTER_BLACKLIST = DATA_COMPONENTS.registerComponentType("filter_blacklist", builder -> builder.persistent(Codec.INT).networkSynchronized(ByteBufCodecs.INT));
-    public static final DeferredHolder<DataComponentType<?>, DataComponentType<String>> FILTER_TAG = DATA_COMPONENTS.registerComponentType("filter_tag", builder -> builder.persistent(Codec.STRING).networkSynchronized(ByteBufCodecs.STRING_UTF8));
-    public static final DeferredHolder<DataComponentType<?>, DataComponentType<NestedFilterInventory>> NESTED_FILTERS = DATA_COMPONENTS.registerComponentType("nested_filters", builder -> builder.persistent(NestedFilterInventory.CODEC).networkSynchronized(NestedFilterInventory.STREAM_CODEC));
 
     public static final DeferredHolder<DataComponentType<?>, DataComponentType<Integer>> BLOOD_LIGHT_BRIGHTNESS = DATA_COMPONENTS.registerComponentType("blood_light_brightness", builder -> builder.persistent(Codec.INT).networkSynchronized(ByteBufCodecs.VAR_INT));
     public static final DeferredHolder<DataComponentType<?>, DataComponentType<DyeColor>> BLOOD_LIGHT_COLOR = DATA_COMPONENTS.registerComponentType("blood_light_color", builder -> builder.persistent(DyeColor.CODEC).networkSynchronized(DyeColor.STREAM_CODEC));
     public static final DeferredHolder<DataComponentType<?>, DataComponentType<Boolean>> BLOOD_LIGHT_RAINBOW = DATA_COMPONENTS.registerComponentType("blood_light_rainbow", builder -> builder.persistent(Codec.BOOL).networkSynchronized(ByteBufCodecs.BOOL));
 
     public static final DeferredHolder<DataComponentType<?>, DataComponentType<SimpleFluidContent>> ORB_FLUID = DATA_COMPONENTS.registerComponentType("orb_fluid", builder -> builder.persistent(SimpleFluidContent.CODEC).networkSynchronized(SimpleFluidContent.STREAM_CODEC));
+
+    public static final DeferredHolder<DataComponentType<?>, DataComponentType<DyeColor>> ALCHEMY_ARRAY_COLOR = DATA_COMPONENTS.registerComponentType("alchemy_array_color", builder -> builder.persistent(DyeColor.CODEC).networkSynchronized(DyeColor.STREAM_CODEC));
+
+    public static final DeferredHolder<DataComponentType<?>, DataComponentType<Boolean>> BLOOD_MENDING = DATA_COMPONENTS.registerComponentType("blood_mending", builder -> builder.persistent(Codec.BOOL).networkSynchronized(ByteBufCodecs.BOOL));
+
+    public static final DeferredHolder<DataComponentType<?>, DataComponentType<Double>> SPIRITUS_MAX = DATA_COMPONENTS.registerComponentType("will_max", builder -> builder.persistent(Codec.DOUBLE).networkSynchronized(ByteBufCodecs.DOUBLE));
 
     public static void register(IEventBus modBus) {
         DATA_COMPONENTS.register(modBus);

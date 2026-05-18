@@ -7,6 +7,7 @@ import net.minecraft.world.level.Level;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import com.breakinblocks.neovitae.NeoVitae;
+import com.breakinblocks.neovitae.api.stream.StreamPresets;
 import com.breakinblocks.neovitae.ritual.EnumRuneType;
 import com.breakinblocks.neovitae.ritual.IMasterRitualStone;
 import com.breakinblocks.neovitae.ritual.Ritual;
@@ -70,19 +71,31 @@ public class RitualSimpleDungeon extends DungeonRitualBase {
 
         LOGGER.info("Dungeon generated. Player spawn: {}, Portal: {}", playerSpawnPos, portalPos);
 
-        // Calculate positions for portal pillars
-        BlockPos pillarPos = masterPos.above(2);  // Above the rune column
+        storeControllerPosition(masterRitualStone, dungeonControllerPos);
+
         BlockPos overworldPlayerPos = masterPos.relative(masterRitualStone.getDirection(), 2);
 
-        // Perform common cleanup FIRST (replaces runes with smooth stone, removes MRS)
-        performRitualCleanup(masterRitualStone, world);
+        for (BlockPos offset : new BlockPos[]{
+                masterPos.north(4), masterPos.south(4),
+                masterPos.east(4),  masterPos.west(4)}) {
+            StreamPresets.voidTendril(offset, masterPos).build()
+                    .sendToNearby(serverWorld, masterPos, 128);
+        }
 
-        // THEN spawn portal pillars (after cleanup so they don't get overwritten)
-        spawnPortalPillar(world, dungeonWorld, pillarPos, playerSpawnPos);
+        if (!applyRitualStructure(masterRitualStone, serverWorld)) {
+            LOGGER.error("Failed to apply ritual structure for simple dungeon");
+            masterRitualStone.stopRitual(Ritual.BreakType.DEACTIVATE);
+            return;
+        }
+        wireFunctionalInversionPillar(serverWorld, masterPos, dungeonWorld, playerSpawnPos);
         spawnPortalPillar(dungeonWorld, world, portalPos, overworldPlayerPos);
 
-        // Stop the ritual since it's a one-time effect
         masterRitualStone.stopRitual(Ritual.BreakType.DEACTIVATE);
+    }
+
+    @Override
+    protected net.minecraft.resources.ResourceLocation getStructureId() {
+        return NeoVitae.rl("ritual/edge_of_the_hidden_realm");
     }
 
     @Override

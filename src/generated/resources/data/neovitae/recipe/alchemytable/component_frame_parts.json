@@ -5,10 +5,10 @@
       "tag": "c:glass_blocks"
     },
     {
-      "tag": "c:stones"
+      "tag": "neovitae:vitae_stone"
     },
     {
-      "item": "neovitae:blank_slate"
+      "item": "neovitae:tabula_rasa"
     }
   ],
   "output": {

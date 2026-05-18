@@ -4,6 +4,8 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.NbtOps;
+import net.minecraft.world.item.DyeColor;
 import net.minecraft.world.Containers;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.item.ItemStack;
@@ -12,8 +14,10 @@ import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
 import net.neoforged.neoforge.items.ItemStackHandler;
 import com.breakinblocks.neovitae.common.alchemyarray.AlchemyArrayEffect;
+import com.breakinblocks.neovitae.common.alchemyarray.AlchemyArrayEffectLight;
 import com.breakinblocks.neovitae.common.alchemyarray.AlchemyArrayEffectType;
 import com.breakinblocks.neovitae.common.NVSounds;
+import com.breakinblocks.neovitae.common.datacomponent.Binding;
 import com.breakinblocks.neovitae.client.particle.ColoredParticleOptions;
 import com.breakinblocks.neovitae.common.particle.NVParticles;
 import com.breakinblocks.neovitae.common.recipe.NVRecipes;
@@ -31,6 +35,9 @@ public class AlchemyArrayBlockEntity extends BaseBlockEntity {
 
     public AlchemyArrayEffect arrayEffect;
     private boolean doDropIngredients = true;
+    private Binding ownerBinding = Binding.EMPTY;
+    private DyeColor arrayColor = null;
+    private CompoundTag pendingEffectNbt = null;
 
     public final ItemStackHandler inv = new ItemStackHandler(2) {
         @Override
@@ -69,6 +76,23 @@ public class AlchemyArrayBlockEntity extends BaseBlockEntity {
         }
         this.rotation = Direction.from2DDataValue(tag.getInt("direction"));
         inv.deserializeNBT(registries, tag.getCompound("inventory"));
+        if (tag.contains("ownerBinding")) {
+            this.ownerBinding = Binding.BASIC_CODEC.parse(NbtOps.INSTANCE, tag.getCompound("ownerBinding")).result().orElse(Binding.EMPTY);
+        }
+        if (tag.contains("arrayColor")) {
+            this.arrayColor = DyeColor.byId(tag.getInt("arrayColor"));
+        } else {
+            this.arrayColor = null;
+        }
+        if (tag.contains("effectState")) {
+            pendingEffectNbt = tag.getCompound("effectState");
+            if (arrayEffect != null) {
+                arrayEffect.readFromNBT(pendingEffectNbt);
+                pendingEffectNbt = null;
+            }
+        } else {
+            pendingEffectNbt = null;
+        }
     }
 
     public void doDropIngredients(boolean drop) {
@@ -83,6 +107,19 @@ public class AlchemyArrayBlockEntity extends BaseBlockEntity {
         tag.putBoolean("doDropIngredients", doDropIngredients);
         tag.putInt("direction", rotation.get2DDataValue());
         tag.put("inventory", inv.serializeNBT(registries));
+        if (!ownerBinding.isEmpty()) {
+            Binding.BASIC_CODEC.encodeStart(NbtOps.INSTANCE, ownerBinding).result().ifPresent(nbt -> tag.put("ownerBinding", nbt));
+        }
+        if (arrayColor != null) {
+            tag.putInt("arrayColor", arrayColor.getId());
+        }
+        if (arrayEffect != null) {
+            CompoundTag effectTag = new CompoundTag();
+            arrayEffect.writeToNBT(effectTag);
+            if (!effectTag.isEmpty()) {
+                tag.put("effectState", effectTag);
+            }
+        }
     }
 
     public static void tick(Level level, BlockPos pos, BlockState state, AlchemyArrayBlockEntity tile) {
@@ -118,6 +155,10 @@ public class AlchemyArrayBlockEntity extends BaseBlockEntity {
                 return false;
             } else {
                 arrayEffect = effect;
+                if (pendingEffectNbt != null) {
+                    arrayEffect.readFromNBT(pendingEffectNbt);
+                    pendingEffectNbt = null;
+                }
                 if (level != null && !level.isClientSide) {
                     level.playSound(null, worldPosition, NVSounds.ALCHEMY_ARRAY_ACTIVATE.get(), SoundSource.BLOCKS, 0.5f, 1.0f);
                     for (int i = 0; i < 6; i++) {
@@ -134,6 +175,7 @@ public class AlchemyArrayBlockEntity extends BaseBlockEntity {
             isActive = true;
             if (arrayEffect.update(this, this.activeCounter)) {
                 craftComplete = true;
+                doDropIngredients = false;
                 if (level != null && !level.isClientSide) {
                     level.playSound(null, worldPosition, NVSounds.ALCHEMY_ARRAY_CRAFT.get(), SoundSource.BLOCKS, 0.7f, 1.0f);
                     ((ServerLevel) level).sendParticles(new ColoredParticleOptions(NVParticles.BLOOD_FLAME.get(), 0xAA0000), worldPosition.getX() + 0.5, worldPosition.getY() + 0.5, worldPosition.getZ() + 0.5, 10, 0.2, 0.0, 0.2, 0.05);
@@ -186,6 +228,24 @@ public class AlchemyArrayBlockEntity extends BaseBlockEntity {
         this.rotation = rotation;
     }
 
+    public Binding getOwnerBinding() {
+        return ownerBinding;
+    }
+
+    public void setOwnerBinding(Binding binding) {
+        this.ownerBinding = binding;
+        setChanged();
+    }
+
+    public DyeColor getArrayColor() {
+        return arrayColor;
+    }
+
+    public void setArrayColor(DyeColor color) {
+        this.arrayColor = color;
+        setChanged();
+    }
+
     public ItemStack getItem(int slot) {
         return inv.getStackInSlot(slot);
     }
@@ -198,6 +258,26 @@ public class AlchemyArrayBlockEntity extends BaseBlockEntity {
                     Containers.dropItemStack(level, worldPosition.getX(), worldPosition.getY(), worldPosition.getZ(), stack);
                 }
             }
+        }
+        if (arrayEffect instanceof AlchemyArrayEffectLight lightEffect && level != null && !level.isClientSide) {
+            lightEffect.removeLights(level);
+        }
+    }
+
+    public int getRedstoneSignal() {
+        if (arrayEffect != null) {
+            return arrayEffect.getRedstoneSignal(this);
+        }
+        return 0;
+    }
+
+    public boolean isSignalSource() {
+        return arrayEffect != null && arrayEffect.isSignalSource();
+    }
+
+    public void onNeighborChanged(BlockPos neighborPos) {
+        if (arrayEffect != null) {
+            arrayEffect.onNeighborChanged(this, neighborPos);
         }
     }
 }

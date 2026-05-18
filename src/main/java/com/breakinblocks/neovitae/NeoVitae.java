@@ -2,6 +2,7 @@ package com.breakinblocks.neovitae;
 
 import com.mojang.logging.LogUtils;
 import net.minecraft.resources.ResourceLocation;
+import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.fml.ModContainer;
 import net.neoforged.fml.ModList;
@@ -32,6 +33,8 @@ import com.breakinblocks.neovitae.common.recipe.NVRecipes;
 import com.breakinblocks.neovitae.common.registry.NVRegistries;
 import com.breakinblocks.neovitae.common.loot.NVLootFunctions;
 import com.breakinblocks.neovitae.common.structure.NVMultiblock;
+import com.breakinblocks.neovitae.common.structure.NVAltarBookSync;
+import com.breakinblocks.neovitae.common.structure.NVRitualBookSync;
 import com.breakinblocks.neovitae.anointment.AnointmentRegistrar;
 import com.breakinblocks.neovitae.ritual.RitualRegistry;
 import com.breakinblocks.neovitae.ritual.harvest.NVHarvestHandlers;
@@ -42,10 +45,20 @@ import com.breakinblocks.neovitae.compat.curios.CuriosCompat;
 
 import com.breakinblocks.neovitae.structures.ModRoomPools;
 import net.neoforged.fml.event.lifecycle.FMLCommonSetupEvent;
+import net.neoforged.fml.loading.FMLEnvironment;
 
 import com.breakinblocks.neovitae.api.NeoVitaeAPI;
+import com.breakinblocks.neovitae.api.routing.RoutingChannelRegistry;
+import com.breakinblocks.neovitae.client.render.item.SpiritusBarDecorator;
+import com.breakinblocks.neovitae.common.event.NVMissingMappings;
+import com.breakinblocks.neovitae.common.material.MaterialRegistry;
+import com.breakinblocks.neovitae.common.routing.EnergyRoutingChannel;
+import com.breakinblocks.neovitae.common.routing.FluidRoutingChannel;
+import com.breakinblocks.neovitae.common.routing.ItemRoutingChannel;
+import com.breakinblocks.neovitae.compat.modonomicon.NVModonomiconCompat;
 import com.breakinblocks.neovitae.impl.AltarRuneBlockRegistry;
 import com.breakinblocks.neovitae.impl.NeoVitaeAPIImpl;
+import com.klikli_dev.modonomicon.data.LoaderRegistry;
 
 @Mod(NeoVitae.MODID)
 public class NeoVitae {
@@ -58,16 +71,23 @@ public class NeoVitae {
     public static final ServerConfig SERVER_CONFIG;
     private static final ModConfigSpec SERVER_CONFIG_SPEC;
 
+    public static final ClientConfig CLIENT_CONFIG;
+    private static final ModConfigSpec CLIENT_CONFIG_SPEC;
+
     static {
-        Pair<ServerConfig, ModConfigSpec> pair = new ModConfigSpec.Builder().configure(ServerConfig::new);
-        SERVER_CONFIG = pair.getLeft();
-        SERVER_CONFIG_SPEC = pair.getRight();
+        Pair<ServerConfig, ModConfigSpec> serverPair = new ModConfigSpec.Builder().configure(ServerConfig::new);
+        SERVER_CONFIG = serverPair.getLeft();
+        SERVER_CONFIG_SPEC = serverPair.getRight();
+
+        Pair<ClientConfig, ModConfigSpec> clientPair = new ModConfigSpec.Builder().configure(ClientConfig::new);
+        CLIENT_CONFIG = clientPair.getLeft();
+        CLIENT_CONFIG_SPEC = clientPair.getRight();
     }
 
     public NeoVitae(IEventBus modBus, ModContainer container) {
-        com.breakinblocks.neovitae.api.routing.RoutingChannelRegistry.register(new com.breakinblocks.neovitae.common.routing.ItemRoutingChannel());
-        com.breakinblocks.neovitae.api.routing.RoutingChannelRegistry.register(new com.breakinblocks.neovitae.common.routing.FluidRoutingChannel());
-        com.breakinblocks.neovitae.api.routing.RoutingChannelRegistry.register(new com.breakinblocks.neovitae.common.routing.EnergyRoutingChannel());
+        RoutingChannelRegistry.register(new ItemRoutingChannel());
+        RoutingChannelRegistry.register(new FluidRoutingChannel());
+        RoutingChannelRegistry.register(new EnergyRoutingChannel());
 
         try {
             Class<?> testSetup = Class.forName("com.breakinblocks.neovitae.gametest.NVGameTestSetup");
@@ -77,7 +97,7 @@ public class NeoVitae {
             LOGGER.error("Failed to register game test setup", e);
         }
 
-        com.breakinblocks.neovitae.common.material.MaterialRegistry.register(modBus);
+        MaterialRegistry.register(modBus);
         NVRegistries.register(modBus);
         NVDataComponents.register(modBus);
         NVFluids.register(modBus);
@@ -99,15 +119,24 @@ public class NeoVitae {
         RitualRegistry.register(modBus);
         NVCriteriaTriggers.register(modBus);
         NVMultiblock.register(NeoForge.EVENT_BUS);
+        if (ModList.get().isLoaded("modonomicon")) {
+            NVAltarBookSync.register(NeoForge.EVENT_BUS);
+            NVRitualBookSync.register(NeoForge.EVENT_BUS);
+        }
         NVMenus.register(modBus);
         NVTabs.register(modBus);
 
         CuriosCompat.init(modBus);
 
         container.registerConfig(ModConfig.Type.SERVER, SERVER_CONFIG_SPEC);
+        container.registerConfig(ModConfig.Type.CLIENT, CLIENT_CONFIG_SPEC);
 
         modBus.addListener(this::commonSetup);
         modBus.addListener(NVPayloads::register);
+        if (FMLEnvironment.dist == Dist.CLIENT) {
+            modBus.addListener(SpiritusBarDecorator::registerAll);
+        }
+        NVMissingMappings.register(modBus);
         NeoForge.EVENT_BUS.addListener(NVCommands::register);
     }
 
@@ -120,12 +149,12 @@ public class NeoVitae {
 
         if (ModList.get().isLoaded("modonomicon")) {
             event.enqueueWork(() -> {
-                com.klikli_dev.modonomicon.data.LoaderRegistry.registerPredicate(
+                LoaderRegistry.registerPredicate(
                         rl("non_air_solid"),
                         (blockGetter, blockPos, blockState) ->
                                 !blockState.isAir() && blockState.getFluidState().isEmpty()
                 );
-                com.breakinblocks.neovitae.compat.modonomicon.NVModonomiconCompat.registerPageLoaders();
+                NVModonomiconCompat.registerPageLoaders();
             });
         }
     }

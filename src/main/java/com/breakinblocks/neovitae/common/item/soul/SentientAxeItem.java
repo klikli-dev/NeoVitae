@@ -35,15 +35,15 @@ public class SentientAxeItem extends AxeItem implements ISentientTool {
     public SentientAxeItem() {
         super(NVMaterialsAndTiers.SENTIENT, new Properties()
                 .attributes(AxeItem.createAttributes(NVMaterialsAndTiers.SENTIENT, 8, -3.1f))
-                .component(NVDataComponents.SPIRITUS_TYPE, SpiritusType.DEFAULT));
+                .component(NVDataComponents.SPIRITUS_TYPE, SpiritusType.RAW));
     }
 
     @Override
-    public double[] getDamageForWillType(SpiritusType type) {
+    public double[] getDamageForSpiritusType(SpiritusType type) {
         return switch (type) {
-            case DESTRUCTIVE -> DESTRUCTIVE_DAMAGE;
-            case VENGEFUL -> VENGEFUL_DAMAGE;
-            case STEADFAST -> STEADFAST_DAMAGE;
+            case NIHILUM -> DESTRUCTIVE_DAMAGE;
+            case VINDICTA -> VENGEFUL_DAMAGE;
+            case INVICTUS -> STEADFAST_DAMAGE;
             default -> DEFAULT_DAMAGE;
         };
     }
@@ -75,10 +75,10 @@ public class SentientAxeItem extends AxeItem implements ISentientTool {
                 recalculatePowers(stack, player.level(), player);
                 SpiritusType type = getCurrentType(stack);
                 double will = PlayerSpiritusHandler.getTotalSpiritus(type, player);
-                int willBracket = getLevel(will);
+                int spiritusBracket = getLevel(will);
 
-                if (willBracket >= 0) {
-                    applyEffectToEntity(type, willBracket, target, player);
+                if (spiritusBracket >= 0) {
+                    applyEffectToEntity(type, spiritusBracket, target, player);
                 }
             }
             return true;
@@ -89,7 +89,7 @@ public class SentientAxeItem extends AxeItem implements ISentientTool {
     @Override
     public boolean onLeftClickEntity(ItemStack stack, Player player, Entity entity) {
         recalculatePowers(stack, player.level(), player);
-        if (handleWillDrain(stack, player)) {
+        if (handleSpiritusDrain(stack, player)) {
             return false;
         }
         return super.onLeftClickEntity(stack, player, entity);
@@ -100,9 +100,10 @@ public class SentientAxeItem extends AxeItem implements ISentientTool {
         SpiritusType type = PlayerSpiritusHandler.getLargestSpiritusType(player);
         double soulsRemaining = PlayerSpiritusHandler.getTotalSpiritus(type, player);
 
-        setCurrentType(stack, soulsRemaining > 0 ? type : SpiritusType.DEFAULT);
+        setCurrentType(stack, soulsRemaining > 0 ? type : SpiritusType.RAW);
         int level = getLevel(soulsRemaining);
 
+        setActivatedState(stack, soulsRemaining > ACTIVATION_THRESHOLD);
         setDrainAmount(stack, level >= 0 ? SOUL_DRAIN_PER_SWING[level] : 0);
         setDamageBonus(stack, getExtraDamage(type, level));
         setStaticDrop(stack, level >= 0 ? STATIC_DROP[level] : 1);
@@ -112,8 +113,8 @@ public class SentientAxeItem extends AxeItem implements ISentientTool {
 
     @Override
     public void appendHoverText(ItemStack stack, TooltipContext context, List<Component> tooltip, TooltipFlag flag) {
-        tooltip.add(Component.translatable("tooltip.neovitae." + getTooltipKey() + ".desc").withStyle(ChatFormatting.GRAY));
-        tooltip.add(Component.translatable("tooltip.neovitae.currentType." + getCurrentType(stack).name().toLowerCase(Locale.ROOT)).withStyle(ChatFormatting.GRAY));
+        tooltip.add(Component.translatable("tooltip.neovitae." + getTooltipKey() + ".desc").withStyle(ChatFormatting.ITALIC, ChatFormatting.GRAY));
+        SpiritusTooltipHelper.appendSpiritusInfo(stack, getTooltipKey(), tooltip, flag);
         super.appendHoverText(stack, context, tooltip, flag);
     }
 

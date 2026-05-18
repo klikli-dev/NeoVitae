@@ -10,14 +10,18 @@ import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.material.Fluid;
 import com.breakinblocks.neovitae.NeoVitae;
 import com.breakinblocks.neovitae.common.item.NVMaterialsAndTiers;
-import com.breakinblocks.neovitae.common.living.LivingUpgrade;
+import com.breakinblocks.neovitae.common.sentient.SentientUpgrade;
 import com.breakinblocks.neovitae.common.registry.AltarTier;
 import com.breakinblocks.neovitae.common.registry.NVRegistries;
 
 public class NVTags {
     public static class Items {
+        public static final TagKey<Item> BLOOD_MENDING_BLACKLIST = tag(bm("blood_mending_blacklist"));
+        public static final TagKey<Item> SPIRITUS_CAPABLE = tag(bm("spiritus_capable"));
         public static final TagKey<Item> SPIRITUS_GEM = tag(bm("spiritus_gems"));
         public static final TagKey<Item> SPIRITUS_CRYSTALS = tag(bm("crystals/demon"));
+
+        public static final TagKey<Item> VITAE_STONE = tag(bm("vitae_stone"));
 
         public static final TagKey<Item> STORAGE_BLOCKS_HELLFORGED = fromBlock(Blocks.STORAGE_BLOCKS_HELLFORGED);
 
@@ -38,8 +42,8 @@ public class NVTags {
 
         public static final TagKey<Item> CHARGES = tag(bm("charges"));
 
-        public static final TagKey<Item> LIVING_UPGRADE_SET = tag(bm("living_upgrade_set"));
-        public static final TagKey<Item> LIVING_SET = withParent(LIVING_UPGRADE_SET, NVMaterialsAndTiers.LIVING_ARMOUR_MATERIAL.getId());
+        public static final TagKey<Item> SENTIENT_UPGRADE_SET = tag(bm("sentient_upgrade_set"));
+        public static final TagKey<Item> SENTIENT_SET = withParent(SENTIENT_UPGRADE_SET, NVMaterialsAndTiers.SENTIENT_ARMOUR_MATERIAL.getId());
 
         public static final TagKey<Item> FRAGMENTS_IRON = tag(c("fragments/iron"));
         public static final TagKey<Item> FRAGMENTS_GOLD = tag(c("fragments/gold"));
@@ -67,6 +71,11 @@ public class NVTags {
         public static final TagKey<Item> INGOTS_HELLFORGED = tag(c("ingots/hellforged"));
         public static final TagKey<Item> RAW_MATERIALS_HELLFORGED = tag(c("raw_materials/hellforged"));
 
+        public static final TagKey<Item> ANOINTABLE_MELEE = tag(bm("anointable/melee"));
+        public static final TagKey<Item> ANOINTABLE_MINING = tag(bm("anointable/mining"));
+        public static final TagKey<Item> ANOINTABLE_BOWS = tag(bm("anointable/bows"));
+        public static final TagKey<Item> ANOINTABLE_WEAPONS = tag(bm("anointable/weapons"));
+
         private static TagKey<Item> fromBlock(TagKey<Block> input) {
             return tag(input.location());
         }
@@ -91,6 +100,8 @@ public class NVTags {
 
         public static final TagKey<Block> PULSE_ON_CRAFTING = tag(bm("altar/pulse_on_crafting"));
         public static final TagKey<Block> ANIMA_COMPARATOR = tag(bm("altar/anima_comparator"));
+
+        public static final TagKey<Block> TELEPOSE_BLACKLIST = tag(bm("telepose_blacklist"));
 
         public static final TagKey<Block> STORAGE_BLOCKS_HELLFORGED = tag(c("storage_blocks/hellforged"));
 
@@ -129,6 +140,11 @@ public class NVTags {
 
     public static class Fluids {
         public static final TagKey<Fluid> ESSENTIA_VITAE = tag(bm("essentia_vitae"));
+        public static final TagKey<Fluid> ESSENTIA_VITAE_SOURCE = tag(bm("essentia_vitae_source"));
+        public static final TagKey<Fluid> ESSENTIA_VITAE_FLOWING = tag(bm("essentia_vitae_flowing"));
+        public static final TagKey<Fluid> ANIMATED_SPIRITUS = tag(bm("animated_spiritus"));
+        public static final TagKey<Fluid> ANIMATED_SPIRITUS_SOURCE = tag(bm("animated_spiritus_source"));
+        public static final TagKey<Fluid> ANIMATED_SPIRITUS_FLOWING = tag(bm("animated_spiritus_flowing"));
 
         private static TagKey<Fluid> tag(ResourceLocation id) {
             return TagKey.create(Registries.FLUID, id);
@@ -143,6 +159,8 @@ public class NVTags {
     public static class Entities {
         public static final TagKey<EntityType<?>> TELEPOSE_BLACKLIST = tag(bm("telepose_blacklist"));
         public static final TagKey<EntityType<?>> WELL_OF_SUFFERING_BLACKLIST = tag(bm("well_of_suffering_blacklist"));
+        public static final TagKey<EntityType<?>> RITUAL_BOSS_BLACKLIST = tag(bm("ritual_boss_blacklist"));
+        public static final TagKey<EntityType<?>> NO_SACRIFICE = tag(bm("no_sacrifice"));
 
         private static TagKey<EntityType<?>> tag(ResourceLocation id) {
             return TagKey.create(Registries.ENTITY_TYPE, id);
@@ -153,18 +171,18 @@ public class NVTags {
         public static final TagKey<AltarTier> VALID_TIERS = TagKey.create(NVRegistries.Keys.ALTAR_TIER_KEY, bm("valid_tiers"));
     }
 
-    public static class Living {
-        public static final TagKey<LivingUpgrade> TOOLTIP_ORDER = tag(bm("tooltip_order"));
-        public static final TagKey<LivingUpgrade> TOOLTIP_HIDE = tag(bm("tooltip_hide"));
-        public static final TagKey<LivingUpgrade> IS_DOWNGRADE = tag(bm("is_downgrade"));
-        public static final TagKey<LivingUpgrade> LIVING_START = tag(bm("living_start"));
-        public static final TagKey<LivingUpgrade> TRAINERS = tag(bm("trainer"));
-        public static final TagKey<LivingUpgrade> IS_SCRAPPABLE = tag(bm("is_scrappable"));
-        /** Upgrades in this tag are unsuitable for Living Armor and should not be applied */
-        public static final TagKey<LivingUpgrade> LIVING_BLACKLIST = tag(bm("living_blacklist"));
+    public static class Sentient {
+        public static final TagKey<SentientUpgrade> TOOLTIP_ORDER = tag(bm("tooltip_order"));
+        public static final TagKey<SentientUpgrade> TOOLTIP_HIDE = tag(bm("tooltip_hide"));
+        public static final TagKey<SentientUpgrade> IS_DOWNGRADE = tag(bm("is_downgrade"));
+        public static final TagKey<SentientUpgrade> SENTIENT_START = tag(bm("sentient_start"));
+        public static final TagKey<SentientUpgrade> TRAINERS = tag(bm("trainer"));
+        public static final TagKey<SentientUpgrade> IS_SCRAPPABLE = tag(bm("is_scrappable"));
+        /** Upgrades in this tag are unsuitable for Sentient Armor and should not be applied */
+        public static final TagKey<SentientUpgrade> SENTIENT_BLACKLIST = tag(bm("sentient_blacklist"));
 
-        private static TagKey<LivingUpgrade> tag(ResourceLocation id) {
-            return TagKey.create(NVRegistries.Keys.LIVING_UPGRADES, id);
+        private static TagKey<SentientUpgrade> tag(ResourceLocation id) {
+            return TagKey.create(NVRegistries.Keys.SENTIENT_UPGRADES, id);
         }
     }
 

@@ -1,7 +1,7 @@
 package com.breakinblocks.neovitae.common.command;
 
 import com.mojang.brigadier.Command;
-import com.mojang.brigadier.CommandDispatcher;
+import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import com.mojang.brigadier.exceptions.DynamicCommandExceptionType;
@@ -18,6 +18,8 @@ import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.MobSpawnType;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import com.breakinblocks.neovitae.common.blockentity.ImperfectRitualStoneBlockEntity;
@@ -45,26 +47,24 @@ public class ImperfectRitualCommand {
         return SharedSuggestionProvider.suggestResource(RitualRegistry.getRegisteredImperfectRituals(), builder);
     };
 
-    public static void register(CommandDispatcher<CommandSourceStack> dispatcher) {
-        dispatcher.register(
-                Commands.literal("nv-imperfectritual")
-                        .requires(source -> source.hasPermission(Commands.LEVEL_GAMEMASTERS))
-                        .then(
-                                Commands.argument("pos", BlockPosArgument.blockPos())
-                                        .then(
-                                                Commands.literal("set")
-                                                        .then(
-                                                                Commands.argument("ritual", ResourceLocationArgument.id())
-                                                                        .suggests(RITUAL_SUGGESTIONS)
-                                                                        .executes(ImperfectRitualCommand::setRitual)
-                                                        )
-                                        )
-                        )
-                        .then(
-                                Commands.literal("list")
-                                        .executes(ImperfectRitualCommand::listRituals)
-                        )
-        );
+    public static LiteralArgumentBuilder<CommandSourceStack> build() {
+        return Commands.literal("imperfect")
+                .requires(source -> source.hasPermission(Commands.LEVEL_GAMEMASTERS))
+                .then(
+                        Commands.argument("pos", BlockPosArgument.blockPos())
+                                .then(
+                                        Commands.literal("set")
+                                                .then(
+                                                        Commands.argument("ritual", ResourceLocationArgument.id())
+                                                                .suggests(RITUAL_SUGGESTIONS)
+                                                                .executes(ImperfectRitualCommand::setRitual)
+                                                )
+                                )
+                )
+                .then(
+                        Commands.literal("list")
+                                .executes(ImperfectRitualCommand::listRituals)
+                );
     }
 
     private static ImperfectRitualStoneBlockEntity getIRS(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
@@ -119,8 +119,8 @@ public class ImperfectRitualCommand {
         if (success) {
             boolean showLightning = stats != null ? stats.lightningEffect() : ritual.isLightShow();
             if (showLightning) {
-                net.minecraft.world.entity.EntityType.LIGHTNING_BOLT.spawn(level, abovePos.above(),
-                        net.minecraft.world.entity.MobSpawnType.TRIGGERED);
+                EntityType.LIGHTNING_BOLT.spawn(level, abovePos.above(),
+                        MobSpawnType.TRIGGERED);
             }
         }
 

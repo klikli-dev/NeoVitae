@@ -18,8 +18,8 @@ public class SpiritusCategory extends CategoryProvider {
     protected String[] generateEntryMap() {
         return new String[]{
                 "_____________a_____________",
-                "___b___c___j_l_m_n_________",
-                "___d___o___k_______________",
+                "___b___c_y_j___m_n_________",
+                "___d_z_o___k_______________",
                 "___e___p___________________",
                 "___f___q___x_______________",
                 "___g_i_t_u_v_w_____________",
@@ -32,10 +32,10 @@ public class SpiritusCategory extends CategoryProvider {
     protected void generateEntries() {
         var spiritus = this.add(new SpiritusEntry(this).generate('a'));
 
-        var soulSnare = this.add(new SpiritusSnareEntry(this).generate('b'));
-        soulSnare.withParent(this.parent(spiritus));
-        soulSnare.withCondition(BookEntryReadConditionModel.create().withEntry("neovitae:spiritus/spiritus"));
-        soulSnare.hideWhileLocked(false);
+        var throwingDaggers = this.add(new ThrowingDaggersEntry(this).generate('b'));
+        throwingDaggers.withParent(this.parent(spiritus));
+        throwingDaggers.withCondition(BookEntryReadConditionModel.create().withEntry("neovitae:spiritus/spiritus"));
+        throwingDaggers.hideWhileLocked(false);
 
         var hellfireForge = this.add(new HellfireForgeEntry(this).generate('c'));
         hellfireForge.withParent(this.parent(spiritus));
@@ -43,23 +43,23 @@ public class SpiritusCategory extends CategoryProvider {
         hellfireForge.hideWhileLocked(false);
 
         var spiritusGems = this.add(new SpiritusGemsEntry(this).generate('d'));
-        spiritusGems.withParent(this.parent(soulSnare));
-        spiritusGems.withCondition(BookEntryReadConditionModel.create().withEntry("neovitae:spiritus/spiritus_snare"));
+        spiritusGems.withParent(this.parent(throwingDaggers));
+        spiritusGems.withCondition(BookEntryReadConditionModel.create().withEntry("neovitae:spiritus/throwing_daggers"));
         spiritusGems.hideWhileLocked(false);
 
-        var crystallizedWill = this.add(new CrystallizedWillEntry(this).generate('e'));
+        var crystallizedWill = this.add(new CrystallizedSpiritusEntry(this).generate('e'));
         crystallizedWill.withParent(this.parent(spiritusGems));
         crystallizedWill.withCondition(BookEntryReadConditionModel.create().withEntry("neovitae:spiritus/spiritus_gems"));
         crystallizedWill.hideWhileLocked(false);
 
-        var aspectedWill = this.add(new AspectedWillEntry(this).generate('f'));
+        var aspectedWill = this.add(new AspectedSpiritusEntry(this).generate('f'));
         aspectedWill.withParent(this.parent(crystallizedWill));
-        aspectedWill.withCondition(BookEntryReadConditionModel.create().withEntry("neovitae:spiritus/crystallized_will"));
+        aspectedWill.withCondition(BookEntryReadConditionModel.create().withEntry("neovitae:spiritus/crystallized_spiritus"));
         aspectedWill.hideWhileLocked(false);
 
         var aura = this.add(new AuraEntry(this).generate('g'));
         aura.withParent(this.parent(aspectedWill));
-        aura.withCondition(BookEntryReadConditionModel.create().withEntry("neovitae:spiritus/aspected_will"));
+        aura.withCondition(BookEntryReadConditionModel.create().withEntry("neovitae:spiritus/aspected_spiritus"));
         aura.hideWhileLocked(false);
 
         var auraGauge = this.add(new AuraGaugeEntry(this).generate('h'));
@@ -67,9 +67,9 @@ public class SpiritusCategory extends CategoryProvider {
         auraGauge.withCondition(BookEntryReadConditionModel.create().withEntry("neovitae:spiritus/aura"));
         auraGauge.hideWhileLocked(false);
 
-        var willCatalysts = this.add(new WillCatalystsEntry(this).generate('i'));
+        var willCatalysts = this.add(new SpiritusCatalystsEntry(this).generate('i'));
         willCatalysts.withParent(this.parent(aspectedWill));
-        willCatalysts.withCondition(BookEntryReadConditionModel.create().withEntry("neovitae:spiritus/aspected_will"));
+        willCatalysts.withCondition(BookEntryReadConditionModel.create().withEntry("neovitae:spiritus/aspected_spiritus"));
         willCatalysts.hideWhileLocked(false);
 
         var sentientSword = this.add(new SentientSwordEntry(this).generate('j'));
@@ -81,11 +81,6 @@ public class SpiritusCategory extends CategoryProvider {
         sentientTools.withParent(this.parent(sentientSword));
         sentientTools.withCondition(BookEntryReadConditionModel.create().withEntry("neovitae:spiritus/sentient_sword"));
         sentientTools.hideWhileLocked(false);
-
-        var throwingDaggers = this.add(new ThrowingDaggersEntry(this).generate('l'));
-        throwingDaggers.withParent(this.parent(spiritus));
-        throwingDaggers.withCondition(BookEntryReadConditionModel.create().withEntry("neovitae:spiritus/spiritus"));
-        throwingDaggers.hideWhileLocked(false);
 
         var bloodTank = this.add(new BloodTankEntry(this).generate('m'));
         bloodTank.withParent(this.parent(spiritus));
@@ -107,45 +102,20 @@ public class SpiritusCategory extends CategoryProvider {
         routingNodes.withCondition(BookEntryReadConditionModel.create().withEntry("neovitae:spiritus/node_router"));
         routingNodes.hideWhileLocked(false);
 
-        var standardFilter = this.add(new StandardFilterEntry(this).generate('q'));
-        standardFilter.withParent(this.parent(routingNodes));
-        standardFilter.withCondition(BookEntryReadConditionModel.create().withEntry("neovitae:spiritus/routing_nodes"));
-        standardFilter.hideWhileLocked(false);
-
-        var tagFilter = this.add(new TagFilterEntry(this).generate('r'));
-        tagFilter.withParent(this.parent(standardFilter));
-        tagFilter.withCondition(BookEntryReadConditionModel.create().withEntry("neovitae:spiritus/standard_filter"));
-        tagFilter.hideWhileLocked(false);
-
-        var modFilter = this.add(new ModFilterEntry(this).generate('s'));
-        modFilter.withParent(this.parent(standardFilter));
-        modFilter.withCondition(BookEntryReadConditionModel.create().withEntry("neovitae:spiritus/standard_filter"));
-        modFilter.hideWhileLocked(false);
-
-        var enchantFilter = this.add(new EnchantFilterEntry(this).generate('t'));
-        enchantFilter.withParent(this.parent(standardFilter));
-        enchantFilter.withCondition(BookEntryReadConditionModel.create().withEntry("neovitae:spiritus/standard_filter"));
-        enchantFilter.hideWhileLocked(false);
-
-        var compositeFilter = this.add(new CompositeFilterEntry(this).generate('u'));
-        compositeFilter.withParent(this.parent(standardFilter));
-        compositeFilter.withCondition(BookEntryReadConditionModel.create().withEntry("neovitae:spiritus/standard_filter"));
-        compositeFilter.hideWhileLocked(false);
-
-        var filterParts = this.add(new FilterPartsEntry(this).generate('v'));
-        filterParts.withParent(this.parent(standardFilter));
-        filterParts.withCondition(BookEntryReadConditionModel.create().withEntry("neovitae:spiritus/standard_filter"));
-        filterParts.hideWhileLocked(false);
-
-        var editingFilters = this.add(new EditingFiltersEntry(this).generate('w'));
-        editingFilters.withParent(this.parent(standardFilter));
-        editingFilters.withCondition(BookEntryReadConditionModel.create().withEntry("neovitae:spiritus/standard_filter"));
-        editingFilters.hideWhileLocked(false);
-
         var upgrades = this.add(new UpgradesEntry(this).generate('x'));
         upgrades.withParent(this.parent(routingNodes));
         upgrades.withCondition(BookEntryReadConditionModel.create().withEntry("neovitae:spiritus/routing_nodes"));
         upgrades.hideWhileLocked(false);
+
+        var bloodMending = this.add(new BloodMendingEntry(this).generate('y'));
+        bloodMending.withParent(this.parent(hellfireForge));
+        bloodMending.withCondition(BookEntryReadConditionModel.create().withEntry("neovitae:spiritus/hellfire_forge"));
+        bloodMending.hideWhileLocked(false);
+
+        var spiritusInfusion = this.add(new SpiritusInfusionEntry(this).generate('z'));
+        spiritusInfusion.withParent(this.parent(spiritusGems));
+        spiritusInfusion.withCondition(BookEntryReadConditionModel.create().withEntry("neovitae:spiritus/spiritus_gems"));
+        spiritusInfusion.hideWhileLocked(false);
     }
 
     @Override

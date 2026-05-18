@@ -12,7 +12,7 @@ import com.breakinblocks.neovitae.common.block.dungeon.DungeonVariant;
 import com.breakinblocks.neovitae.common.datacomponent.SpiritusType;
 import com.breakinblocks.neovitae.common.fluid.NVFluids;
 import com.breakinblocks.neovitae.common.item.NVItems;
-import com.breakinblocks.neovitae.datagen.content.LivingUpgrades;
+import com.breakinblocks.neovitae.datagen.content.SentientUpgrades;
 import com.breakinblocks.neovitae.util.helper.BlockWithItemHolder;
 
 public class NVLanguageProvider extends LanguageProvider implements com.klikli_dev.modonomicon.api.datagen.ModonomiconLanguageProvider {
@@ -43,6 +43,7 @@ public class NVLanguageProvider extends LanguageProvider implements com.klikli_d
         addTooltip("no_owner", "Not bound yet");
         addTooltip("orb.fluid", "Essentia Vitae: %s / %s mB");
         addTooltip("orb.tier", "Tier %s");
+        addTooltip("orb.anima_max", "Raises Anima Maximum to %s");
 
         // Death messages
         add("death.attack.spikes", "%1$s was impaled by spikes");
@@ -105,13 +106,13 @@ public class NVLanguageProvider extends LanguageProvider implements com.klikli_d
 
         // Demon Crystal Blocks
         add(NVBlocks.RAW_SPIRITUS_CRYSTAL, "Raw Crystal Cluster");
-        add(NVBlocks.CORROSIVE_SPIRITUS_CRYSTAL, "Corrosive Crystal Cluster");
-        add(NVBlocks.DESTRUCTIVE_SPIRITUS_CRYSTAL, "Destructive Crystal Cluster");
-        add(NVBlocks.VENGEFUL_SPIRITUS_CRYSTAL, "Vengeful Crystal Cluster");
-        add(NVBlocks.STEADFAST_SPIRITUS_CRYSTAL, "Steadfast Crystal Cluster");
+        add(NVBlocks.SPIRITUS_RUINA_CRYSTAL, "Spiritus Ruina Crystal Cluster");
+        add(NVBlocks.SPIRITUS_NIHILUM_CRYSTAL, "Spiritus Nihilum Crystal Cluster");
+        add(NVBlocks.SPIRITUS_VINDICTA_CRYSTAL, "Spiritus Vindicta Crystal Cluster");
+        add(NVBlocks.SPIRITUS_INVICTUS_CRYSTAL, "Spiritus Invictus Crystal Cluster");
 
         // Routing Node Blocks
-        add(NVBlocks.ROUTING_NODE, "Item Routing Node");
+        add(NVBlocks.ROUTING_CONDUIT, "Routing Conduit");
         add(NVBlocks.INPUT_ROUTING_NODE, "Input Routing Node");
         add(NVBlocks.OUTPUT_ROUTING_NODE, "Output Routing Node");
         add(NVBlocks.MASTER_ROUTING_NODE, "Master Routing Node");
@@ -143,6 +144,8 @@ public class NVLanguageProvider extends LanguageProvider implements com.klikli_d
         add(NVFluids.ANIMATED_SPIRITUS_BLOCK.get(), "Animated Spiritus Essence");
 
         add(NVBlocks.ATHANOR_BLOCK, "Athanor");
+        add("menu.neovitae.athanor", "Athanor");
+        add("menu.neovitae.teleposer", "Teleposer");
 
         add(NVBlocks.BLOOD_TANK, "Blood Tank");
         addTooltip("container_tier_missing", "No Tier found!");
@@ -150,15 +153,19 @@ public class NVLanguageProvider extends LanguageProvider implements com.klikli_d
         addTooltip("fluid_content_empty", "Empty");
         addTooltip("fluid_content", "Contains: %smB of %s");
 
+        add(NVBlocks.BLOOD_BATTERY, "Blood Battery");
+        addTooltip("blood_battery.capacity", "Capacity: %s FE");
+        addTooltip("blood_battery.creative", "Creative Only");
+
         add(NVBlocks.HELLFIRE_FORGE, "Hellfire Forge");
         add(NVItems.RAW_SPIRITUS.get(), "Raw Spiritus");
 
         // Spiritus Essence (dropped from mobs with sentient weapons)
         add(NVItems.MONSTER_SOUL_RAW.get(), "Spiritus Essence");
-        add(NVItems.MONSTER_SOUL_CORROSIVE.get(), "Corrosive Spiritus Essence");
-        add(NVItems.MONSTER_SOUL_DESTRUCTIVE.get(), "Destructive Spiritus Essence");
-        add(NVItems.MONSTER_SOUL_VENGEFUL.get(), "Vengeful Spiritus Essence");
-        add(NVItems.MONSTER_SOUL_STEADFAST.get(), "Steadfast Spiritus Essence");
+        add(NVItems.MONSTER_SOUL_RUINA.get(), "Spiritus Ruina Essence");
+        add(NVItems.MONSTER_SOUL_NIHILUM.get(), "Spiritus Nihilum Essence");
+        add(NVItems.MONSTER_SOUL_VINDICTA.get(), "Spiritus Vindicta Essence");
+        add(NVItems.MONSTER_SOUL_INVICTUS.get(), "Spiritus Invictus Essence");
 
         add(NVItems.SPIRITUS_GEM_PETTY.get(), "Petty Spiritus Gem");
         add(NVItems.SPIRITUS_GEM_LESSER.get(), "Lesser Spiritus Gem");
@@ -172,11 +179,11 @@ public class NVLanguageProvider extends LanguageProvider implements com.klikli_d
         addGemDesc(NVItems.SPIRITUS_GEM_GRAND, "a large amount of");
 
         // Slates
-        add(NVItems.SLATE_BLANK.get(), "Blank Slate");
-        add(NVItems.SLATE_REINFORCED.get(), "Reinforced Slate");
-        add(NVItems.SLATE_IMBUED.get(), "Imbued Slate");
-        add(NVItems.SLATE_DEMONIC.get(), "Demonic Slate");
-        add(NVItems.SLATE_ETHEREAL.get(), "Ethereal Slate");
+        add(NVItems.TABULA_RASA.get(), "Tabula Rasa");
+        add(NVItems.TABULA_ROBUR.get(), "Tabula Robur");
+        add(NVItems.TABULA_ANIMATA.get(), "Tabula Animata");
+        add(NVItems.TABULA_SPIRITUS.get(), "Tabula Spiritus");
+        add(NVItems.TABULA_AETHEREA.get(), "Tabula Aetherea");
 
         // Sigils
         add(NVItems.SIGIL_DIVINATION.get(), "Divination Sigil");
@@ -194,10 +201,17 @@ public class NVLanguageProvider extends LanguageProvider implements com.klikli_d
         add(NVItems.SIGIL_HOLDING.get(), "Sigil of Holding");
         add(NVItems.SIGIL_TELEPOSITION.get(), "Sigil of Teleposition");
         add(NVItems.SIGIL_PHANTOM_BRIDGE.get(), "Sigil of the Phantom Bridge");
+        add(NVItems.SIGIL_NECROMANCY.get(), "Sigil of Necromancy");
+        add(NVItems.SIGIL_BOUND_TREASURES.get(), "Sigil of Bound Treasures");
+        add("tooltip.neovitae.bound_treasures.linked", "Container linked");
+        add("tooltip.neovitae.bound_treasures.not_linked", "No container linked. Shift right-click a container to bind.");
+        add("tooltip.neovitae.bound_treasures.unloaded", "Linked container is in an unloaded area");
+        add("tooltip.neovitae.bound_treasures.missing", "Linked container no longer exists");
 
         // Alchemy & Misc
-        add(NVItems.ARCANE_ASHES.get(), "Arcane Ashes");
-        addTooltip("arcaneAshes", "Draws an alchemy circle when placed");
+        add(NVItems.ARCANE_SCRIBE_TOOL.get(), "Arcane Scribe Tool");
+        addTooltip("arcane_scribe_tool", "Inscribes an alchemy array when used on a surface");
+        add("tooltip.neovitae.arcane_scribe_tool.color", "Color: %s");
 
         // Reagents
         add(NVItems.REAGENT_WATER.get(), "Reagent Water");
@@ -228,38 +242,40 @@ public class NVLanguageProvider extends LanguageProvider implements com.klikli_d
         // Incense Altar
         add(NVBlocks.INCENSE_ALTAR, "Incense Altar");
 
-        add(NVItems.SPIRITUS_SNARE.get(), "Soul Snare");
-        addTooltip("soulSnare.desc", "Throw at weakened mobs to extract their soul");
         add(NVItems.WEAK_BLOOD_SHARD.get(), "Weak Blood Shard");
-        add(NVItems.DAGGER_OF_SACRIFICE.get(), "Dagger of Sacrifice");
+
         add(NVItems.LAVA_CRYSTAL.get(), "Lava Crystal");
         addTooltip("lavaCrystal.desc", "Place fire, bindable furnace fuel");
         add("chat.neovitae.notEnoughLP", "Not enough Essentia Vitae!");
 
         // Crystal Items
-        add(NVItems.RAW_CRYSTAL.get(), "Spiritus Crystal");
-        add(NVItems.CORROSIVE_CRYSTAL.get(), "Corrosive Spiritus Crystal");
-        add(NVItems.DESTRUCTIVE_CRYSTAL.get(), "Destructive Spiritus Crystal");
-        add(NVItems.VENGEFUL_CRYSTAL.get(), "Vengeful Spiritus Crystal");
-        add(NVItems.STEADFAST_CRYSTAL.get(), "Steadfast Spiritus Crystal");
+        add(NVItems.RAW_SPIRITUS_CRYSTAL_ITEM.get(), "Spiritus Crystal");
+        add(NVItems.SPIRITUS_RUINA_CRYSTAL_ITEM.get(), "Spiritus Ruina Crystal");
+        add(NVItems.SPIRITUS_NIHILUM_CRYSTAL_ITEM.get(), "Spiritus Nihilum Crystal");
+        add(NVItems.SPIRITUS_VINDICTA_CRYSTAL_ITEM.get(), "Spiritus Vindicta Crystal");
+        add(NVItems.SPIRITUS_INVICTUS_CRYSTAL_ITEM.get(), "Spiritus Invictus Crystal");
         add(NVItems.SPIRITUS_GAUGE.get(), "Spiritus Aura Gauge");
         addTooltip("spiritus_gauge", "Shows the current spiritus level in the area");
 
         // Crystal Catalysts
-        add(NVItems.RAW_CRYSTAL_CATALYST.get(), "Raw Crystal Catalyst");
-        add(NVItems.CORROSIVE_CRYSTAL_CATALYST.get(), "Corrosive Crystal Catalyst");
-        add(NVItems.DESTRUCTIVE_CRYSTAL_CATALYST.get(), "Destructive Crystal Catalyst");
-        add(NVItems.VENGEFUL_CRYSTAL_CATALYST.get(), "Vengeful Crystal Catalyst");
-        add(NVItems.STEADFAST_CRYSTAL_CATALYST.get(), "Steadfast Crystal Catalyst");
-        add("tooltip.neovitae.crystal_catalyst.desc", "Right-click a Spiritus Crystal to accelerate its growth");
+        add(NVItems.RAW_SPIRITUS_CATALYST.get(), "Raw Crystal Catalyst");
+        add(NVItems.SPIRITUS_RUINA_CATALYST.get(), "Spiritus Ruina Catalyst");
+        add(NVItems.SPIRITUS_NIHILUM_CATALYST.get(), "Spiritus Nihilum Catalyst");
+        add(NVItems.SPIRITUS_VINDICTA_CATALYST.get(), "Spiritus Vindicta Catalyst");
+        add(NVItems.SPIRITUS_INVICTUS_CATALYST.get(), "Spiritus Invictus Catalyst");
+        add("tooltip.neovitae.crystal_catalyst.desc", "Right-click a same-aspect Spiritus Crystal to accelerate its growth, or a fully-grown Raw cluster to transmute it (consumes one Animus Mote)");
+        add("chat.neovitae.crystal_catalyst.notMature", "The Raw cluster must be fully grown before it can be transmuted");
+        add("chat.neovitae.crystal_catalyst.needsAnimus", "Transmutation requires one Animus Mote in your inventory");
         add("tooltip.neovitae.crystal_catalyst.aspect", "Aspect: %s");
+        add("tooltip.neovitae.blood_mending", "Enchanted with Blood Mending");
+        add("tooltip.neovitae.spiritus_stored", "Spiritus: %s / %s");
 
-        // Will Type Names
-        add("will.neovitae.default", "Raw");
-        add("will.neovitae.corrosive", "Corrosive");
-        add("will.neovitae.destructive", "Destructive");
-        add("will.neovitae.vengeful", "Vengeful");
-        add("will.neovitae.steadfast", "Steadfast");
+        // Spiritus Aspect Names
+        add("will.neovitae.raw", "Raw Spiritus");
+        add("will.neovitae.ruina", "Spiritus Ruina");
+        add("will.neovitae.nihilum", "Spiritus Nihilum");
+        add("will.neovitae.vindicta", "Spiritus Vindicta");
+        add("will.neovitae.invictus", "Spiritus Invictus");
 
         // Sentient Tools
         add(NVItems.SENTIENT_SWORD.get(), "Sentient Sword");
@@ -273,6 +289,58 @@ public class NVLanguageProvider extends LanguageProvider implements com.klikli_d
         addTooltip("sentientShovel.desc", "Empowered by spiritus in your inventory");
         addTooltip("sentientScythe.desc", "Area damage empowered by spiritus");
 
+        add(NVItems.LEX_VITAE.get(), "Lex Vitae");
+        addTooltip("lexVitae.desc", "Sentient multitool: chops, mines, digs, tills. Sneak-right-click to toggle. Sneak+scroll to set mining radius.");
+        addTooltip("lexVitae.dormant", "Dormant");
+        addTooltip("lexVitae.active", "Active");
+        addTooltip("lexVitae.radius", "Radius: %sx%s");
+        add("message.neovitae.lex_vitae.radius", "Lex Vitae mining radius: %sx%s");
+
+        // Spiritus type tooltip header + per-type display names (color-coded at runtime)
+        addTooltip("spiritus.type", "Attuned: %s");
+        addTooltip("spiritus.raw", "Raw");
+        addTooltip("spiritus.ruina", "Spiritus Ruina");
+        addTooltip("spiritus.nihilum", "Spiritus Nihilum");
+        addTooltip("spiritus.vindicta", "Spiritus Vindicta");
+        addTooltip("spiritus.invictus", "Spiritus Invictus");
+
+        // Spiritus headline numerics + Shift expand
+        addTooltip("spiritus.level", "Level %s (%s will)");
+        addTooltip("spiritus.damage_bonus", "+%s bonus damage");
+        addTooltip("spiritus.aoe_radius", "%s block AoE radius");
+        addTooltip("spiritus.hold_shift", "Hold Shift for details");
+
+        // Universal riders for type-specific effects with computed numerics
+        addTooltip("spiritus.rider.ruina", "Wither %s for %ss on hit");
+        addTooltip("spiritus.rider.ruina.inactive", "Insufficient Spiritus Ruina to inflict Wither");
+        addTooltip("spiritus.rider.invictus", "Absorption hearts for %ss on kill");
+        addTooltip("spiritus.rider.invictus.inactive", "Insufficient Spiritus Invictus to grant Absorption");
+
+        // Per-tool riders for type-specific behavior without universal numerics
+        addTooltip("sentientSword.rider.raw", "Damage scales with stored Raw spiritus");
+        addTooltip("sentientSword.rider.nihilum", "Heavy damage scaling; slower attack speed");
+        addTooltip("sentientSword.rider.vindicta", "Faster attacks and bonus movement speed");
+
+        addTooltip("sentientAxe.rider.raw", "Damage scales with stored Raw spiritus");
+        addTooltip("sentientAxe.rider.nihilum", "Heavy damage scaling");
+        addTooltip("sentientAxe.rider.vindicta", "Lighter, quicker swings");
+
+        addTooltip("sentientPickaxe.rider.raw", "Mining speed and damage scale with Raw spiritus");
+        addTooltip("sentientPickaxe.rider.nihilum", "Heavy damage when used as a weapon");
+        addTooltip("sentientPickaxe.rider.vindicta", "Quicker strikes; light in hand");
+
+        addTooltip("sentientShovel.rider.raw", "Mining speed and damage scale with Raw spiritus");
+        addTooltip("sentientShovel.rider.nihilum", "Heavy damage when used as a weapon");
+        addTooltip("sentientShovel.rider.vindicta", "Quicker strikes; light in hand");
+
+        addTooltip("sentientScythe.rider.raw", "Sweeping damage scales with stored Raw spiritus");
+        addTooltip("sentientScythe.rider.nihilum", "Devastating sweeping damage");
+        addTooltip("sentientScythe.rider.vindicta", "Fast, lightweight sweeps");
+
+        addTooltip("lexVitae.rider.raw", "All actions empowered by stored Raw spiritus");
+        addTooltip("lexVitae.rider.nihilum", "Devastating damage and mining bonuses");
+        addTooltip("lexVitae.rider.vindicta", "Faster swings and channels");
+
         // Routing Items
         add(NVItems.NODE_ROUTER.get(), "Node Router");
         add(NVItems.MASTER_NODE_UPGRADE.get(), "Master Routing Node Core");
@@ -284,6 +352,8 @@ public class NVLanguageProvider extends LanguageProvider implements com.klikli_d
         add("chat.neovitae.routing.same", "Cannot link a node to itself!");
         add("chat.neovitae.routing.link.master", "Node linked to Master Routing Node.");
         add("chat.neovitae.routing.link", "Nodes linked together.");
+        add("chat.neovitae.undertow.upward", "Undertow Array: bubble column now pushes upward.");
+        add("chat.neovitae.undertow.downward", "Undertow Array: bubble column now drags downward.");
 
         // Throwing Daggers
         add(NVItems.THROWING_DAGGER.get(), "Throwing Dagger");
@@ -294,17 +364,87 @@ public class NVLanguageProvider extends LanguageProvider implements com.klikli_d
         add("entity.neovitae.throwing_dagger", "Throwing Dagger");
         add("entity.neovitae.throwing_dagger_syringe", "Syringe Throwing Dagger");
         add("entity.neovitae.blood_shield", "Sanguine Ward");
+        add("entity.neovitae.blood_light", "Blood Light");
+
+        add("entity.neovitae.necromancy_summon", "Undead Servant");
+        add("entity.neovitae.necromancy_summon_husk", "Desiccated Servant");
+        add("entity.neovitae.necromancy_summon_skeleton", "Skeletal Servant");
+        add("entity.neovitae.necromancy_summon_stray", "Frozen Servant");
+
+        // Slime of Vitae
+        add("entity.neovitae.slime_vitae", "Slime of Vitae");
+        add(NVItems.SLIME_VITAE_SPAWN_EGG.get(), "Slime of Vitae Spawn Egg");
 
         // Daemonium Ignis
         add("entity.neovitae.daemonium_ignis", "Daemonium Ignis");
         add(NVItems.DAEMONIUM_IGNIS_SPAWN_EGG.get(), "Daemonium Ignis Spawn Egg");
 
+        // Daemonium Cruoris
+        add("entity.neovitae.daemonium_cruoris", "Daemonium Cruoris");
+        add(NVItems.DAEMONIUM_CRUORIS_SPAWN_EGG.get(), "Daemonium Cruoris Spawn Egg");
+
+        // Daemonium Corrodis
+        add("entity.neovitae.daemonium_corrodis", "Daemonium Corrodis");
+        add(NVItems.DAEMONIUM_CORRODIS_SPAWN_EGG.get(), "Daemonium Corrodis Spawn Egg");
+
         // Daemonium Glaciaris
         add("entity.neovitae.daemonium_glaciaris", "Daemonium Glaciaris");
         add(NVItems.DAEMONIUM_GLACIARIS_SPAWN_EGG.get(), "Daemonium Glaciaris Spawn Egg");
 
+        // Daemonium Rancoris
+        add("entity.neovitae.daemonium_rancoris", "Daemonium Rancoris");
+        add(NVItems.DAEMONIUM_RANCORIS_SPAWN_EGG.get(), "Daemonium Rancoris Spawn Egg");
+
+        // Daemonium Pestis
+        add("entity.neovitae.daemonium_pestis", "Daemonium Pestis");
+        add(NVItems.DAEMONIUM_PESTIS_SPAWN_EGG.get(), "Daemonium Pestis Spawn Egg");
+
+        // Daemonium Voraxis
+        add("entity.neovitae.daemonium_voraxis", "Daemonium Voraxis");
+        add(NVItems.DAEMONIUM_VORAXIS_SPAWN_EGG.get(), "Daemonium Voraxis Spawn Egg");
+
+        // Daemonium Doloris
+        add("entity.neovitae.daemonium_doloris", "Daemonium Doloris");
+        add("entity.neovitae.daemonium_doloris.foreman", "The Foreman");
+        add(NVItems.DAEMONIUM_DOLORIS_SPAWN_EGG.get(), "Daemonium Doloris Spawn Egg");
+
+        // Daemonium Fervidis
+        add("entity.neovitae.daemonium_fervidis", "Daemonium Fervidis");
+        add(NVItems.DAEMONIUM_FERVIDIS_SPAWN_EGG.get(), "Daemonium Fervidis Spawn Egg");
+
+        // Daemonium Animaris
+        add("entity.neovitae.daemonium_animaris", "Daemonium Animaris");
+        add(NVItems.DAEMONIUM_ANIMARIS_SPAWN_EGG.get(), "Daemonium Animaris Spawn Egg");
+
         // Misc WIP Items
         add(NVItems.ANIMATED_SPIRITUS.get(), "Animated Spiritus");
+
+        // Demon drop materials
+        add(NVItems.GORE_CLOTTED_FANG.get(), "Gore-Clotted Fang");
+        add(NVItems.BLIGHT_MARROW.get(), "Blight Marrow");
+        add(NVItems.VENOMGLAND_SAC.get(), "Venomgland Sac");
+        add(NVItems.HOLLOW_GUT.get(), "Hollow Gut");
+        add(NVItems.ECTOPLASMIC_RESIDUE.get(), "Ectoplasmic Residue");
+        add(NVItems.ANIMUS_MOTE.get(), "Animus Mote");
+        add(NVItems.REVENANT_PLATE.get(), "Revenant Plate");
+        add(NVItems.FROZEN_MARROW_SHARD.get(), "Frozen Marrow Shard");
+        add(NVItems.CINDER_HEART_FRAGMENT.get(), "Cinder Heart Fragment");
+        add(NVItems.PERMAFROST_CORE.get(), "Permafrost Core");
+        add(NVItems.DEMONITE_TRIM_INGOT.get(), "Demonite Trim Ingot");
+        add(NVItems.BLIGHT_WHETSTONE.get(), "Blight Whetstone");
+        add(NVItems.TAINTED_FLESH.get(), "Tainted Flesh");
+        add(NVItems.VITAE_MORSEL.get(), "Vitae Morsel");
+        add(NVItems.BOTTLED_SPITE.get(), "Bottled Spite");
+        add(NVItems.SIGIL_DAMNED.get(), "Sigil of the Damned");
+
+        // Sigil of the Damned tooltips
+        add("tooltip.neovitae.sigil.damned.desc", "The blood of the fallen empowers the bearer.");
+        add("tooltip.neovitae.sigil.damned.spiritus", "+50 Bonus Spiritus Collection");
+        add("tooltip.neovitae.sigil.damned.sacrifice", "+25 Bonus Sacrifice");
+        add("tooltip.neovitae.sigil.damned.siphon", "+10 Blood Siphon (heal on kill)");
+
+        // Trim material
+        add("trim_material.neovitae.demonite", "Demonite");
 
         // Simple Recipe Ingredients
         add(NVItems.SULFUR.get(), "Sulfur");
@@ -344,13 +484,13 @@ public class NVLanguageProvider extends LanguageProvider implements com.klikli_d
         add("chat.neovitae.mimic.potionInterval.up", "Potion Interval: %d ticks");
 
         // Alchemy Flask Items
-        add(NVItems.SLATE_VIAL.get(), "Slate Vial");
+        add(NVItems.TABULA_VIAL.get(), "Tabula Vial");
         add(NVItems.ALCHEMY_FLASK.get(), "Alchemy Flask");
         add(NVItems.ALCHEMY_FLASK_THROWABLE.get(), "Throwable Alchemy Flask");
         add(NVItems.ALCHEMY_FLASK_LINGERING.get(), "Lingering Alchemy Flask");
 
         // Blood Provider Items
-        add(NVItems.SLATE_AMPOULE.get(), "Slate Ampoule");
+        add(NVItems.TABULA_AMPOULE.get(), "Tabula Ampoule");
         add("tooltip.neovitae.blood_provider.slate.desc", "A simple ampoule containing 500 EV.");
 
         // Anointment Items - Base tier (using 1.20.1 thematic names)
@@ -362,7 +502,7 @@ public class NVLanguageProvider extends LanguageProvider implements com.klikli_d
         add(NVItems.QUICK_DRAW_ANOINTMENT.get(), "Dexterity Alkahest");
         add(NVItems.LOOTING_ANOINTMENT.get(), "Plunderer's Glint");
         add(NVItems.BOW_POWER_ANOINTMENT.get(), "Iron Tip");
-        add(NVItems.WILL_POWER_ANOINTMENT.get(), "Will Empowerment");
+        add(NVItems.SPIRITUS_DRAIN_ANOINTMENT.get(), "Spiritus Drain Anointment");
         add(NVItems.SMELTING_ANOINTMENT.get(), "Slow-burning Oil");
         add(NVItems.VOIDING_ANOINTMENT.get(), "Voiding Essence");
         add(NVItems.BOW_VELOCITY_ANOINTMENT.get(), "Archer's Polish");
@@ -419,39 +559,8 @@ public class NVLanguageProvider extends LanguageProvider implements com.klikli_d
         add(NVItems.BOW_VELOCITY_ANOINTMENT_3.get(), "Archer's Polish III");
         add(NVItems.WEAPON_REPAIR_ANOINTMENT_3.get(), "Mending Balm III");
 
-        // Routing/Filter Items
+        // Routing Items
         add(NVItems.FRAME_PARTS.get(), "Frame Parts");
-        add(NVItems.ITEM_ROUTER_FILTER.get(), "Standard Filter");
-        add(NVItems.ITEM_TAG_FILTER.get(), "Tag Filter");
-        add(NVItems.ITEM_ENCHANT_FILTER.get(), "Enchantment Filter");
-        add(NVItems.ITEM_MOD_FILTER.get(), "Mod Filter");
-        add(NVItems.ITEM_COMPOSITE_FILTER.get(), "Composite Filter");
-
-        // Filter GUI translations
-        add("filter.neovitae.whitelist", "Whitelist Mode");
-        add("filter.neovitae.blacklist", "Blacklist Mode");
-        add("filter.neovitae.anytag", "Match Any Tag:");
-        add("filter.neovitae.specifiedtag", "Specified Tag:");
-        add("filter.neovitae.novalidtag", "No valid tag");
-
-        // Filter GUI display names (used by getDisplayName())
-        add("gui.neovitae.filter.exact", "Exact Filter");
-        add("gui.neovitae.filter.mod", "Mod Filter");
-        add("gui.neovitae.filter.tag", "Tag Filter");
-        add("gui.neovitae.filter.composite", "Composite Filter");
-
-        // Filter tooltip descriptions
-        add("tooltip.neovitae.modfilter.desc", "Filters items by their mod namespace");
-        add("tooltip.neovitae.tagfilter.desc", "Filters items by their tags");
-        add("tooltip.neovitae.compositefilter.desc", "Combines multiple filters together");
-        add("tooltip.neovitae.filter.whitelist", "Whitelist: Only matching items pass");
-        add("tooltip.neovitae.filter.blacklist", "Blacklist: Non-matching items pass");
-        add("tooltip.neovitae.filter.from_mod", "Items from %s");
-        add("tooltip.neovitae.filter.count", "%d x %s");
-        add("tooltip.neovitae.filter.all", "All %s");
-        add("tooltip.neovitae.filter.anytag", "Any tag on %s");
-        add("tooltip.neovitae.extraInfo", "Hold SHIFT for details");
-        add("tooltip.neovitae.contained_filters", "Contained Filters:");
 
         add(NVItems.BLOOD_SWEAT_AND_TEARS.get(), "Music Disc");
         add("jukebox_song.neovitae.blood_sweat_and_tears", "Saereth - Blood, Sweat & Tears");
@@ -476,6 +585,9 @@ public class NVLanguageProvider extends LanguageProvider implements com.klikli_d
 
         // Teleposer Block
         add(NVBlocks.TELEPOSER, "Teleposer");
+
+        // Spirit Cache
+        add(NVBlocks.SPIRIT_CACHE, "Spirit Cache");
 
         // Teleposer Focus Items
         add(NVItems.TELEPOSER_FOCUS.get(), "Teleposer Focus");
@@ -525,6 +637,7 @@ public class NVLanguageProvider extends LanguageProvider implements com.klikli_d
 
         // Ritual Reader
         add(NVItems.RITUAL_READER.get(), "Ritual Reader");
+        add(NVItems.RITUAL_DESIGNER.get(), "Ritual Designer");
         addTooltip("reader.desc", "Used to configure ritual areas.");
         addTooltip("reader.currentState", "Mode: %s");
         addTooltip("reader.currentRange", "Range: %s");
@@ -543,7 +656,7 @@ public class NVLanguageProvider extends LanguageProvider implements com.klikli_d
         add("chat.neovitae.reader.corner1Set", "Corner 1 set at %d, %d, %d");
         add("chat.neovitae.reader.areaSet", "Area '%s' updated successfully.");
         add("chat.neovitae.reader.invalidRange", "Invalid range key.");
-        add("chat.neovitae.reader.willType", "Will type set to: %s");
+        add("chat.neovitae.reader.spiritusType", "Will type set to: %s");
         add("ritual.neovitae.blockRange.noRange", "No range with that key.");
         add("ritual.neovitae.blockRange.tooBig", "Area volume exceeds limit of %d blocks.");
         add("ritual.neovitae.blockRange.tooFar", "Area extends beyond limits (vertical: %d, horizontal: %d).");
@@ -553,6 +666,9 @@ public class NVLanguageProvider extends LanguageProvider implements com.klikli_d
         add("chat.neovitae.imperfect.activated", "%s activated!");
         add("chat.neovitae.imperfect.notEnoughLP", "Not enough Essentia Vitae! Requires %d EV.");
         add("chat.neovitae.imperfect.noMatch", "No imperfect ritual matches that block.");
+
+        // Arcane Scribe Tool messages
+        add("chat.neovitae.scribe.bound", "Arcane Scribe Tool bound to %s");
 
         // Master Ritual Stone activation messages
         add("chat.neovitae.crystal.notBound", "The crystal is not bound to a player!");
@@ -573,9 +689,15 @@ public class NVLanguageProvider extends LanguageProvider implements com.klikli_d
         add("chat.neovitae.ritual.disabled", "This ritual has been disabled.");
 
         // Dungeon Seal messages
+        add("container.neovitae.dungeon_seal", "Choose Your Path");
         add("chat.neovitae.dungeon.seal.opened", "The seal has been broken. A new path opens...");
         add("chat.neovitae.dungeon.seal.failed", "The seal remains firmly shut.");
         add("chat.neovitae.dungeon.seal.wrongKey", "This key doesn't fit this seal.");
+        add("chat.neovitae.dungeon.seal.noKeys", "You don't have any keys that fit this seal.");
+        add("chat.neovitae.dungeon.threshold.mine_entrance", "Strange noises and creatures begin to stir in the depths...");
+        add("chat.neovitae.dungeon.threshold.mine_key", "A monstrous roar echoes through the corridors...");
+        add("chat.neovitae.dungeon.spatial_distortion", "You sense a spatial distortion in this area...");
+        add("chat.neovitae.dungeon.rift_opened", "A spatial rift tears open near the exit portal...");
 
         // Dungeon Key items
         add(NVItems.SIMPLE_KEY.get(), "Simple Dungeon Key");
@@ -607,7 +729,7 @@ public class NVLanguageProvider extends LanguageProvider implements com.klikli_d
         addAnointment("quick_draw", "Deft Hands");
         addAnointment("looting", "Plundering");
         addAnointment("bow_power", "Heavy Shot");
-        addAnointment("will_power", "Spiritus Drain");
+        addAnointment("spiritus_drain", "Spiritus Drain");
         addAnointment("smelting", "Heated Tool");
         addAnointment("voiding", "Voiding");
         addAnointment("bow_velocity", "Sniping");
@@ -625,7 +747,7 @@ public class NVLanguageProvider extends LanguageProvider implements com.klikli_d
         addTooltip("anointment.quick_draw.desc", "Decreases bow draw time");
         addTooltip("anointment.looting.desc", "Increases mob drops (Looting)");
         addTooltip("anointment.bow_power.desc", "Increases arrow damage");
-        addTooltip("anointment.will_power.desc", "Arrows drain Spiritus on hit");
+        addTooltip("anointment.spiritus_drain.desc", "Arrows drain Spiritus on hit");
         addTooltip("anointment.smelting.desc", "Auto-smelts drops from mining");
         addTooltip("anointment.voiding.desc", "Destroys unwanted drops from mining");
         addTooltip("anointment.bow_velocity.desc", "Increases arrow velocity");
@@ -648,7 +770,7 @@ public class NVLanguageProvider extends LanguageProvider implements com.klikli_d
 
         // Dagger tooltips
         addTooltip("sacrificial_dagger.desc", "The Gift of Vitae");
-        addTooltip("dagger_of_sacrifice.desc", "Theft of Vitae");
+        add("item.neovitae.sacrificial_dagger.alternate", "Orb of Sacrifice");
 
         // Rune tooltips
         addTooltip("rune.blank", "A basic rune with no special effect");
@@ -709,10 +831,12 @@ public class NVLanguageProvider extends LanguageProvider implements com.klikli_d
         add("message.neovitae.blood_light.redstone_on", "Redstone Control: Enabled");
         add("message.neovitae.blood_light.redstone_off", "Redstone Control: Disabled");
         add("message.neovitae.sigil.blood_light.brightness", "Sigil Brightness: %s");
+        add("message.neovitae.too_far_from_altar", "You are too far from an Ara Vitae");
 
         // Material generation messages
         add("message.neovitae.materials.generated", "[Neo Vitae] New ore materials have been detected and added to the config.");
         add("message.neovitae.materials.restart_required", "[Neo Vitae] A game restart is required for the new material items to appear.");
+        add("command.neovitae.generate.dedicated_unsupported", "/nvgenerate cannot run on a dedicated server: ore color sampling requires client-side block textures. Run it once in single-player to produce materials.json, then ship that file to the dedicated server.");
         add("command.neovitae.generate.scanning", "Scanning c:ores tags...");
         add("command.neovitae.generate.no_new", "No new ore materials found. %s already configured.");
         add("command.neovitae.generate.added", "Added %s new materials: %s");
@@ -721,10 +845,10 @@ public class NVLanguageProvider extends LanguageProvider implements com.klikli_d
         add("command.neovitae.setorbfill.success", "Set orb fill to %s / %s mB");
         add("command.neovitae.setorbfill.not_orb", "You must be holding an Orb of Vitae");
 
-        add(NVItems.LIVING_HELMET.get(), "Living Helmet");
-        add(NVItems.LIVING_PLATE.get(), "Living Plate");
-        add(NVItems.LIVING_LEGGINGS.get(), "Living Leggings");
-        add(NVItems.LIVING_BOOTS.get(), "Living Boots");
+        add(NVItems.SENTIENT_HELMET.get(), "Sentient Helmet");
+        add(NVItems.SENTIENT_PLATE.get(), "Sentient Plate");
+        add(NVItems.SENTIENT_LEGGINGS.get(), "Sentient Leggings");
+        add(NVItems.SENTIENT_BOOTS.get(), "Sentient Boots");
         add(NVItems.UPGRADE_TOME.get(), "Upgrade Tome");
         add(NVItems.EXPERIENCE_TOME.get(), "Tome of Peritia");
         addTooltip("experience_tome.stored", "Stored XP: %s");
@@ -735,12 +859,12 @@ public class NVLanguageProvider extends LanguageProvider implements com.klikli_d
         add(NVItems.SYNTHETIC_POINT.get(), "Synthetic Upgrade Points");
         addTooltip("scrap", "Contained Upgrade Points: %s");
 
-        add(NVItems.TRAINING_BRACELET.get(), "Living Training Bracelet");
+        add(NVItems.TRAINING_BRACELET.get(), "Sentient Training Bracelet");
         add("trainer.neovitae.allow_others", "Allow Others");
         add("trainer.neovitae.deny_others", "Deny Others");
         add("trainer.neovitae.save", "Save");
 
-        add("item.neovitae.living_plate.dead", "Formerly Living Plate");
+        add("item.neovitae.sentient_plate.dead", "Formerly Sentient Plate");
         addTooltip("has_living_stats", "Theres some kind of notes, but you cant decipher them");
 
         addCommand("upgrade.get", "%s has the following upgrades:\n");
@@ -775,7 +899,7 @@ public class NVLanguageProvider extends LanguageProvider implements com.klikli_d
         addCommand("imperfect_ritual.unknown", "Unknown imperfect ritual: %s");
         addCommand("imperfect_ritual.no_block", "Imperfect ritual %s has no block requirement in DataMap.");
         addCommand("imperfect_ritual.activated", "Imperfect ritual %s activated.");
-        addCommand("imperfect_ritual.failed", "Imperfect ritual %s failed to activate (insufficient LP?).");
+        addCommand("imperfect_ritual.failed", "Imperfect ritual %s failed to activate (insufficient EV?).");
         addCommand("imperfect_ritual.placed", "Placed block for imperfect ritual %s: %s");
         addCommand("imperfect_ritual.list.header", "=== Available Imperfect Rituals ===");
 
@@ -799,14 +923,14 @@ public class NVLanguageProvider extends LanguageProvider implements com.klikli_d
         addTooltip("sigil.lava.desc", "Places lava source blocks");
 
         // Sigil tooltips - Divination/Seer info messages
-        addTooltip("sigil.divination.currentAltarTier", "Current Altar Tier: %s");
+        addTooltip("sigil.divination.currentAltarTier", "Current Ara Vitae Tier: %s");
         addTooltip("sigil.divination.currentEV", "Current Essentia Vitae: %s");
-        addTooltip("sigil.divination.currentAltarCapacity", "Altar Capacity: %s EV");
+        addTooltip("sigil.divination.currentAltarCapacity", "Ara Vitae Capacity: %s EV");
         addTooltip("sigil.divination.currentNetworkLP", "Anima: %s EV");
         addTooltip("sigil.divination.otherNetwork", "Viewing network of: %s");
-        addTooltip("sigil.seer.currentAltarTier", "Current Altar Tier: %s");
+        addTooltip("sigil.seer.currentAltarTier", "Current Ara Vitae Tier: %s");
         addTooltip("sigil.seer.currentEV", "Current Essentia Vitae: %s");
-        addTooltip("sigil.seer.currentAltarCapacity", "Altar Capacity: %s EV");
+        addTooltip("sigil.seer.currentAltarCapacity", "Ara Vitae Capacity: %s EV");
         addTooltip("sigil.seer.otherNetwork", "Viewing network of: %s");
         addTooltip("sigil.seer.currentAltarProgress", "Crafting Progress: %s%%");
         addTooltip("sigil.seer.currentAltarConsumption", "Consumption Rate: %s EV/t");
@@ -826,6 +950,7 @@ public class NVLanguageProvider extends LanguageProvider implements com.klikli_d
         // Sigil activated/deactivated states
         addTooltip("activated", "Activated");
         addTooltip("deactivated", "Deactivated");
+        addTooltip("sigil.upkeep", "Upkeep: %s EV / %ss");
 
         // Sigil holding
         addTooltip("sigil.holding.sigilInSlot", "Slot %s: %s");
@@ -833,21 +958,15 @@ public class NVLanguageProvider extends LanguageProvider implements com.klikli_d
         // Current owner/binding
         addTooltip("currentOwner", "Bound to: %s");
 
-        // Current will type (currentType variant for sentient tools)
-        addTooltip("currentType.default", "Type: Raw");
-        addTooltip("currentType.corrosive", "Type: Corrosive");
-        addTooltip("currentType.destructive", "Type: Destructive");
-        addTooltip("currentType.vengeful", "Type: Vengeful");
-        addTooltip("currentType.steadfast", "Type: Steadfast");
+        add("chat.neovitae.sentient_upgrade.level_up", "%s has levelled up to %s!");
 
-        add("chat.neovitae.living_upgrade.level_up", "%s has levelled up to %s!");
-
-        LivingUpgrades.translations(this::add);
+        SentientUpgrades.translations(this::add);
 
         // JEI Integration
         addJei("recipe.altar", "Ara Vitae");
         addJei("recipe.hellfire_forge", "Hellfire Forge");
-        addJei("recipe.alchemyarraycrafting", "Alchemy Array");
+        addJei("recipe.array_crafting", "Array Crafting");
+        addJei("recipe.array_effects", "Array Effects");
         addJei("recipe.tabulavitae", "Tabula Vitae");
         addJei("recipe.requiredtier", "Required Tier: %s");
         addJei("recipe.requiredlp", "Required Essentia Vitae: %s");
@@ -867,6 +986,7 @@ public class NVLanguageProvider extends LanguageProvider implements com.klikli_d
         addJei("recipe.meteor.estimate", "Est: %s blocks (~%s%%)");
         addJei("recipe.arc", "Athanor");
         addJei("recipe.athanor.chance", "Chance: %s%%");
+        addJei("recipe.athanor.spiritus_cost", "Spiritus Cost:");
         addJei("recipe.flask", "Flask Brewing");
         addJei("recipe.flask_combination", "Flask Combinations");
         addJei("recipe.imperfect_ritual", "Imperfect Ritual");
@@ -882,6 +1002,13 @@ public class NVLanguageProvider extends LanguageProvider implements com.klikli_d
 
         // Jade integration
         add("config.jade.plugin_neovitae.block_info", "Neo Vitae Block Info");
+
+        // Blood Orb
+        add("jei.neovitae.orb.info", "Orbs of Vitae serve three purposes:\n\nMain Hand: Right-click to sacrifice one heart, channeling 200 EV into your Anima.\n\nOff-Hand (Shield): Hold the use key to raise a Sanguine Ward that blocks all frontal damage. Costs 50 EV/second to maintain. Requires at least 200 EV to activate.\n\nOff-Hand (Harvest): Slay any creature while holding an orb in your off-hand to fill the orb's internal reservoir with Essentia Vitae (10 EV per point of max health). Place the orb on an Ara Vitae to drain its reservoir into the basin at 10x speed.\n\nThe orb glows with an enchanted sheen when its internal tank is full.");
+
+        // Blood Mending Upgrade
+        addJei("recipe.hellfire_forge_upgrade", "Hellfire Forge Upgrade");
+        addJei("recipe.upgrade_hint", "Any damageable item will be converted to have Blood Mending");
 
         // Blood Tank
         add("jei.neovitae.blood_tank.upgrade_info", "Blood Tanks can be upgraded by placing them in a crafting grid surrounded by Glass and Bloodstone. Each upgrade doubles the tank's capacity. Tanks retain their stored fluid when upgraded. The initial tier holds 16,000 mB and tier 16 holds 524,288,000 mB.");
@@ -905,6 +1032,34 @@ public class NVLanguageProvider extends LanguageProvider implements com.klikli_d
         addJei("effect.night.desc", "Sets the time to night");
         addJei("effect.elevator.name", "Teleposition Array");
         addJei("effect.elevator.desc", "Teleports you to aligned arrays above or below");
+        addJei("effect.repulsion.name", "Repulsion Array");
+        addJei("effect.repulsion.desc", "Pushes hostile mobs away from the array");
+        addJei("effect.collection.name", "Collection Array");
+        addJei("effect.collection.desc", "Pulls nearby items toward the array center");
+        addJei("effect.light.name", "Light Array");
+        addJei("effect.light.desc", "Emits light in a radius without placing torches");
+        addJei("effect.furnace.name", "Furnace Array");
+        addJei("effect.furnace.desc", "Smelts items dropped on the ground nearby");
+        addJei("effect.rain.name", "Tempest Array");
+        addJei("effect.rain.desc", "Toggles rain on or off. Costs EV to activate.");
+        addJei("effect.growth.name", "Growth Array");
+        addJei("effect.growth.desc", "Accelerates crop growth in a small radius");
+        addJei("effect.freeze.name", "Freeze Array");
+        addJei("effect.freeze.desc", "Converts water to ice and adds snow layers");
+        addJei("effect.signal.name", "Signal Array");
+        addJei("effect.signal.desc", "Outputs redstone proportional to owner's EV");
+        addJei("effect.trigger.name", "Trigger Array");
+        addJei("effect.trigger.desc", "Emits a redstone pulse when an entity steps on it");
+        addJei("effect.spirit_siphon.name", "Spirit Siphon Array");
+        addJei("effect.spirit_siphon.desc", "Damages mobs and releases raw spiritus into the chunk");
+        addJei("effect.deflection.name", "Deflection Array");
+        addJei("effect.deflection.desc", "Reflects projectiles that pass through the column above");
+        addJei("effect.endless_fountain.name", "Endless Fountain Array");
+        addJei("effect.endless_fountain.desc", "Fills adjacent fluid tanks with water every few ticks");
+        addJei("effect.undertow.name", "Undertow Array");
+        addJei("effect.undertow.desc", "Creates a bubble column in water; right-click to reverse");
+        addJei("effect.loyal_friends.name", "Array of Loyal Friends");
+        addJei("effect.loyal_friends.desc", "Summons and revives your tamed companions");
 
         // Array effect dummy items (JEI searchable)
         add(NVItems.ARRAY_BOUNCE.get(), "Bounce Array");
@@ -914,13 +1069,39 @@ public class NVLanguageProvider extends LanguageProvider implements com.klikli_d
         add(NVItems.ARRAY_DAY.get(), "Sunrise Array");
         add(NVItems.ARRAY_NIGHT.get(), "Moonrise Array");
         add(NVItems.ARRAY_ELEVATOR.get(), "Teleposition Array");
+        add(NVItems.ARRAY_REPULSION.get(), "Repulsion Array");
+        add(NVItems.ARRAY_COLLECTION.get(), "Collection Array");
+        add(NVItems.ARRAY_LIGHT.get(), "Light Array");
+        add(NVItems.ARRAY_FURNACE.get(), "Furnace Array");
+        add(NVItems.ARRAY_RAIN.get(), "Tempest Array");
+        add(NVItems.ARRAY_GROWTH.get(), "Growth Array");
+        add(NVItems.ARRAY_FREEZE.get(), "Freeze Array");
+        add(NVItems.ARRAY_SIGNAL.get(), "Signal Array");
+        add(NVItems.ARRAY_TRIGGER.get(), "Trigger Array");
+        add(NVItems.ARRAY_SPIRIT_SIPHON.get(), "Spirit Siphon Array");
+        add(NVItems.ARRAY_DEFLECTION.get(), "Deflection Array");
+        add(NVItems.ARRAY_ENDLESS_FOUNTAIN.get(), "Endless Fountain Array");
+        add(NVItems.ARRAY_UNDERTOW.get(), "Undertow Array");
         addTooltip("array_effect.bounce", "Bounces entities high into the air. Crouch to disable.");
         addTooltip("array_effect.spike", "Damages any entity that steps on the array.");
         addTooltip("array_effect.updraft", "Launches entities upward with a gust of wind.");
         addTooltip("array_effect.movement", "Accelerates entities in the direction the array faces.");
         addTooltip("array_effect.day", "Advances the time to dawn. Consumed on use.");
         addTooltip("array_effect.night", "Advances the time to night. Consumed on use.");
-        addTooltip("array_effect.elevator", "Jump to teleport up, crouch to teleport down. Searches up to 64 blocks.");
+        addTooltip("array_effect.elevator", "Requires another Teleposition Array above or below. Jump to teleport up, sneak to go down. Range: 64 blocks.");
+        addTooltip("array_effect.repulsion", "Pushes hostile mobs away in a 5-block radius.");
+        addTooltip("array_effect.collection", "Pulls dropped items within 2 blocks. Place over a chest to auto-collect.");
+        addTooltip("array_effect.light", "Places invisible light sources in a radius above the array.");
+        addTooltip("array_effect.furnace", "Smelts items on the ground using furnace recipes. 10 EV per stack. Prevents item despawn.");
+        addTooltip("array_effect.rain", "Toggles rain on or off. Costs 500 EV. Consumed on use.");
+        addTooltip("array_effect.growth", "Accelerates crop and plant growth in a 2-block radius.");
+        addTooltip("array_effect.freeze", "Freezes water sources to ice and covers ground in snow. Consumed on use.");
+        addTooltip("array_effect.signal", "Outputs redstone signal 0-15 based on the owner's EV level.");
+        addTooltip("array_effect.trigger", "Emits a redstone pulse when a mob or player steps on the array.");
+        addTooltip("array_effect.spirit_siphon", "Damages non-player mobs and releases raw spiritus into the chunk.");
+        addTooltip("array_effect.deflection", "Reflects projectiles passing through a column above the array.");
+        addTooltip("array_effect.endless_fountain", "Fills adjacent fluid tanks with up to 6 buckets of water every 5 ticks.");
+        addTooltip("array_effect.undertow", "Drives a bubble column through the water above. Right-click to flip between upward (push) and downward (drag).");
 
         // Rituals
         addRitual("water", "Ritual of the Full Spring");
@@ -942,8 +1123,8 @@ public class NVLanguageProvider extends LanguageProvider implements com.klikli_d
         addRitual("zephyr", "Call of the Zephyr");
         addRitual("pump", "Hymn of Siphoning");
         addRitual("phantom_bridge", "Ritual of the Phantom Bridge");
-        addRitual("crystal_harvest", "Crystalline Harvest");
-        addRitual("downgrade", "Ritual of Living Evolution");
+        addRitual("crystallum_fractura", "Crystallum Fractura");
+        addRitual("downgrade", "Ritual of Sentient Evolution");
         addRitual("meteor", "Mark of the Falling Tower");
         addRitual("forsaken_soul", "Cry of the Forsaken Soul");
         addRitual("full_stomach", "Ritual of the Satiated Stomach");
@@ -952,14 +1133,18 @@ public class NVLanguageProvider extends LanguageProvider implements com.klikli_d
         addRitual("condor", "Reverence of the Condor");
         addRitual("grounding", "The Sinner's Burden");
         addRitual("placer", "Ritual of the Mason");
-        addRitual("geode", "Geode Resonance");
         addRitual("ellipse", "Ellipsoid Manifestation");
         addRitual("sphere", "Spherical Manifestation");
-        addRitual("armour_evolve", "Ritual of Living Evolution");
+        addRitual("armour_evolve", "Ritual of Sentient Evolution");
         addRitual("upgrade_remove", "Sound of the Cleansing Soul");
-        addRitual("crystal_split", "Resonance of the Faceted Crystal");
         addRitual("crafting", "Rhythm of the Beating Anvil");
         addRitual("yawning_void", "Yawning of the Void");
+        add("ritual.neovitae.torment_nexus", "The Torment Nexus");
+        add("ritual.neovitae.torment_nexus.info",
+                "Binds every spawner and trial spawner in range, suppressing their natural spawns and harvesting"
+                + " an equivalent stream of EV from the simulated kills. Loot is funneled into a chest atop the"
+                + " Master Ritual Stone; an Experience Tome in the chest soaks up the kills' XP. Requires an"
+                + " Awakened Activation Crystal.");
 
         // Dungeon Rituals (snake_case to match ritual constructors)
         add("ritual.neovitae.simple_dungeon", "Edge of the Hidden Realm");
@@ -1009,11 +1194,11 @@ public class NVLanguageProvider extends LanguageProvider implements com.klikli_d
         addAdvancement("master_blood_orb", "Magus Orb of Vitae", "Upgrade to a Tier 3 Orb of Vitae");
         addAdvancement("archmage_blood_orb", "Dominus Orb of Vitae", "Upgrade to a Tier 4 Orb of Vitae");
         addAdvancement("transcendent_blood_orb", "Divinus Orb of Vitae", "Achieve the ultimate Orb of Vitae");
-        addAdvancement("blank_slate", "Blank Slate", "Inscribe your first slate");
-        addAdvancement("reinforced_slate", "Reinforced Slate", "Craft a Reinforced Slate");
-        addAdvancement("imbued_slate", "Imbued Slate", "Craft an Imbued Slate");
-        addAdvancement("demonic_slate", "Demonic Slate", "Craft a Demonic Slate");
-        addAdvancement("ethereal_slate", "Ethereal Slate", "Craft an Ethereal Slate");
+        addAdvancement("tabula_rasa", "Tabula Rasa", "Inscribe your first slate");
+        addAdvancement("tabula_robur", "Tabula Robur", "Craft a Reinforced Slate");
+        addAdvancement("tabula_animata", "Tabula Animata", "Craft an Imbued Slate");
+        addAdvancement("tabula_spiritus", "Tabula Spiritus", "Craft a Demonic Slate");
+        addAdvancement("tabula_aetherea", "Tabula Aetherea", "Craft an Ethereal Slate");
         addAdvancement("tabula_vitae", "The Alchemy Table", "Craft a Tabula Vitae");
         addAdvancement("athanor", "Industrial Alchemy", "Craft an Athanor");
         addAdvancement("incense_altar", "Sacred Incense", "Craft an Incense Altar");
@@ -1024,12 +1209,17 @@ public class NVLanguageProvider extends LanguageProvider implements com.klikli_d
         addAdvancement("first_ritual", "Ritual Awakening", "Activate your first ritual");
         addAdvancement("well_of_suffering", "Well of Suffering", "Activate the Well of Suffering");
         addAdvancement("edge_of_hidden_realm", "Edge of the Hidden Realm", "Venture into the Endless Realm");
-        addAdvancement("crack_of_fractured_crystal", "Crack of the Fractured Crystal", "Activate the Resonance of the Faceted Crystal");
+        addAdvancement("crystallum_fractura", "Crystallum Fractura", "Activate the unified harvest ritual; let the aura split crystals from Spiritus itself");
+        addAdvancement("transmute_ruina", "First Fracture", "Transmute a fully-grown Raw cluster into Spiritus Ruina with a catalyst and an Animus Mote");
+        addAdvancement("transmute_nihilum", "Aspect of Ruin", "Transmute a Raw cluster into Spiritus Nihilum");
+        addAdvancement("transmute_vindicta", "Aspect of Vengeance", "Transmute a Raw cluster into Spiritus Vindicta");
+        addAdvancement("transmute_invictus", "Aspect of Endurance", "Transmute a Raw cluster into Spiritus Invictus");
+        addAdvancement("aspectum_omnia", "Aspectum Omnia", "Transmute a Raw cluster into each of the four aspects");
         addAdvancement("serenade_of_nether", "Serenade of the Nether", "Activate the Serenade of the Nether");
         addAdvancement("master_of_ceremonies", "Master of Ceremonies", "Complete all ritual achievements");
         addAdvancement("meteor", "METEO!", "Summon the Mark of the Falling Tower");
         addAdvancement("teleposer", "Displacement", "Craft a Teleposer");
-        addAdvancement("spiritus_snare", "Soul Snare", "Craft a Soul Snare");
+        addAdvancement("throwing_dagger", "First Strike", "Craft a Throwing Dagger");
         addAdvancement("spiritus", "First Spiritus", "Obtain raw Spiritus");
         addAdvancement("spiritus_gem_petty", "Petty Spiritus Gem", "Craft a Petty Spiritus Gem");
         addAdvancement("spiritus_gem_lesser", "Lesser Spiritus Gem", "Upgrade to a Lesser Gem");
@@ -1039,10 +1229,14 @@ public class NVLanguageProvider extends LanguageProvider implements com.klikli_d
         addAdvancement("sentient_sword", "Sentient Blade", "Craft a Sentient Sword");
         addAdvancement("hellfire_forge", "Hellfire Forge", "Craft a Hellfire Forge");
         addAdvancement("vas_maleficum", "Vas Maleficum", "Craft a Vas Maleficum");
-        addAdvancement("living_armor", "Living Armor", "Craft Living Armor");
+        addAdvancement("sentient_armor", "Sentient Armor", "Craft Sentient Armor");
         addAdvancement("self_sacrifice", "Blood Pact", "Craft a Sacrificial Dagger");
-        addAdvancement("sacrifice", "The Greater Sacrifice", "Craft a Dagger of Sacrifice");
-        addAdvancement("blood_sweat_and_tears", "Blood, Sweat & Tears", "Craft the legendary record at a Tier 6 altar");
+
+        addAdvancement("arcane_scribe", "Circle of Intent", "Craft an Arcane Scribe Tool to inscribe and activate Alchemy Arrays");
+        addAdvancement("demonite", "Forged in the Pit", "Unearth a sliver of raw Demonite from the Endless Realm");
+        addAdvancement("hellforged_ingot", "Hellforged", "Smelt raw Demonite into a Hellforged Ingot");
+
+        addAdvancement("blood_sweat_and_tears", "Blood, Sweat & Tears", "Craft the legendary record at a Tier 6 Ara Vitae");
     }
 
     public void addRitual(String key, String name) {
@@ -1082,6 +1276,7 @@ public class NVLanguageProvider extends LanguageProvider implements com.klikli_d
     private void addDungeonBlocks() {
         // Non-variant dungeon blocks
         add(DungeonBlocks.DUNGEON_ORE, "Dungeon Ore");
+        add(DungeonBlocks.PRISMATIC_DEMONITE, "Prismatic Demonite Ore");
         add(DungeonBlocks.DUNGEON_BRICK_ASSORTED, "Assorted Dungeon Brick");
 
         // Functional dungeon blocks
